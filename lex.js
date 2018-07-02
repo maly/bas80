@@ -150,3 +150,58 @@ function InputStream(input) {
         return peek() == null;
     }
 }
+
+
+
+
+function parse(source) {
+    var lines = source.split("\n");
+
+    var basic = []
+
+    for (var i=0;i<lines.length;i++) {
+        var line = lines[i];
+        var out = {source:line,rawTokens:[],label:null,_numline:i,_cmd:1}
+        var input = InputStream(line);
+        var tok = TokenStream(input);
+        while(!tok.eof()) {
+            var t = tok.next()
+            out.rawTokens.push(t)
+        }
+        if (!out.rawTokens.length) continue; //neni co ukladat
+        out.tokens = [].concat(out.rawTokens)
+        if (out.tokens[0].type=="num") { //line number
+            out.label = out.tokens.shift().value;
+        }
+
+        //decolonization
+        var nout = [];
+        while (out.tokens.length) {
+            var t = out.tokens.shift()
+            if (t.type=="colon") {
+                if (nout[0].type=="var") {
+                    nout.unshift({type:"kw",value:"let"})
+                }
+                basic.push({
+                    source:line,
+                    rawTokens:out.rawTokens,
+                    label:out.label,
+                    _numline:out._numline,
+                    _cmd:out._cmd,
+                    tokens:nout
+                });
+                nout=[];
+                out.label=null;
+                out._cmd++;
+                continue;
+            }            
+            nout.push(t)
+        }
+        if (nout[0].type=="var") {
+            nout.unshift({type:"kw",value:"let"})
+        }
+        out.tokens = nout
+        basic.push(out);
+    }
+    return basic
+}
