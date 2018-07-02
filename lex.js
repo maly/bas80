@@ -51,7 +51,7 @@ function InputStream(input) {
         return ":".indexOf(ch) >= 0;
     }
     function is_punc(ch) {
-        return ",;(){}[]".indexOf(ch) >= 0;
+        return ",;#(){}[]".indexOf(ch) >= 0;
     }
     function is_whitespace(ch) {
         return " \t\n".indexOf(ch) >= 0;
@@ -110,10 +110,7 @@ function InputStream(input) {
         read_while(is_whitespace);
         if (input.eof()) return null;
         var ch = input.peek();
-        if (ch == "#") {
-            skip_comment();
-            return read_next();
-        }
+
         if (ch == '"') return read_string();
         if (is_digit(ch)) return read_number();
         if (is_id_start(ch)) {
