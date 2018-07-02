@@ -26,6 +26,7 @@ function InputStream(input) {
  function TokenStream(input) {
     var current = null;
     var keywords = " if then else rem print goto let for to next step gosub return end stop data read restore ";
+    var functions = " abs rnd max ";
     return {
         next  : next,
         peek  : peek,
@@ -35,11 +36,14 @@ function InputStream(input) {
     function is_keyword(x) {
         return keywords.indexOf(" " + x.toLowerCase() + " ") >= 0;
     }
+    function is_function(x) {
+        return functions.indexOf(" " + x.toLowerCase() + " ") >= 0;
+    }
     function is_digit(ch) {
         return /[0-9]/i.test(ch);
     }
     function is_id_start(ch) {
-        return /[a-zλ_]/i.test(ch);
+        return /[a-z_]/i.test(ch);
     }
     function is_id(ch) {
         return is_id_start(ch) || "?!0123456789".indexOf(ch) >= 0;
@@ -76,8 +80,17 @@ function InputStream(input) {
     }
     function read_ident() {
         var id = read_while(is_id);
+        var s = input.peek();
+        if (s=="$") {
+            input.next();
+            return {
+                type  : "var$",
+                value : id.toLowerCase()
+            };
+
+        }
         return {
-            type  : is_keyword(id) ? "kw" : "var",
+            type  : is_keyword(id) ? "kw" : is_function(id) ? "fn" : "var",
             value : id.toLowerCase()
         };
     }
@@ -175,10 +188,22 @@ function parse(source) {
         var nout = [];
         while (out.tokens.length) {
             var t = out.tokens.shift()
-            if (t.type=="colon") {
+            if (t.type=="colon" || (t.type=="kw" && t.value=="then")) {
                 if (nout[0].type=="var") {
                     nout.unshift({type:"kw",value:"let"})
                 }
+                if (nout[0].type=="var$") {
+                    nout.unshift({type:"kw",value:"let"})
+                }
+                if (t.type=="kw" && t.value=="then") {
+                    nout.push(t)
+                    if (out.tokens.length) {
+                        if (out.tokens[0].type=="num") {
+                            nout.push({type:"kw",value:"goto"})
+                        }
+                    }
+                }
+
                 basic.push({
                     source:line,
                     rawTokens:out.rawTokens,
@@ -190,11 +215,27 @@ function parse(source) {
                 nout=[];
                 out.label=null;
                 out._cmd++;
+
+                if (t.type=="kw" && t.value=="then") {
+                    if (out.tokens.length) {
+                        if (out.tokens[0].type=="num") {
+                            nout.push({type:"kw",value:"goto"})
+                        }
+                    }
+                }
+
+
                 continue;
-            }            
+            }   
+
             nout.push(t)
+
+            
         }
         if (nout[0].type=="var") {
+            nout.unshift({type:"kw",value:"let"})
+        }
+        if (nout[0].type=="var$") {
             nout.unshift({type:"kw",value:"let"})
         }
         out.tokens = nout
