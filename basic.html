@@ -1,10 +1,10 @@
 <textarea id="source">
 5 REM Ahoj, tady to začíná
 10 A=max(0,55)
-b=abs(2+3)*4
-d=2+3*4
-e=2*3+4
-f=2+3+4
+b=4*abs(2+3)
+d=2+3*a
+e=2*3+a
+f=2+3+a
 if a=55 then b=rnd():a=a+1:print"*"
 c=2*a+b
 20 PRINT "Ahoj,";a
@@ -164,23 +164,36 @@ if a=20 then 20
     	return ex;
     }
 
-    var exprAsm = function(expr) {
+    var exprAsm = function(expr,left) {
+    	if (typeof left=="undefined") left=false;
     	var type = expr.type;
-    	if (type=="num") {
+    	if (type=="num" && !left) {
     		return "\tCONST "+expr.value+"\n"
     	}
-    	if (type=="str") {
+    	if (type=="str" && !left) {
     		return "\tCONST$ "+expr.value+"\n"
     	}
+    	if (type=="num" && left) {
+    		return "\tCONSTD "+expr.value+"\n"
+    	}
+    	if (type=="str" && left) {
+    		return "\tCONST$D "+expr.value+"\n"
+    	}
     	if (type=="var") {
-    		return "\tGETVAR "+expr.value+"\n"
+    		return "\tGETVAR "+expr.value+"\n"+(left?"\tXCHG\n":"")
     	}
     	if (type=="var$") {
-    		return "\tGETVARSTR "+expr.value+"\n"
+    		return "\tGETVARSTR "+expr.value+"\n"+(left?"\tXCHG\n":"")
     	}
     	if (type=="binary") {
-    		out = exprAsm(expr.left)+"\tXCHG\n"+exprAsm(expr.right)
-    		out += "\tOPCALL "+expr.operator+"\n"
+    		if (expr.left.type=="num" && expr.right.type=="binary") {
+    			out = exprAsm(expr.right)+exprAsm(expr.left,true)
+    		} else if (expr.left.type=="num" && expr.right.type=="fn") {
+    			out = exprAsm(expr.right)+exprAsm(expr.left,true)
+    		} else {
+    			out = exprAsm(expr.left,true)+exprAsm(expr.right)
+    		}
+    		out += "\tOPCALL "+expr.operator+"\n"+(left?"\tXCHG\n":"")
     		return out;
     	}
     	
@@ -189,7 +202,7 @@ if a=20 then 20
     		for(var i=0;i<expr.operands.length;i++) {
     			out += exprAsm(expr.operands[i])+"\tPUSH\n"
     		}
-    		out += "\tFNCALL "+expr.value+"\n"
+    		out += "\tFNCALL "+expr.value+"\n"+(left?"\tXCHG\n":"")
     		return out;
     	}
 		
