@@ -122,6 +122,19 @@ var LIB = {
         "\tJC dofalse\n"+
         "\tJMP dotrue\n"
     },
+    "o_le": {
+        uses:["o_logic"],
+        code: "\tCALL olofix\n"+
+        "\tMOV A,D\n"+
+        "\tCMP H\n"+
+        "\tJC dotrue\n"+
+        "\tJNZ dofalse\n"+
+        "\tMOV A,E\n"+
+        "\tCMP D\n"+
+        "\tJZ dotrue\n"+
+        "\tJC dotrue\n"+
+        "\tJMP dofalse\n"
+    },
     "o_eq": {
         uses:["o_logic"],
         code: "\tMOV A,L\n"+
