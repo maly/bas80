@@ -69,6 +69,13 @@ var expr = function(tokens, ln, bool) {
     var parse_atom = function() {
         var n = tokens.shift();
         //if (!n) return n
+        if (n.type=="op" && n.value=="-") {
+            //negative number
+            n = tokens.shift();
+            n.value = n.value * -1
+            return n
+        }
+
         if (n.type=="fn") {
             var nn = ARITY[n.value];
             var op=[];

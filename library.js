@@ -203,8 +203,15 @@ var LIB = {
     },
     "f_abs": {
         uses:null,
-        code: ""+
-        ""+
+        code: "\tMOV A,H\n"+
+        "\tORA A\n"+
+        "\tRP\n"+
+        "\tCMA\n"+
+        "\tMOV H,A\n"+
+        "\tMOV A,L\n"+
+        "\tCMA\n"+
+        "\tMOV L,A\n"+
+        "\tINX H\n"+
         "\tRET\n"
     },
     "f_sgn": {
