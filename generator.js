@@ -254,6 +254,14 @@ var generator = function(basic) {
                     //out+="RP"+i+":\n";
                     loops.unshift(["CMD"+i,"R"]);
                     continue;
+                case "endwhile":
+                    if (!loops.length) croak("ENDWHILE without WHILE",line)
+                    if (loops[0][1]!="W") croak("WHILE / ENDWHILE mismatched",line)
+                    //loops.unshift(["CMD"+i,"R"]);
+    				out+="\tJMP "+loops[0][0]+"\n";
+                    out+="WB"+loops[0][0]+":\n"
+                    loops.shift()                    
+                    continue;
                 case "break":
                     if (!loops.length) croak("BREAK outside the loop",line);
                     out+="\tJMP "+loops[0][1]+"B"+loops[0][0]+"\n"
@@ -300,7 +308,17 @@ var generator = function(basic) {
                     out+="RB"+loops[0][0]+":\n"
                     loops.shift()
     				continue;
+
+                case "while":
+                    loops.unshift(["CMD"+i,"W"])
+                    var ex = expr(tokens,line,true);
+                    out+="WC"+loops[0][0]+":\n"
+					out+=exprAsm(ex);
+    				out+="\tMOV A,H\n\tORA L\n";
+    				out+="\tJZ WB"+loops[0][0]+"\n";
+    				continue;
                     
+
                 case "print":
                 var println = true;
                     while(tokens.length) {
