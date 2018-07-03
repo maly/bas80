@@ -145,6 +145,17 @@ var LIB = {
         "\tJNZ dofalse\n"+
         "\tJMP dotrue\n"
     },
+    "o_neq": {
+        uses:["o_logic"],
+        code: "\tMOV A,L\n"+
+        "\tCMP E\n"+
+        "\tJNZ dotrue\n"+
+        "\tMOV A,H\n"+
+        "\tCMP D\n"+
+        "\tJNZ dotrue\n"+
+        "\tJMP dofalse\n"
+    },
+
     "o_add": {
         uses:null,
         inline:true,

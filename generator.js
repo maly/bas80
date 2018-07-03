@@ -57,6 +57,7 @@
             case "*": return "mul"
             case "/": return "div"
             case "=": return "eq"
+            case "<>": return "neq"
             case "<": return "lt"
             case ">": return "gt"
             case "<=": return "le"
