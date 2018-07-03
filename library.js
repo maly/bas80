@@ -123,13 +123,14 @@ var LIB = {
         "\tJMP dotrue\n"
     },
     "o_eq": {
-        uses:null,
+        uses:["o_logic"],
         code: "\tMOV A,L\n"+
-        "\tORA E\n"+
-        "\tRNZ\n"+
+        "\tCMP E\n"+
+        "\tJNZ dofalse\n"+
         "\tMOV A,H\n"+
-        "\tORA D\n"+
-        "\tRET\n"
+        "\tCMP D\n"+
+        "\tJNZ dofalse\n"+
+        "\tJMP dotrue\n"
     },
     "o_add": {
         uses:null,
