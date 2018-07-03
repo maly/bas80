@@ -188,6 +188,7 @@ function parse(source) {
         out.tokens = [].concat(out.rawTokens)
         if (out.tokens[0].type=="num") { //line number
             out.label = out.tokens.shift().value;
+            if (!out.tokens.length) continue
         }
 
         //decolonization

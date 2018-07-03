@@ -47,73 +47,7 @@ var exprType = function(expr,ln) {
     croak("Invalid expression type",ln);
 }
 
-var exprAsm = function(expr,line,etype,left) {
-    if (typeof etype=="undefined") etype="int";
-    if (typeof left=="undefined") left=false;
-    var type = expr.type;
-    if (type=="num" && !left) {
-        return "\tLXI H,"+expr.value+"\n"
-    }
-    if (type=="str" && !left) {
-        var cs=ENV.addStr(expr.value);
-        return "\tLXI H,cs_"+cs+"\t;"+expr.value+"\n"
-    }
-    if (type=="num" && left) {
-        return "\tLXI D,"+expr.value+"\n"
-    }
-    if (type=="str" && left) {
-        var cs=ENV.addStr(expr.value);
-        return "\tLXI D,cs_"+cs+"\t;"+expr.value+"\n"
-    }
-    if (type=="var" && !left) {
-        ENV.addVar(expr.value,"int")
-        return "\tLHLD v_"+expr.value+"\n"
-    }
-    if (type=="var" && left) {
-        ENV.addVar(expr.value,"int")
-        return "\tXCHG\n\tLHLD v_"+expr.value+"\n\tXCHG\n"
-    }
-    if (type=="var$" && !left) {
-        ENV.addVar(expr.value,"str")
-        return "\tLHLD vs_"+expr.value+"\n"
-    }
-    if (type=="var$" && left) {
-        ENV.addVar(expr.value,"str")
-        return "\tXCHG\n\tLHLD vs_"+expr.value+"\n\tXCHG\n"
-    }
-    if (type=="binary") {
-        if (expr.left.type=="num" && expr.right.type=="binary") {
-            out = exprAsm(expr.right,line,etype)+exprAsm(expr.left,line,etype,true)
-        } else if (expr.left.type=="num" && expr.right.type=="fn") {
-            out = exprAsm(expr.right,line,etype)+exprAsm(expr.left,line,etype,true)
-        } else {
-            out = exprAsm(expr.left,line,etype,true)+exprAsm(expr.right,line,etype)
-        }
-        var opfn = "o_"+opAsm(expr.operator,line,etype);
-        ENV.addUse(opfn);
-        out += "\tCALL "+opfn+"\n"+(left?"\tXCHG\n":"")
-        return out;
-    }
-    
-    if (type=="fn") {
-        out="";
-        if (expr.operands.length==1) {
-            out += exprAsm(expr.operands[0])
-        } else if (expr.operands.length==2) {
-            out += exprAsm(expr.operands[0],true)
-            out += exprAsm(expr.operands[1])
-        } else
-        for(var i=0;i<expr.operands.length;i++) {
-            out += exprAsm(expr.operands[i])+"\tPUSH\n"
-        }
-        ENV.addUse("f_"+expr.value);
-        out += "\tCALL f_"+expr.value+"\n"+(left?"\tXCHG\n":"")
-        return out;
-    }
-    
-    return "\tUNKNOWN "+JSON.stringify(expr)+"\n"
 
-}
 
 var compute = function (l,r,op) {
     switch(op) {

@@ -95,9 +95,10 @@ var LIB = {
     },
     "o_add": {
         uses:null,
-        code: ""+
+        inline:true,
+        code: "\tDAD D\t;o_add\n"+
         ""+
-        "\tRET\n"
+        ""
     },
     "o_mul": {
         uses:null,
