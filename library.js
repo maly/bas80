@@ -91,14 +91,35 @@ var LIB = {
         "\tJNZ dotrue\n"+
         "\tMOV A,L\n"+
         "\tCMP E\n"+
+        "\tJZ dofalse\n"+
         "\tJC dofalse\n"+
         "\tJMP dotrue\n"
     },
-    "o_gt": {
-        uses:null,
+    "o_ge": {
+        uses:["o_logic"],
         code: ""+
-        ""+
-        "\tRET\n"
+        "\tMOV A,H\n"+
+        "\tCMP D\n"+
+        "\tJC dotrue\n"+
+        "\tJNZ dofalse\n"+
+        "\tMOV A,L\n"+
+        "\tCMP E\n"+
+        "\tJZ dotrue\n"+
+        "\tJC dotrue\n"+
+        "\tJMP dofalse\n"
+    },
+    "o_gt": {
+        uses:["o_logic"],
+        code: ""+
+        "\tMOV A,D\n"+
+        "\tCMP H\n"+
+        "\tJC dofalse\n"+
+        "\tJNZ dotrue\n"+
+        "\tMOV A,E\n"+
+        "\tCMP D\n"+
+        "\tJZ dofalse\n"+
+        "\tJC dofalse\n"+
+        "\tJMP dotrue\n"
     },
     "o_eq": {
         uses:null,
