@@ -250,6 +250,9 @@ var generator = function(basic) {
                 case "return":
     				out+="\tRET\n";
     				continue;
+                case "end":
+    				out+="\tRST 0\n";
+    				continue;
                 case "repeat":
                     //out+="RP"+i+":\n";
                     loops.unshift(["CMD"+i,"R"]);

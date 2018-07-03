@@ -71,16 +71,28 @@ var LIB = {
         uses:null,
         sysdb:["prtchan"],
         code: ""+
-        "\tRST 8\n"+
+        "\tRST 1\n"+
         "\tRET\n"
     },
 
     //operators
-    "o_lt": {
+    "o_logic": {
         uses:null,
-        code: ""+
-        ""+
+        code: "dofalse: LXI H,0\n\tRET\n"+
+        "dotrue: LXI H,1\n"+
         "\tRET\n"
+    },    
+    "o_lt": {
+        uses:["o_logic"],
+        code: ""+
+        "\tMOV A,H\n"+
+        "\tCMP D\n"+
+        "\tJC dofalse\n"+
+        "\tJNZ dotrue\n"+
+        "\tMOV A,L\n"+
+        "\tCMP E\n"+
+        "\tJC dofalse\n"+
+        "\tJMP dotrue\n"
     },
     "o_gt": {
         uses:null,
@@ -112,10 +124,16 @@ var LIB = {
     },
     "o_sub": {
         uses:null,
+        inline:true,
         code: ""+
-        ""+
-        "\tRET\n"
+        "\tMOV A, E\n"+
+        "\tSUB L\n"+
+        "\tMOV L, A\n"+
+        "\tMOV A, D\n"+
+        "\tSBB H\n"+
+        "\tMOV H, A\n"
     },
+
     "o_div": {
         uses:null,
         code: ""+
