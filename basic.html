@@ -5,256 +5,37 @@ b=4*abs(2+3)
 d=2+3*a
 e=2*3+a
 f=2+3+a
-if a=55 then b=rnd():a=a+1:print"*"
+g$="ahoj"
+h$=g$+", svete"
+if a<55 then b=rnd():a=a+1:print"*"
 c=2*a+b
-20 PRINT "Ahoj,";a
+20 PRINT "Ahoj,";a;
 print #1,"Done bez , new line ."
 if a=20 then 20
 30 GOTO 10
 
 </textarea>
 
+<button onclick="compile()">Compile</button>
+<script src="library.js"></script>
+
 <script src="lex.js"></script>
+<script src="parsing.js"></script>
+<script src="generator.js"></script>
 <script>
-    var source = document.getElementById("source").innerHTML
+var compile = function(){
+    var source = document.getElementById("source").value
+
+    source=source.replace(/\&gt\;/gs,">")
+    source=source.replace(/\&lt\;/gs,"<")
 
     var basic = parse(source)
 
 
     console.log(basic)
 
+    console.log(generator(basic))
+}
 
-    var labelIndex = function(basic) {
-    	var out={};
-    	for (var i=0;i<basic.length;i++) {
-    		if (basic[i].label) {
-    			var label = basic[i].label;
-    			out[label] = i;
-    		}
-    	}
-    	return out
-    }
-
-    var findNewLine = function(i,basic) {
-    	var thisLine = basic[i]._numline;
-    	while(i<basic.length) {
-    		i++;
-    		if (basic[i]._numline>thisLine) return i;
-    	}
-    	return null;
-    }
-
-    var skipMark = function(i,basic) {
-    	var idx = findNewLine(i,basic);
-    	if (idx) {
-    		if (!basic[idx]._skip) basic[idx]._skip=[];
-    		basic[idx]._skip.push(i)
-    	}
-    }
-
-    var findLabel = function(label,labels) {
-    	if(labels[label]) return labels[label];
-    }
-
-    var croak = function(msg,ln) {
-    	throw new Error(msg + " ("+ln._numline+":"+ln._cmd+")");
-    }
-
-    var PRECEDENCE = {
-	    "=": 1,
-	    "||": 2,
-	    "&&": 3,
-	    "<": 7, ">": 7, "<=": 7, ">=": 7, "==": 7, "!=": 7,
-	    "+": 10, "-": 10,
-	    "*": 20, "/": 20, "%": 20,
-	};
-
-	var ARITY = {
-		"max":2,
-		"abs":1,
-		"rnd":0
-	}
-
-	var compute = function (l,r,op) {
-		switch(op) {
-			case "+": return l+r;
-			case "-": return l-r;
-			case "*": return l*r;
-			case "/": return l/r;
-		}
-	}
-
-    var expr = function(tokens, bool) {
-    	var expectPunctuation = function(punc) {
-    		var n = tokens.shift();
-    		if (n.type!="punc") croak(punc+" is missing")
-    		if (n.value!=punc) croak(punc+" is missing")
-    	}
-
-    	var parse_atom = function() {
-    		var n = tokens.shift();
-    		//if (!n) return n
-    		if (n.type=="fn") {
-    			var nn = ARITY[n.value];
-    			var op=[];
-    			expectPunctuation("(")
-    			while(nn>0) {
-    				op.push(expr(tokens,bool))
-    				nn--
-    				if (nn) expectPunctuation(",")
-    			}
-    			expectPunctuation(")")
-    			return {type:"fn",value:n.value,operands:op}
-    		}
-    		if (n.type=="punc" && n.value=="(") {
-    			var exp=expr(tokens,bool);
-    			expectPunctuation(")")
-    			return exp;
-    		}
-
-    		return n;
-    	}
-    	var maybe_binary = function(left,my_prec) {
-    		if (!tokens.length) return left;
-    		var tok = tokens[0];
-    		if (tok.type!="op") return left;
-    		
-    		var his_prec = PRECEDENCE[tok.value];
-    		if (his_prec>my_prec) {
-	   			tokens.shift();
-    			var right = maybe_binary(parse_atom(), his_prec);
-    			
-    			var binary = {
-	                type     : (tok.value == "=" && !bool) ? "assign" : "binary",
-	                operator : tok.value,
-	                left     : left,
-	                right    : right
-            	};
-
-            	//can evaluate number?
-    			if (left.type=="num" && right.type=="num") {
-    				//console.log(left.value, right.value, tok.value)
-	    			binary = {
-		                type     : "num",
-		                value: compute(left.value, right.value, tok.value)
-	            	};	
-    			}
-
-            	//can evaluate strings?
-    			if (left.type=="str" && right.type=="str" && tok.value=="+") {
-    				//console.log(left.value, right.value, tok.value)
-	    			binary = {
-		                type     : "str",
-		                value: left.value + right.value
-	            	};	
-    			}
-
-   			
-            	return maybe_binary(binary,my_prec)
-    		} else {
-    			
-   			
-    		}
-    		return left;
-    	}
-    	//var n = tokens.shift();
-
-    	var ex = maybe_binary(parse_atom(),0);
-    	
-    	return ex;
-    }
-
-    var exprAsm = function(expr,left) {
-    	if (typeof left=="undefined") left=false;
-    	var type = expr.type;
-    	if (type=="num" && !left) {
-    		return "\tCONST "+expr.value+"\n"
-    	}
-    	if (type=="str" && !left) {
-    		return "\tCONST$ "+expr.value+"\n"
-    	}
-    	if (type=="num" && left) {
-    		return "\tCONSTD "+expr.value+"\n"
-    	}
-    	if (type=="str" && left) {
-    		return "\tCONST$D "+expr.value+"\n"
-    	}
-    	if (type=="var") {
-    		return "\tGETVAR "+expr.value+"\n"+(left?"\tXCHG\n":"")
-    	}
-    	if (type=="var$") {
-    		return "\tGETVARSTR "+expr.value+"\n"+(left?"\tXCHG\n":"")
-    	}
-    	if (type=="binary") {
-    		if (expr.left.type=="num" && expr.right.type=="binary") {
-    			out = exprAsm(expr.right)+exprAsm(expr.left,true)
-    		} else if (expr.left.type=="num" && expr.right.type=="fn") {
-    			out = exprAsm(expr.right)+exprAsm(expr.left,true)
-    		} else {
-    			out = exprAsm(expr.left,true)+exprAsm(expr.right)
-    		}
-    		out += "\tOPCALL "+expr.operator+"\n"+(left?"\tXCHG\n":"")
-    		return out;
-    	}
-    	
-    	if (type=="fn") {
-    		out="";
-    		for(var i=0;i<expr.operands.length;i++) {
-    			out += exprAsm(expr.operands[i])+"\tPUSH\n"
-    		}
-    		out += "\tFNCALL "+expr.value+"\n"+(left?"\tXCHG\n":"")
-    		return out;
-    	}
-		
-    	return "\tUNKNOWN "+JSON.stringify(expr)+"\n"
-
-    }
-
-    var out="";
-    var labels = labelIndex(basic);
-    for(var i=0;i<basic.length;i++) {
-    	var par,next;
-    	var line = basic[i];
-    	out+="CMD"+i+":\n"
-    	if (line._skip) {
-    		out+="SKIP"+line._skip[0]+":\n"
-    	}
-    	var tokens = [].concat(line.tokens);
-    	if (tokens[0].type=="kw") {
-    		var cmd = tokens[0].value;
-    		tokens.shift();
-    		out+="; "+cmd+"\n"
-    		switch(cmd) {
-    			case "goto":
-    				par = tokens.shift();
-    				out+="\tJMP CMD"+findLabel(par.value,labels)+"\n";
-    				continue;
-    			case "let":
-    				par = tokens.shift();
-    				if (par.type!="var" && par.type!="var$") croak("No variable name",line)
-    				next = tokens.shift();
-    				if (next.type!="op" || next.value!="=") croak("LET without an assignment")
-    				var ex = expr(tokens);
-    				out+=exprAsm(ex);
-    				if (par.type=="var") {
-    					out+="\tSETVAR "+par.value+"\n";
-    				} else if (par.type=="var$") {
-    					out+="\tSETVARSTR "+par.value+"\n";
-    				}
-    				continue;
-
-    			case "if":
-    				var ex = expr(tokens,true);
-    				skipMark(i,basic)
-					out+=exprAsm(ex);
-    				out+="\tIF Z, SKIP"+i+"\n";
-    				continue;
-
-
-    		}
-    	}
-
-    }
-
-    console.log(out)
+compile()
 </script>

@@ -1,0 +1,242 @@
+
+    var labelIndex = function(basic) {
+    	var out={};
+    	for (var i=0;i<basic.length;i++) {
+    		if (basic[i].label) {
+    			var label = basic[i].label;
+    			out[label] = i;
+    		}
+    	}
+    	return out
+    }
+
+    var findNewLine = function(i,basic) {
+    	var thisLine = basic[i]._numline;
+    	while(i<basic.length) {
+    		i++;
+    		if (basic[i]._numline>thisLine) return i;
+    	}
+    	return null;
+    }
+
+    var skipMark = function(i,basic) {
+    	var idx = findNewLine(i,basic);
+    	if (idx) {
+    		if (!basic[idx]._skip) basic[idx]._skip=[];
+    		basic[idx]._skip.push(i)
+    	}
+    }
+
+    var findLabel = function(label,labels) {
+    	if(labels[label]) return labels[label];
+    }
+
+    var croak = function(msg,ln) {
+    	throw new Error(msg + " ("+ln._numline+":"+ln._cmd+")");
+    }
+
+
+
+
+    
+
+
+
+    var opAsm = function(op,line,etype) {
+        if (etype=="str") {
+            switch(op) {
+                case "+": return "concat"
+            }
+            croak ("Invalid string operator",line)
+        }
+
+        
+        switch(op) {
+            case "+": return "add"
+            case "-": return "sub"
+            case "*": return "mul"
+            case "/": return "div"
+            case "=": return "eq"
+            case "<": return "lt"
+            case ">": return "gt"
+            case "<=": return "le"
+            case ">=": return "ge"
+        }
+    }
+
+    var varAsm = function() {
+        var out = ""
+        for(var k in ENV.vars) {
+            var type = ENV.vars[k];
+            switch (type) {
+                case "int":
+                    out +="v_"+k+":\t DS 2\n";
+                    continue
+                case "str":
+                    out +="vs_"+k+":\t DS 2\n";
+                    continue
+                case "sysdb":
+                    out +="sv_"+k+":\t DS 1\n";
+                    continue
+                case "sysdw":
+                    out +="sv_"+k+":\t DS 2\n";
+                    continue
+            }
+        }
+        return out
+    }
+
+    var strAsm = function() {
+        var out = ""
+        for(var i=0;i<ENV.strs.length;i++) {
+            var s = ENV.strs[i];
+            out +="cs_"+i+":\t DB \""+s+"\",0\n"
+        }
+        return out
+    }
+
+var ENV= {
+    vars:{},
+    addVar:function(name,type) {
+        ENV.vars[name] = type
+    },
+    strs:[],
+    addStr:function(s) {
+        if (ENV.strs.indexOf(s)<0) ENV.strs.push(s)
+        return ENV.strs.indexOf(s)
+    },
+    uses:[],
+    addUse:function(s) {
+        if (ENV.uses.indexOf(s)<0) {
+            ENV.uses.push(s)
+            var fn = LIB[s]
+            if (!fn) throw new Error("Cannot link "+s)
+            if (fn.uses) {
+                for (var i=0;i<fn.uses.length;i++) {
+                    var use = fn.uses[i]
+                    ENV.addUse(use)
+                }
+            }
+        }
+        return ENV.uses.indexOf(s)
+    }
+};
+
+var generator = function(basic) {
+
+    ENV.vars={}
+    ENV.strs=[]
+    ENV.uses=[]
+
+
+    var isPunc = function(punc,token) {
+        if (!token) return false
+        if (token.type!="punc") return false
+        if (token.value!=punc) return false
+        tokens.shift()
+        return true;
+    }
+
+    var out="";
+    var labels = labelIndex(basic);
+    ENV.labels = labels;
+    for(var i=0;i<basic.length;i++) {
+    	var par,next;
+    	var line = basic[i];
+    	out+="CMD"+i+":\n"
+    	if (line._skip) {
+    		out+="SKIP"+line._skip[0]+":\n"
+    	}
+    	var tokens = [].concat(line.tokens);
+    	if (tokens[0].type=="kw") {
+    		var cmd = tokens[0].value;
+    		tokens.shift();
+    		out+="; "+cmd+"\n"
+    		switch(cmd) {
+    			case "goto":
+    				par = tokens.shift();
+    				out+="\tJMP CMD"+findLabel(par.value,labels)+"\n";
+    				continue;
+    			case "let":
+    				par = tokens.shift();
+    				if (par.type!="var" && par.type!="var$") croak("No variable name",line)
+    				next = tokens.shift();
+    				if (next.type!="op" || next.value!="=") croak("LET without an assignment")
+                    var ex = expr(tokens,line);
+                    var et = exprType(ex,line);
+    				out+=exprAsm(ex,line,et);
+    				if (par.type=="var") {
+                        if (et!="int") croak("Cannot assign this to int variable",line)
+                        ENV.addVar(par.value,"int")
+    					out+="\tSHLD v_"+par.value+"\n";
+    				} else if (par.type=="var$") {
+                        if (et!="str") croak("Cannot assign this to string variable",line)
+                        ENV.addVar(par.value,"str")
+    					out+="\tSHLD vs_"+par.value+"\n";
+    				}
+    				continue;
+
+    			case "if":
+    				var ex = expr(tokens,line,true);
+    				skipMark(i,basic)
+					out+=exprAsm(ex);
+    				out+="\tMOV A,H\n\tORA L\n";
+    				out+="\tJZ SKIP"+i+"\n";
+    				continue;
+                
+                case "print":
+                var println = true;
+                    while(tokens.length) {
+                        if (isPunc("#",tokens[0])) {
+                            //channel swap
+                            var chan = expr(tokens,line,true);
+                            out+=exprAsm(chan,line,"int");
+                            ENV.addUse("prtchan")
+                            out+="\tCALL prtchan\n"
+                            if (!isPunc(",",tokens[0])) croak("Syntax error",line)
+                            continue
+                        }
+                        var ex = expr(tokens,line,true);
+                        var et = exprType(ex,line);
+                        out+=exprAsm(ex,line,et);
+                        ENV.addUse("print"+et)
+                        out+="\tCALL print"+et+"\n"
+                        println = true;
+                        if (isPunc(";",tokens[0])) {
+                            println = false;
+                            continue;
+                        }
+                        if (isPunc(",",tokens[0])) {
+                            ENV.addUse("printtab")
+                            out+="\tCALL printtab\n"
+                            println = false;
+                            continue;
+                        }
+
+                    }
+                    if (println) {
+                        ENV.addUse("println")
+                        out+="\tCALL println\n"
+                    }
+                    
+
+                    continue
+
+            }
+            if (tokens.length) croak ("Extra characters", line)
+    	}
+
+    }
+
+    //fndump
+    out+=fnAsm();
+
+
+    //strdump
+    out+=strAsm();
+
+    //vardump
+    out+=varAsm();
+
+    return out;
+}
