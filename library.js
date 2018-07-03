@@ -78,13 +78,14 @@ var LIB = {
     //operators
     "o_logic": {
         uses:null,
-        code: "dofalse: LXI H,0\n\tRET\n"+
+        code: "olofix: LXI B,8000h\n\tDAD B\n\tXCHG\n\tDAD B\n\tXCHG\n\tRET\n"+
+        "dofalse: LXI H,0\n\tRET\n"+
         "dotrue: LXI H,1\n"+
         "\tRET\n"
     },    
     "o_lt": {
         uses:["o_logic"],
-        code: ""+
+        code: "\tCALL olofix\n"+
         "\tMOV A,H\n"+
         "\tCMP D\n"+
         "\tJC dofalse\n"+
@@ -97,7 +98,7 @@ var LIB = {
     },
     "o_ge": {
         uses:["o_logic"],
-        code: ""+
+        code: "\tCALL olofix\n"+
         "\tMOV A,H\n"+
         "\tCMP D\n"+
         "\tJC dotrue\n"+
@@ -110,7 +111,7 @@ var LIB = {
     },
     "o_gt": {
         uses:["o_logic"],
-        code: ""+
+        code: "\tCALL olofix\n"+
         "\tMOV A,D\n"+
         "\tCMP H\n"+
         "\tJC dofalse\n"+
