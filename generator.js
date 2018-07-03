@@ -130,6 +130,18 @@
             return "\tXCHG\n\tLHLD vs_"+expr.value+"\n\tXCHG\n"
         }
         if (type=="binary") {
+            if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="+") {
+                out = exprAsm(expr.left,line,etype,)+"\tINX H\n"
+                return out
+            }
+            if (expr.left.type=="num" && expr.left.value==1 && expr.operator=="+") {
+                out = exprAsm(expr.right,line,etype,)+"\tINX H\n"
+                return out
+            }
+            if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="-") {
+                out = exprAsm(expr.left,line,etype,)+"\tDCX H\n"
+                return out
+            }
             if (expr.left.type=="num" && expr.right.type=="binary") {
                 out = exprAsm(expr.right,line,etype)+exprAsm(expr.left,line,etype,true)
             } else if (expr.left.type=="num" && expr.right.type=="fn") {
@@ -213,6 +225,7 @@ var generator = function(basic) {
     var out="";
     var labels = labelIndex(basic);
     ENV.labels = labels;
+    var loops=[];
     for(var i=0;i<basic.length;i++) {
     	var par,next;
     	var line = basic[i];
@@ -230,6 +243,25 @@ var generator = function(basic) {
     				par = tokens.shift();
     				out+="\tJMP CMD"+findLabel(par.value,labels)+"\n";
     				continue;
+                case "gosub":
+    				par = tokens.shift();
+    				out+="\tCALL CMD"+findLabel(par.value,labels)+"\n";
+    				continue;
+                case "return":
+    				out+="\tRET\n";
+    				continue;
+                case "repeat":
+                    //out+="RP"+i+":\n";
+                    loops.unshift(["CMD"+i,"R"]);
+                    continue;
+                case "break":
+                    if (!loops.length) croak("BREAK outside the loop",line);
+                    out+="\tJMP "+loops[0][1]+"B"+loops[0][0]+"\n"
+                    continue;                    
+                case "continue":
+                    if (!loops.length) croak("CONTINUE outside the loop",line);
+                    out+="\tJMP "+loops[0][1]+"C"+loops[0][0]+"\n"
+                    continue;                    
     			case "let":
     				par = tokens.shift();
     				if (par.type!="var" && par.type!="var$") croak("No variable name",line)
@@ -256,7 +288,19 @@ var generator = function(basic) {
     				out+="\tMOV A,H\n\tORA L\n";
     				out+="\tJZ SKIP"+i+"\n";
     				continue;
-                
+
+                case "until":
+                    if (!loops.length) croak("UNTIL without REPEAT",line)
+                    if (loops[0][1]!="R") croak("UNTIL / REPEAT mismatched",line)
+                    var ex = expr(tokens,line,true);
+                    out+="RC"+loops[0][0]+":\n"
+					out+=exprAsm(ex);
+    				out+="\tMOV A,H\n\tORA L\n";
+    				out+="\tJZ "+loops[0][0]+"\n";
+                    out+="RB"+loops[0][0]+":\n"
+                    loops.shift()
+    				continue;
+                    
                 case "print":
                 var println = true;
                     while(tokens.length) {
@@ -300,6 +344,8 @@ var generator = function(basic) {
     	}
 
     }
+
+    if (loops.length) croak ("REPEAT without UNTIL", line)
 
     //fndump
     out+=fnAsm();

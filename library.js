@@ -31,10 +31,13 @@ var fnAsm = function() {
 
 var LIB = {
     "printstr": {
-        uses:null,
-        code: ""+
-        ""+
-        "\tRET\n"
+        uses:["serout"],
+        code: "\tMOV A,M\n"+
+        "\tORA A\n"+
+        "\tRZ\n"+
+        "\tCALL serout\n"+
+        "\tINX H\n"+
+        "\tJMP printstr\n"
     },
     "printint": {
         uses:null,
@@ -44,6 +47,7 @@ var LIB = {
     },
     "prtchan": {
         uses:null,
+        sysdb:["prtchan"],
         code: "\tMOV A,L\n"+
         "\tSTA sv_prtchan\n"+
         "\tRET\n"
