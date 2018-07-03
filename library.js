@@ -137,10 +137,31 @@ var LIB = {
         ""+
         "\tRET\n"
     },
+    "f_sgn": {
+        uses:null,
+        code: "\tMOV A,H\n"+
+        "\tRLCA\n"+
+        "\tJC f_sgn_m\n"+
+        "\tLXI H,1\n"+
+        "\tRET\n"+
+        "f_sgn_m: LXI H,0FFFFh\n"+
+        "\tRET\n"
+    },
     "f_rnd": {
         uses:null,
+        sysdw:["rndseed"],
         code: ""+
         ""+
         "\tRET\n"
     },    
+    "f_chrS": {
+        uses:null,
+        sysdw:["chrS"],
+        code: "\tMOV A,L\n"+
+        "\tSTA sv_chrS\n"+
+        "\tXRA A\n"+
+        "\tSTA sv_chrS+1\n"+
+        "\tLXI H,sv_chrS\n"+
+        "\tRET\n"
+    },      
 }

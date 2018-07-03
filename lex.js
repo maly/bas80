@@ -26,7 +26,7 @@ function InputStream(input) {
  function TokenStream(input) {
     var current = null;
     var keywords = " if then else rem print goto let for to next step gosub return end stop data read restore ";
-    var functions = " abs rnd max ";
+    var functions = " abs rnd max chr$ sgn ";
     return {
         next  : next,
         peek  : peek,
@@ -83,6 +83,12 @@ function InputStream(input) {
         var s = input.peek();
         if (s=="$") {
             input.next();
+            if (is_function(id+"$")) {
+                return {
+                    type  : "fn",
+                    value : id.toLowerCase()+"S"
+                };
+            }
             return {
                 type  : "var$",
                 value : id.toLowerCase()

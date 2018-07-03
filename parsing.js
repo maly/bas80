@@ -10,8 +10,11 @@ var PRECEDENCE = {
 var ARITY = {
     "max":2,
     "abs":1,
-    "rnd":0
+    "sgn":1,
+    "rnd":0,
+    "chrS":1
 }
+
 
 
 var exprType = function(expr,ln) {
@@ -37,7 +40,9 @@ var exprType = function(expr,ln) {
     }
     
     if (type=="fn") {
-        return "int";
+        var fn =expr.value;
+
+        return fn[fn.length-1]=="S"?"str":"int";
     }
     croak("Invalid expression type",ln);
 }
@@ -123,8 +128,8 @@ var expr = function(tokens, ln, bool) {
     var expectPunctuation = function(punc) {
         var n = tokens.shift();
         if (!n) croak(punc+" is missing",ln)
-        if (n.type!="punc") croak(punc+" is missing",ln)
-        if (n.value!=punc) croak(punc+" is missing",ln)
+        if (n.type!="punc") croak(punc+" is missing, "+n.type+"instead",ln)
+        if (n.value!=punc) croak(punc+" is missing, "+n.value+" instead",ln)
     }
 
     var parse_atom = function() {
