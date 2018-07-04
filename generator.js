@@ -262,6 +262,7 @@ var generator = function(basic) {
     				out+="\tRET\n";
     				continue;
                 case "end":
+                case "stop":
     				out+="\tRST 0\n";
     				continue;
                 case "repeat":
