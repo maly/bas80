@@ -470,6 +470,8 @@ var generator = function(basic) {
 
     if (loops.length) croak ("Non-closed loops", line)
 
+    out+="ERRGO:\tRST 0\n"; //error handling poor man
+
     //fndump
     out+=fnAsm();
 
