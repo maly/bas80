@@ -83,8 +83,12 @@ var expr = function(tokens, ln, bool) {
             var nn = ARITY[n.value].length;
             var op=[];
             expectPunctuation("(")
+            var argNum=0;
             while(nn>0) {
-                op.push(expr(tokens,ln,bool))
+                var ex = expr(tokens,ln,bool)
+                var et = exprType(ex,ln);
+                if (ARITY[n.value][argNum]!=et) croak("Argument type mismatch, expected: "+ARITY[n.value][argNum],ln)
+                op.push(ex)
                 nn--
                 if (nn) expectPunctuation(",")
             }
