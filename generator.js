@@ -303,7 +303,83 @@ var generator = function(basic) {
     					out+="\tSHLD vs_"+par.value+"\n";
     				}
     				continue;
+                case "for":
+                    //out+="RP"+i+":\n";
+    				par = tokens.shift();
+    				if (par.type!="var") croak("No usable variable name",line)
+    				next = tokens.shift();
+    				if (next.type!="op" || next.value!="=") croak("FOR without an initial assignment")
+                    var ex = expr(tokens,line);
+                    var et = exprType(ex,line);
+                    out+=exprAsm(ex,line,et);  
+                    ENV.addVar(par.value,"int")
+                    out+="\tSHLD v_"+par.value+"\n";                        
+                    next = tokens.shift();
+    				if (next.type!="kw" || next.value!="to") croak("FOR without TO")
 
+                    var ex = expr(tokens,line);
+                    var et = exprType(ex,line);
+                    out+=exprAsm(ex,line,et);  
+                    out+="\tSHLD sv_forL"+i+"\n"; 
+
+                    var step = 1
+
+                    if (tokens.length) {
+                        next = tokens.shift();
+                        if (next.type!="kw" || next.value!="step") croak("Did you mean STEP?")
+                        var ex = expr(tokens,line);
+                        var et = exprType(ex,line);
+                        if (ex.type=="num") {
+                            //step constant
+                            step = ex.value;
+                        } else {
+                            //step counted
+                            out+=exprAsm(ex,line,et);  
+                            out+="\tSHLD sv_forS"+i+"\n"; 
+                            ENV.addVar("forS"+i,"sysdw")
+                            step="ex"
+                        }
+                    }
+
+
+                    out+="\tJMP FCCMD"+i+"\n"; 
+                    out+="FLCMD"+i+":\n"; 
+                    ENV.addVar("forL"+i,"sysdw")
+                                                      
+                    loops.unshift(["CMD"+i,"F",i,par.value,step]);
+                    continue;
+                case "next":
+                    if (!loops.length) croak("NEXT without FOR",line)
+                    if (loops[0][1]!="F") croak("Loops mismatched",line)
+                    par = tokens.shift();
+                    if (par.type!="var") croak("No usable variable name",line)
+                    if (par.value!=loops[0][3]) croak("FOR / NEXT variable mismatch",line)
+                    out+="FC"+loops[0][0]+":\n"
+                    out+="\tLHLD v_"+par.value+"\n"
+                    var step = loops[0][4];
+                    if (step=="ex") {
+                        out+="\tXCHG\n"
+                        out+="\tLHLD sv_forS"+loops[0][2]+"\n"
+                        out+="\tDAD D\n"
+                    } else if (step==1) {
+                        out+="\tINX H\n"
+                    } else {
+                        out+="\tLXI D,"+step+"\n"
+                        out+="\tDAD D\n"
+                    }
+                    out+="\tSHLD v_"+par.value+"\n"
+                    out+="\tXCHG\n"
+                    out+="\tLHLD sv_forL"+loops[0][2]+"\n"
+                    out+="\tMOV A,L\n"
+                    out+="\tCMP E\n"
+                    out+="\tJNZ FLCMD"+loops[0][2]+"\n"
+                    out+="\tMOV A,H\n"
+                    out+="\tCMP D\n"
+                    out+="\tJNZ FLCMD"+loops[0][2]+"\n"
+                    out+="FB"+loops[0][0]+":\n"
+
+                    loops.shift()
+                    continue
     			case "if":
     				var ex = expr(tokens,line,true);
     				skipMark(i,basic)
@@ -378,7 +454,7 @@ var generator = function(basic) {
 
     }
 
-    if (loops.length) croak ("REPEAT without UNTIL", line)
+    if (loops.length) croak ("Non-closed loops", line)
 
     //fndump
     out+=fnAsm();

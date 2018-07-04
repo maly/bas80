@@ -3,12 +3,12 @@
 gosub 100
 10 A=abs(-5)
 20 B=15
-while a<>10
+for a=5 to 15
 c=a+b
-a=1+a
+rem a=1+a
 b=b-3
 print "*",c
-endwhile
+next a
 end
 100 print "TEST"
 return

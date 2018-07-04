@@ -25,7 +25,8 @@ function InputStream(input) {
 
  function TokenStream(input) {
     var current = null;
-    var keywords = " if then else rem print goto let for to next step gosub return end stop data read restore repeat until continue break "+
+    var keywords = " if then else rem print goto let for to next step "+
+            "gosub return end stop data read restore repeat until continue break "+
             "while endwhile ";
     var functions = " abs neg rnd max chr$ sgn ";
     return {
