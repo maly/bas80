@@ -306,20 +306,64 @@ var generator = function(basic) {
                         out+="\tpush h\n\tlhld vs_"+par.value+"\n\tcall hp_test\n\tpop h\n"
     					out+="\tSHLD vs_"+par.value+"\n";
     				}
-    				continue;
+                    continue;
+                case "poke":
+                    var ex = expr(tokens,line);
+                    var et = exprType(ex,line);
+                    next = tokens.shift();
+                    if (next.type!="punc" || next.value!=",") croak("Syntax error",line)
+                    var ex2 = expr(tokens,line);
+                    var et2 = exprType(ex2,line);
+                    if (ex2.type!="num") {
+                        out+=exprAsm(ex2,line,et2);  
+                        out+="\tpush h\n"
+                    }
+                    out+=exprAsm(ex,line,et);  
+                    if (ex2.type!="num") {
+                        out+="\tpop d\n"
+                        out+="\tmov m,e\n"
+                    } else {
+                        out+="\tmvi m,"+(ex2.value % 256)+"\n"
+                    }
+                    continue
+                case "dpoke":
+                    var ex = expr(tokens,line);
+                    var et = exprType(ex,line);
+                    next = tokens.shift();
+                    if (next.type!="punc" || next.value!=",") croak("Syntax error",line)
+                    var ex2 = expr(tokens,line);
+                    var et2 = exprType(ex2,line);
+                    if (ex2.type!="num") {
+                        out+=exprAsm(ex2,line,et2);  
+                        out+="\tpush h\n"
+                    }
+                    out+=exprAsm(ex,line,et);  
+                    if (ex2.type!="num") {
+                        out+="\tpop d\n"
+                        out+="\tmov m,e\n"
+                        out+="\tinx h\n"
+                        out+="\tmov m,d\n"
+                    } else {
+                        out+="\tmvi m,"+(ex2.value % 256)+"\n"
+                        out+="\tinx h\n"
+                        out+="\tmvi m,"+(ex2.value >> 8)+"\n"
+                    }
+                    continue
+
+                
                 case "for":
                     //out+="RP"+i+":\n";
     				par = tokens.shift();
     				if (par.type!="var") croak("No usable variable name",line)
     				next = tokens.shift();
-    				if (next.type!="op" || next.value!="=") croak("FOR without an initial assignment")
+    				if (next.type!="op" || next.value!="=") croak("FOR without an initial assignment",line)
                     var ex = expr(tokens,line);
                     var et = exprType(ex,line);
                     out+=exprAsm(ex,line,et);  
                     ENV.addVar(par.value,"int")
                     out+="\tSHLD v_"+par.value+"\n";                        
                     next = tokens.shift();
-    				if (next.type!="kw" || next.value!="to") croak("FOR without TO")
+    				if (next.type!="kw" || next.value!="to") croak("FOR without TO",line)
 
                     var limit = "ex"
                     var ex = expr(tokens,line);
@@ -339,7 +383,7 @@ var generator = function(basic) {
 
                     if (tokens.length) {
                         next = tokens.shift();
-                        if (next.type!="kw" || next.value!="step") croak("Did you mean STEP?")
+                        if (next.type!="kw" || next.value!="step") croak("Did you mean STEP?",line)
                         var ex = expr(tokens,line);
                         var et = exprType(ex,line);
                         if (ex.type=="num") {

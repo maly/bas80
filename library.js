@@ -471,10 +471,24 @@ var LIB = {
         "\tXCHG\n"+
         "\tRET\n"
     },
+    "f_peek":{
+        uses:null,
+        code: "\tMOV A,M\n"+
+        "\tMVI H,0\n"+
+        "\tMOV L,A\n"+
+        "\tRET\n"
+    },
+    "f_dpeek":{
+        uses:null,
+        code: "\tMOV A,M\n"+
+        "\tINX H\n"+
+        "\tMOV L,M\n"+
+        "\tMOV H,A\n"+
+        "\tRET\n"
+    },
     "f_len": {
-        uses:["s_getaddr"],
+        uses:[],
         code: ""+
-        //"\tCALL s_getaddr\n"+
         "\tLXI D,0\n"+
         "f_ll:MOV A,M\n"+
         "\tORA A\n"+

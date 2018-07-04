@@ -11,6 +11,8 @@ var ARITY = {
     "max":["int","int"],
     "abs":["int"],
     "neg":["int"],
+    "peek":["int"],
+    "dpeek":["int"],
     "sgn":["int"],
     "rnd":[],
     "len":["str"],
