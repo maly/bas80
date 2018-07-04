@@ -234,6 +234,7 @@ var generator = function(basic) {
     }
 
     var out="";
+    out +="\tORG 8000h\n\t.ent $\n\n"; //zahlavi
     var labels = labelIndex(basic);
     ENV.labels = labels;
     var loops=[];
@@ -478,6 +479,9 @@ var generator = function(basic) {
 
     //vardump
     out+=varAsm();
+
+    out +="\n\nHEAP EQU $\nRAMTOP EQU 0F000h\nds RAMTOP-$\n\n"; //zapati
+
 
     return out;
 }

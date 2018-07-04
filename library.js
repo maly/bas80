@@ -40,7 +40,7 @@ var LIB = {
         "\tJMP printstr\n"
     },
     "printint": {
-        uses:["s_div10","serout"],
+        uses:["s_div10","serout","f_abs"],
         code: ""+
         "\tMOV     a,h \n"+
         "\tORA     a \n"+
@@ -277,6 +277,29 @@ var LIB = {
         ""+
         "\tRET\n"
     },    
+    "s_getaddr":{
+        uses:null,
+        code: "\tDAD D\t;o_add\n"+
+        "\tMOV E,M\n"+
+        "\tINX H\n"+
+        "\tMOV D,M\n"+
+        "\tXCHG\n"+
+        "\tRET\n"
+    },
+    "f_len": {
+        uses:["s_getaddr"],
+        code: ""+
+        //"\tCALL s_getaddr\n"+
+        "\tLXI D,0\n"+
+        "f_ll:MOV A,M\n"+
+        "\tORA A\n"+
+        "\tJZ f_le\n"+
+        "\tINX D\n"+
+        "\tINX H\n"+
+        "\tJMP f_ll\n"+
+        "f_le:\tXCHG\n"+
+        "\tRET\n"
+    },        
     "f_chrS": {
         uses:null,
         sysdw:["chrS"],

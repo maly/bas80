@@ -13,6 +13,7 @@ var ARITY = {
     "neg":["int"],
     "sgn":["int"],
     "rnd":[],
+    "len":["str"],
     "chrS":["int"]
 }
 
