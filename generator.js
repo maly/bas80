@@ -317,11 +317,20 @@ var generator = function(basic) {
                     next = tokens.shift();
     				if (next.type!="kw" || next.value!="to") croak("FOR without TO")
 
+                    var limit = "ex"
                     var ex = expr(tokens,line);
                     var et = exprType(ex,line);
-                    out+=exprAsm(ex,line,et);  
-                    out+="\tSHLD sv_forL"+i+"\n"; 
+                    if (ex.type=="num") {
+                        //step constant
+                        limit = ex.value;
+                    } else {
+                        //step counted
+                        out+=exprAsm(ex,line,et);  
+                        out+="\tSHLD sv_forL"+i+"\n"; 
+                        ENV.addVar("forL"+i,"sysdw")
+                    }
 
+                    //step variants
                     var step = 1
 
                     if (tokens.length) {
@@ -341,12 +350,10 @@ var generator = function(basic) {
                         }
                     }
 
-
                     out+="\tJMP FCCMD"+i+"\n"; 
                     out+="FLCMD"+i+":\n"; 
-                    ENV.addVar("forL"+i,"sysdw")
                                                       
-                    loops.unshift(["CMD"+i,"F",i,par.value,step]);
+                    loops.unshift(["CMD"+i,"F",i,par.value,step,limit]);
                     continue;
                 case "next":
                     if (!loops.length) croak("NEXT without FOR",line)
@@ -368,8 +375,14 @@ var generator = function(basic) {
                         out+="\tDAD D\n"
                     }
                     out+="\tSHLD v_"+par.value+"\n"
-                    out+="\tXCHG\n"
-                    out+="\tLHLD sv_forL"+loops[0][2]+"\n"
+                    
+                    var limit = loops[0][5];
+                    if (limit=="ex") {
+                        out+="\tXCHG\n"
+                        out+="\tLHLD sv_forL"+loops[0][2]+"\n"
+                    } else {
+                        out+="\tLXI H,"+limit+"\n"
+                    }
                     out+="\tMOV A,L\n"
                     out+="\tCMP E\n"
                     out+="\tJNZ FLCMD"+loops[0][2]+"\n"
