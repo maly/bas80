@@ -131,6 +131,8 @@
             return "\tXCHG\n\tLHLD vs_"+expr.value+"\n\tXCHG\n"
         }
         if (type=="binary") {
+
+            //spec ops, optimalised
             if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="+") {
                 out = exprAsm(expr.left,line,etype,)+"\tINX H\n"
                 return out
@@ -141,6 +143,14 @@
             }
             if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="-") {
                 out = exprAsm(expr.left,line,etype,)+"\tDCX H\n"
+                return out
+            }
+            if (expr.right.type=="num" && expr.right.value==2 && expr.operator=="*") {
+                out = exprAsm(expr.left,line,etype,)+"\tDAD H\n"
+                return out
+            }
+            if (expr.right.type=="num" && expr.right.value==4 && expr.operator=="*") {
+                out = exprAsm(expr.left,line,etype,)+"\tDAD H\n\tDAD H\n"
                 return out
             }
             if (expr.left.type=="num" && expr.right.type=="binary") {
