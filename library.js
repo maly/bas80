@@ -311,3 +311,119 @@ var LIB = {
         "\tRET\n"
     },      
 }
+
+
+/*
+	ORG 8000h
+	.ent $
+    
+    ; heap format: 
+hp_init:    
+	LXI H,0ffffh ;zarážka
+    SHLD RAMTOP-2
+    SHLD RAMTOP-4
+	LXI H,((RAMTOP-HEAP)&0xfffe)-4
+    SHLD HEAP
+	JMP hp_done    
+hp_f: LXI H,HEAP+1
+hp_f2:
+	mov d,m
+    dcx h
+    mov e,m
+	MOV A,E
+    ANI 01h ;0=empty,1=full
+	RET
+hp_n:
+	MOV A,M
+    ANI 0FEh ;delka
+    MOV E,A
+    INX H
+    MOV D,M
+    DCX H
+    DAD D
+    INX H
+    INX H
+    INX H
+    JMP HP_F2
+    
+hp_fe: ;find empty
+	call hp_f
+hp_fe2:    
+    rz ;nalezeno, konec
+    mov a,d
+    ana e
+    inr a
+    jz ERRGO
+hp_fen:
+    call hp_n
+    jmp hp_fe2
+    
+hp_a: ;delka = bc
+	mov a,c
+    rrc
+    jnc hp_aeven
+    inx b
+hp_aeven: 
+	call hp_fe
+    ;kontrola delky
+    ;v de je delka
+hp_alop:    
+    mov a,d
+    cmp b
+    jc hp_alow
+    jnz hp_amore
+    mov a,e
+    cmp c
+    jnc hp_amore
+hp_alow: ;dostali jsme, ale malo
+	call hp_fen
+	jmp hp_alop
+hp_amore:    
+    ;mame, alokujeme
+    
+    mov a,e
+    sub c
+    mov e,a
+    mov a,d
+    sbb b
+    mov d,a
+    ;de = zkráceno o...
+    dcx d
+    dcx d
+    ;system data
+    
+    push h
+    dad b ;adresa nového bloku
+    inx h
+    inx h
+    ;kam zapíšeme novou volnou délku
+    mov m,e
+    inx h
+    mov m,d
+    ;nový blok vytvořen
+    ;zpátky k našimu
+    inx b
+    pop h
+    mov m,c
+    inx h
+    mov m,b
+    dcx h ; v hl je adresa toho bločku
+    ret
+    
+
+hp_done:
+	
+    lxi b,9000h
+    call hp_a
+    
+    lxi b,6
+    call hp_a    
+
+
+HEAP EQU $
+RAMTOP EQU 0F000h
+ds RAMTOP-$-2
+nop
+
+
+*/
