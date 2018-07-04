@@ -234,7 +234,6 @@ var generator = function(basic) {
     }
 
     var out="";
-    out +="\tORG 8000h\n\t.ent $\n\n"; //zahlavi
     var labels = labelIndex(basic);
     ENV.labels = labels;
     var loops=[];
@@ -470,6 +469,14 @@ var generator = function(basic) {
 
     if (loops.length) croak ("Non-closed loops", line)
 
+    //prepend
+    if (ENV.uses.indexOf("__heap")>=0) {
+        out = "\tCALL HP_INIT\n" + out;
+    }
+
+    out ="\tORG 8000h\n\t.ent $\n\n" + out; //zahlavi
+
+    //append
     out+="ERRGO:\tRST 0\n"; //error handling poor man
 
     //fndump

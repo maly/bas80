@@ -1,5 +1,6 @@
-<textarea id="source">
-1 PRINT "Ahoj, svete"
+<textarea id="source" cols=60 rows=40>
+1 a$ = "Ahoj, "
+a$ = a$ + "svete"
 gosub 100
 10 A=abs(-5)
 20 B=15
@@ -10,10 +11,12 @@ b=b-3
 print "*",c
 next a
 end
-100 print "TEST"
+100 print a$
 return
 
 </textarea>
+
+<textarea id="out" cols=60 rows=40></textarea>
 
 <button onclick="compile()">Compile</button>
 <script src="library.js"></script>
@@ -33,7 +36,7 @@ var compile = function(){
 
     console.log(basic)
 
-    console.log(generator(basic))
+    document.getElementById("out").value = (generator(basic))
 }
 
 compile()
