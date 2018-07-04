@@ -153,6 +153,22 @@ var LIB = {
         "        MOV     m,b \n"+
         "        INX     h\n"+
         "        RET     \n"+
+        "hp_test:\n"+
+        "        push d\n"+
+        "        lxi d,HEAP\n"+
+        "        mov a,h\n"+
+        "        cmp d\n"+
+        "        jc hp_noheap\n"+
+        "        mov a,l\n"+
+        "        cmp e\n"+
+        "        jc hp_noheap\n"+
+        "        dcx h\n"+
+        "        dcx h\n"+
+        "        call hp_free\n"+
+        "        \n"+
+        "hp_noheap: \n"+
+        "        pop d\n"+
+        "        ret        \n"+
         "HP_DONE:            \n"
 
     },

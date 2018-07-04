@@ -69,18 +69,19 @@
         var out = ""
         for(var k in ENV.vars) {
             var type = ENV.vars[k];
+            var name = k.split("_")[0]
             switch (type) {
                 case "int":
-                    out +="v_"+k+":\t DS 2\n";
+                    out +="v_"+name+":\t DS 2\n";
                     continue
                 case "str":
-                    out +="vs_"+k+":\t DS 2\n";
+                    out +="vs_"+name+":\t DS 2\n";
                     continue
                 case "sysdb":
-                    out +="sv_"+k+":\t DS 1\n";
+                    out +="sv_"+name+":\t DS 1\n";
                     continue
                 case "sysdw":
-                    out +="sv_"+k+":\t DS 2\n";
+                    out +="sv_"+name+":\t DS 2\n";
                     continue
             }
         }
@@ -194,7 +195,7 @@
 var ENV= {
     vars:{},
     addVar:function(name,type) {
-        ENV.vars[name] = type
+        ENV.vars[name+"_"+type] = type
     },
     strs:[],
     addStr:function(s) {
@@ -300,6 +301,9 @@ var generator = function(basic) {
     				} else if (par.type=="var$") {
                         if (et!="str") croak("Cannot assign this to string variable",line)
                         ENV.addVar(par.value,"str")
+                        ENV.addUse("__heap")
+                        //heap test
+                        out+="\tpush h\n\tlhld vs_"+par.value+"\n\tcall hp_test\n\tpop h\n"
     					out+="\tSHLD vs_"+par.value+"\n";
     				}
     				continue;
@@ -381,7 +385,7 @@ var generator = function(basic) {
                         out+="\tXCHG\n"
                         out+="\tLHLD sv_forL"+loops[0][2]+"\n"
                     } else {
-                        out+="\tLXI H,"+limit+"\n"
+                        out+="\tLXI D,"+limit+"\n"
                     }
                     out+="\tMOV A,L\n"
                     out+="\tCMP E\n"
