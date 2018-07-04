@@ -40,9 +40,23 @@ var LIB = {
         "\tJMP printstr\n"
     },
     "printint": {
-        uses:null,
+        uses:["s_div10","serout"],
         code: ""+
-        ""+
+        "\tMOV     a,h \n"+
+        "\tORA     a \n"+
+        "\tJP      pipos \n"+
+        "\tMVI     a,2Dh ;- \n"+
+        "\tCALL serout\n"+
+        "\tCALL    f_abs \n"+
+        "pipos:\tCALL  s_div10 \n"+
+        "\tPUSH    psw \n"+
+        "\tMOV     a,h \n"+
+        "\tORA     l \n"+
+        "\tJZ      pilast \n"+
+        "\tCALL    pipos \n"+
+        "pilast:\tPOP     psw \n"+
+        "\tADI 30h\n"+  
+        "\tCALL serout\n"+  
         "\tRET\n"
     },
     "prtchan": {
@@ -62,7 +76,9 @@ var LIB = {
     },
     "printtab": {
         uses:["serout"],
-        code: "\tMVI A,09h\n"+
+        code: "\tMVI A,20h\n"+
+        "\tCALL SEROUT\n"+
+        "\tMVI A,09h\n"+
         "\tCALL SEROUT\n"+
         "\tRET\n"
     },
@@ -74,6 +90,25 @@ var LIB = {
         "\tRST 1\n"+
         "\tRET\n"
     },
+
+    "s_div10": {
+        uses:null,
+        code: ""+
+        "\tmvi c,10\n"+
+
+        "\tmvi b,16\n"+
+        "\txra a\n"+
+        "s_d10_1:dad h\n"+
+        "\tral\n"+
+        "\tcmp c\n"+
+        "\tjc s_d10_2\n"+
+        "\tinr l\n"+
+        "\tsub c\n"+
+        "s_d10_2: dcr b\n"+
+
+        "\tjnz s_d10_1\n"+     
+        "\tRET\n"
+    },  
 
     //operators
     "o_logic": {
