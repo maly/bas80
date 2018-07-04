@@ -8,13 +8,15 @@ var PRECEDENCE = {
 };
 
 var ARITY = {
-    "max":2,
-    "abs":1,
-    "neg":1,
-    "sgn":1,
-    "rnd":0,
-    "chrS":1
+    "max":["int","int"],
+    "abs":["int"],
+    "neg":["int"],
+    "sgn":["int"],
+    "rnd":[],
+    "chrS":["int"]
 }
+
+
 
 
 
@@ -78,7 +80,7 @@ var expr = function(tokens, ln, bool) {
         }
 
         if (n.type=="fn") {
-            var nn = ARITY[n.value];
+            var nn = ARITY[n.value].length;
             var op=[];
             expectPunctuation("(")
             while(nn>0) {
