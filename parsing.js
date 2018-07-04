@@ -10,6 +10,7 @@ var PRECEDENCE = {
 var ARITY = {
     "max":2,
     "abs":1,
+    "neg":1,
     "sgn":1,
     "rnd":0,
     "chrS":1

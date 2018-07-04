@@ -249,6 +249,17 @@ var LIB = {
         "\tINX H\n"+
         "\tRET\n"
     },
+    "f_neg": {
+        uses:null,
+        code: "\tMOV A,H\n"+
+        "\tCMA\n"+
+        "\tMOV H,A\n"+
+        "\tMOV A,L\n"+
+        "\tCMA\n"+
+        "\tMOV L,A\n"+
+        "\tINX H\n"+
+        "\tRET\n"
+    },    
     "f_sgn": {
         uses:null,
         code: "\tMOV A,H\n"+
