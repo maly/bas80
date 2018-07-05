@@ -89,6 +89,10 @@
                     continue
             }
         }
+        for(var k in ENV.intarr) {
+            var size = ENV.intarr[k];
+            out +="vai_"+k+":\t DS "+(2*size)+"\n";
+        }
         return out
     }
 
@@ -135,14 +139,26 @@
             ENV.addVar(expr.value,"str")
             return "\tXCHG\n\tLHLD vs_"+expr.value+"\n\tXCHG\n"
         }
+        if (type=="var[]" && !left) {
+            var out = "\tPUSH D\n"+exprAsm(expr.index,line,"int")
+            out += "\tDAD H\n\tLXI D,vai_"+expr.value+"\n"
+            out += "\tDAD D\n\tMOV E,M\n\tINX H\n\tMOV D,M\n\tXCHG\n\tPOP D\n"
+            return out
+        }
+        if (type=="var[]" && left) {
+            var out = "\tPUSH H\n"+exprAsm(expr.index,line,"int")
+            out += "\tDAD H\n\tLXI D,vai_"+expr.value+"\n"
+            out += "\tDAD D\n\tMOV E,M\n\tINX H\n\tMOV D,M\n\tPOP H\n"
+            return out
+        }
         if (type=="binary") {
             //spec ops, optimalised
             if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="+") {
-                out = exprAsm(expr.left,line,etype,)+"\tINX H\n"
+                out = exprAsm(expr.left,line,etype)+"\tINX H\n"
                 return out
             }
             if (expr.left.type=="num" && expr.left.value==1 && expr.operator=="+") {
-                out = exprAsm(expr.right,line,etype,)+"\tINX H\n"
+                out = exprAsm(expr.right,line,etype)+"\tINX H\n"
                 return out
             }
             if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="-") {
@@ -200,6 +216,10 @@ var ENV= {
     vars:{},
     addVar:function(name,type) {
         ENV.vars[name+"_"+type] = type
+    },
+    intarr:{},
+    addArrInt:function(name,limit) {
+        ENV.intarr[name] = limit
     },
     strs:[],
     addStr:function(s) {
@@ -296,25 +316,50 @@ var generator = function(basic) {
                 case "continue":
                     if (!loops.length) croak("CONTINUE outside the loop",line);
                     out+="\tJMP "+loops[0][1]+"C"+loops[0][0]+"\n"
-                    continue;                    
+                    continue;      
+                case "dim":
+                    var epar = expr(tokens,line)
+                    //console.log(epar)
+                    if (epar.type!="var[]") croak("DIM needs a variable name",line);
+                    if (epar.index.type!="num") croak("DIM needs a constant size",line);
+                    ENV.addArrInt(epar.value,epar.index.value)
+                    continue
     			case "let":
-    				par = tokens.shift();
-    				if (par.type!="var" && par.type!="var$") croak("No variable name",line)
-    				next = tokens.shift();
-                    if (next.type!="op" || next.value!="=") croak("LET without an assignment")
+                    //par = tokens.shift();
+                    var epar = expr(tokens,line)
+                    //console.log(epar)
+                    par = epar.left
+    				if (par.type!="var" && par.type!="var[]" && par.type!="var$") croak("No variable name",line)
+//                    next = tokens.shift();
+//                    if (next.type!="op" || next.value!="=") croak("LET without an assignment",line)
                     if (par.type=="var$") {
                         ENV.addVar(par.value,"str")
                         ENV.addUse("__heap")
                         out+="\tlhld vs_"+par.value+"\n\tcall hp_unass\n"
 
                     }
-                    var ex = expr(tokens,line);
+//                    var ex = expr(tokens,line);
+                    var ex = epar.right
                     var et = exprType(ex,line);
     				out+=exprAsm(ex,line,et);
     				if (par.type=="var") {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         ENV.addVar(par.value,"int")
     					out+="\tSHLD v_"+par.value+"\n";
+    				} else if (par.type=="var[]") {
+                        if (et!="int") croak("Cannot assign this to int variable",line)
+                        if (!ENV.intarr[par.value])  croak("You have to DIM array first",line)
+                        //ENV.addArrInt(par.value,)
+                        out += "\tPUSH H\n"
+                        out+=exprAsm(par.index,line,et);
+                        out += "\tDAD H\n"
+                        out += "\tLXI D,vai_"+par.value+"\n";
+                        out += "\tDAD D\n"
+                        out += "\tPOP D\n"
+                        out += "\tMOV M,E\n"
+                        out += "\tINX H\n"
+                        out += "\tMOV M,D\n"
+    					//out+="\tSHLD v_"+par.value+"\n";
     				} else if (par.type=="var$") {
                         if (et!="str") croak("Cannot assign this to string variable",line)
                         //heap test - old one

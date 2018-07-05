@@ -36,6 +36,9 @@ var exprType = function(expr,ln) {
     if (type=="var") {
         return "int"
     }
+    if (type=="var[]") {
+        return "int"
+    }
     if (type=="var$") {
         return "str"
     }
@@ -81,6 +84,18 @@ var expr = function(tokens, ln, bool) {
             n = tokens.shift();
             n.value = n.value * -1
             return n
+        }
+
+        if (n.type=="var" && tokens.length && tokens[0].type=="punc" && tokens[0].value=="(") {
+            //it should be an array
+            expectPunctuation("(")
+//            console.log(JSON.parse(JSON.stringify(tokens)))
+            var ex = expr(tokens,ln,bool)
+            var et = exprType(ex,ln);
+//            console.log(ex,et)
+//            console.log(JSON.parse(JSON.stringify(tokens)))
+            expectPunctuation(")")
+            return {type:"var[]",value:n.value,index:ex}
         }
 
         if (n.type=="fn") {
