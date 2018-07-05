@@ -616,7 +616,35 @@ var LIB = {
             "    call f_abs\n"+
             "    jmp div16\n"
         },
-    "o_concat": {
+        "o_mod": {
+            uses:["div16","errdiv","f_abs"],
+            code: 
+                "    mov a,h\n"+
+                "    ora l\n"+
+                "    jz errdiv\n"+
+                "    mov a,h\n"+
+                "    xra d\n"+
+                "    ani 80h\n"+
+                "    jm o_div_minus\n"+
+                "    call o_divabs\n"+
+                "    RET\n"+
+                "o_div_minus:\n"+
+                "    call o_divabs\n"+
+                "    mov a,h\n"+
+                "    cma\n"+
+                "    mov h,a\n"+
+                "    mov a,l\n"+
+                "    cma\n"+
+                "    mov l,a\n"+
+                "    inx h\n"+
+                "    RET\n"+
+                "o_divabs:\n"+
+                "    call f_abs\n"+
+                "    xchg \n"+
+                "    call f_abs\n"+
+                "    jmp div16\n"
+            },
+        "o_concat": {
         uses:["__heap"],
         code: ""+
             "        push h\n"+
