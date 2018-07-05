@@ -272,7 +272,7 @@ var LIB = {
         "\tcall printstr\n"+
         "\tjmp errgo\n"+
         "errovfl_m:\n"+
-        "\tdb 0ah,0dh\n"
+        "\tdb 0ah,0dh\n"+
         "\t.cstr \"### MULT OVFL\"\n"
     },
     "erroom": {
@@ -282,7 +282,7 @@ var LIB = {
         "\tcall printstr\n"+
         "\tjmp errgo\n"+
         "erroom_m:\n"+
-        "\tdb 0ah,0dh\n"
+        "\tdb 0ah,0dh\n"+
         "\t.cstr \"### OUT OF MEMORY\"\n"
     },
     "errstop": {
@@ -292,7 +292,7 @@ var LIB = {
         "\tcall printstr\n"+
         "\tjmp errgo\n"+
         "errstop_m:\n"+
-        "\tdb 0ah,0dh\n"
+        "\tdb 0ah,0dh\n"+
         "\t.cstr \"### STOP\"\n"
 
     },
@@ -493,13 +493,36 @@ var LIB = {
         ""
     },
     "o_mul": {
-        uses:["mul16","errovfl"],
-        code: "\tcall mul16\n"+
-        "\tmov a,d\n"+
-        "\tora e\n"+
-        "\tjnz errovfl\n"+
-        "\tRET\n"
-    },
+        uses:["mul16","errovfl","f_abs"],
+        code: 
+            "    mov a,h\n"+
+            "    xra d\n"+
+            "    ani 80h\n"+
+            "    jm o_mul_minus\n"+
+            "    call o_mulabs\n"+
+            "    mov a,d\n"+
+            "    ora e\n"+
+            "    jnz errovfl\n"+
+            "    RET\n"+
+            "o_mul_minus:\n"+
+            "    call o_mulabs\n"+
+            "    mov a,d\n"+
+            "    ora e\n"+
+            "    jnz errovfl\n"+
+            "    mov a,h\n"+
+            "    cma\n"+
+            "    mov h,a\n"+
+            "    mov a,l\n"+
+            "    cma\n"+
+            "    mov l,a\n"+
+            "    inx h\n"+
+            "    RET\n"+
+            "o_mulabs:\n"+
+            "    call f_abs\n"+
+            "    xchg \n"+
+            "    call f_abs\n"+
+            "    jmp mul16\n"
+        },
     "o_sub": {
         uses:null,
         inline:true,
@@ -666,7 +689,7 @@ var LIB = {
         "    mvi c,1 ;sign\n"+
         "f_v_c:    \n"+
         "    mov a,m\n"+
-        "f_v_1:    \n"+
+        "f_v_c1:    \n"+
         "    ora a\n"+
         "    jz f_v_ret\n"+
         "    cpi 30h ;0\n"+
