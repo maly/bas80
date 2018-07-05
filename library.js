@@ -625,11 +625,11 @@ var LIB = {
                 "    mov a,h\n"+
                 "    xra d\n"+
                 "    ani 80h\n"+
-                "    jm o_div_minus\n"+
-                "    call o_divabs\n"+
+                "    jm o_mod_minus\n"+
+                "    call o_modabs\n"+
                 "    RET\n"+
-                "o_div_minus:\n"+
-                "    call o_divabs\n"+
+                "o_mod_minus:\n"+
+                "    call o_modabs\n"+
                 "    mov a,h\n"+
                 "    cma\n"+
                 "    mov h,a\n"+
@@ -638,7 +638,7 @@ var LIB = {
                 "    mov l,a\n"+
                 "    inx h\n"+
                 "    RET\n"+
-                "o_divabs:\n"+
+                "o_modabs:\n"+
                 "    call f_abs\n"+
                 "    xchg \n"+
                 "    call f_abs\n"+
