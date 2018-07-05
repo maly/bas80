@@ -134,7 +134,7 @@
             return "\tXCHG\n\tLHLD vs_"+expr.value+"\n\tXCHG\n"
         }
         if (type=="binary") {
-
+            console.log(expr)
             //spec ops, optimalised
             if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="+") {
                 out = exprAsm(expr.left,line,etype,)+"\tINX H\n"
@@ -156,12 +156,13 @@
                 out = exprAsm(expr.left,line,etype,)+"\tDAD H\n\tDAD H\n"
                 return out
             }
+
             if (expr.left.type=="num" && expr.right.type=="binary") {
                 out = exprAsm(expr.right,line,etype)+exprAsm(expr.left,line,etype,true)
             } else if (expr.left.type=="num" && expr.right.type=="fn") {
                 out = exprAsm(expr.right,line,etype)+exprAsm(expr.left,line,etype,true)
             } else {
-                out = exprAsm(expr.left,line,etype,true)+exprAsm(expr.right,line,etype)
+                out = exprAsm(expr.left,line,etype,true)+"\tpush d\n"+exprAsm(expr.right,line,etype)+"\tpop d\n"
             }
             var opfn = "o_"+opAsm(expr.operator,line,etype);
             if (LIB[opfn].inline) {
