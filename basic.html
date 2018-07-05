@@ -1,10 +1,8 @@
 <textarea id="source" cols=60 rows=40>
-    1 a$ = "ahoj"
-for a=33 to 64
-a$ = a$+chr$(a)
-next a
-print a$
-   
+1 input "Heslo:",a$
+if (a$="42") then print "OK":END
+print "BAD"
+goto 1
 </textarea>
 
 <textarea id="out" cols=60 rows=40></textarea>

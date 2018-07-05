@@ -455,13 +455,15 @@ var LIB = {
     "s_strcpy": {
         uses:null,
         code:
+    "    push h\n"+
+    "s_strcpy2:\n"+
     "    ldax d\n"+
     "    mov m,a\n"+
     "    ora a\n"+
     "    jz strcpe\n"+
     "    inx d\n"+
     "    inx h\n"+
-    "    jmp s_strcpy\n"+
+    "    jmp s_strcpy2\n"+
     "strcpe:\n"+
     "    pop h\n"+
     "    ret        \n"
@@ -594,6 +596,19 @@ var LIB = {
         "\tJNZ dotrue\n"+
         "\tJMP dofalse\n"
     },
+
+    "o_streq": {
+        uses:["o_logic"],
+        code: "\tLDAX D\n"+
+        "\tCMP M\n"+
+        "\tJNZ dofalse\n"+
+        "\tORA A\n"+
+        "\tJZ dotrue\n"+
+        "\tINX D\n"+
+        "\tINX H\n"+
+        "\tJMP o_streq\n"
+    },
+
 
     "o_add": {
         uses:null,

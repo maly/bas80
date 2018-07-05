@@ -48,6 +48,7 @@
         if (etype=="str") {
             switch(op) {
                 case "+": return "concat"
+                case "=": return "streq"
             }
             croak ("Invalid string operator",line)
         }
@@ -460,9 +461,10 @@ var generator = function(basic) {
                     loops.shift()
                     continue
     			case "if":
-    				var ex = expr(tokens,line,true);
+                    var ex = expr(tokens,line,true);
+                    var et = exprType(ex,line);
     				skipMark(i,basic)
-					out+=exprAsm(ex);
+					out+=exprAsm(ex,line,et);
     				out+="\tMOV A,H\n\tORA L\n";
     				out+="\tJZ SKIP"+i+"\n";
     				continue;
@@ -472,7 +474,7 @@ var generator = function(basic) {
                     if (loops[0][1]!="R") croak("UNTIL / REPEAT mismatched",line)
                     var ex = expr(tokens,line,true);
                     out+="RC"+loops[0][0]+":\n"
-					out+=exprAsm(ex);
+					out+=exprAsm(ex,line);
     				out+="\tMOV A,H\n\tORA L\n";
     				out+="\tJZ "+loops[0][0]+"\n";
                     out+="RB"+loops[0][0]+":\n"
@@ -483,7 +485,7 @@ var generator = function(basic) {
                     loops.unshift(["CMD"+i,"W"])
                     var ex = expr(tokens,line,true);
                     out+="WC"+loops[0][0]+":\n"
-					out+=exprAsm(ex);
+					out+=exprAsm(ex,line);
     				out+="\tMOV A,H\n\tORA L\n";
     				out+="\tJZ WB"+loops[0][0]+"\n";
     				continue;
