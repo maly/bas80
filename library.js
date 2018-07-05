@@ -273,7 +273,17 @@ var LIB = {
         "\tjmp errgo\n"+
         "errovfl_m:\n"+
         "\tdb 0ah,0dh\n"+
-        "\t.cstr \"### MULT OVFL\"\n"
+        "\t.cstr \"### MULT OVFL\",0dh,0ah\n"
+    },
+    "errdiv": {
+        uses:["printstr"],
+        code:
+        "\tlxi h,errdiv_m\n"+
+        "\tcall printstr\n"+
+        "\tjmp errgo\n"+
+        "errdiv_m:\n"+
+        "\tdb 0ah,0dh\n"+
+        "\t.cstr \"### DIVISION BY ZERO\",0dh,0ah\n"
     },
     "erroom": {
         uses:["printstr"],
@@ -283,7 +293,7 @@ var LIB = {
         "\tjmp errgo\n"+
         "erroom_m:\n"+
         "\tdb 0ah,0dh\n"+
-        "\t.cstr \"### OUT OF MEMORY\"\n"
+        "\t.cstr \"### OUT OF MEMORY\",0dh,0ah\n"
     },
     "errstop": {
         uses:["printstr"],
@@ -293,7 +303,7 @@ var LIB = {
         "\tjmp errgo\n"+
         "errstop_m:\n"+
         "\tdb 0ah,0dh\n"+
-        "\t.cstr \"### STOP\"\n"
+        "\t.cstr \"### STOP\",0dh,0ah\n"
 
     },
 
@@ -341,6 +351,47 @@ var LIB = {
             "    jnz mul16loop\n"+
             "    ret\n"
     },
+
+    "div16": {  
+        uses:null,
+        code:
+            "    push d\n"+
+            "    push h\n"+
+            "    pop d\n"+
+            "    pop b\n"+
+            "    mvi a,16\n"+
+            "    lxi h,0\n"+
+            "    jmp div16_skip\n"+
+            "div16_loop:\n"+
+            "    dad b\n"+
+            "div16_lop2:   \n"+
+            "    pop psw\n"+
+            "    dcr a\n"+
+            "    rz\n"+
+            "div16_skip:\n"+
+            "    push psw\n"+
+            "    xchg\n"+
+            "    dad h\n"+
+            "    xchg\n"+
+            "    jnc div16_adc\n"+
+            "    dad h\n"+
+            "    inx h\n"+
+            "    jmp div16_adskip\n"+
+            "div16_adc:\n"+
+            "    dad h\n"+
+            "div16_adskip:    \n"+
+            "    ;sbc hl,bc\n"+
+            "    mov a,l\n"+
+            "    sub c\n"+
+            "    mov l,a\n"+
+            "    mov a,h\n"+
+            "    sbb b\n"+
+            "    mov h,a\n"+
+            "    jc div16_loop\n"+
+            "    inr e\n"+
+            "    jmp div16_lop2        \n"
+    },
+
 
     "s_strcpy": {
         uses:null,
@@ -536,11 +587,35 @@ var LIB = {
     },
 
     "o_div": {
-        uses:null,
-        code: ""+
-        ""+
-        "\tRET\n"
-    },
+        uses:["div16","errdiv","f_abs"],
+        code: 
+            "    mov a,h\n"+
+            "    ora l\n"+
+            "    jz errdiv\n"+
+            "    mov a,h\n"+
+            "    xra d\n"+
+            "    ani 80h\n"+
+            "    jm o_div_minus\n"+
+            "    call o_divabs\n"+
+            "    xchg\n"+
+            "    RET\n"+
+            "o_div_minus:\n"+
+            "    call o_divabs\n"+
+            "    xchg\n"+
+            "    mov a,h\n"+
+            "    cma\n"+
+            "    mov h,a\n"+
+            "    mov a,l\n"+
+            "    cma\n"+
+            "    mov l,a\n"+
+            "    inx h\n"+
+            "    RET\n"+
+            "o_divabs:\n"+
+            "    call f_abs\n"+
+            "    xchg \n"+
+            "    call f_abs\n"+
+            "    jmp div16\n"
+        },
     "o_concat": {
         uses:["__heap"],
         code: ""+
