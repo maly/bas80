@@ -281,7 +281,6 @@ var LIB = {
         "errovfl_m:\n"+
         "\tdb 0ah,0dh\n"
         "\t.cstr \"### MULT OVFL\"\n"
-
     },
     "erroom": {
         uses:["printstr"],
@@ -292,6 +291,16 @@ var LIB = {
         "erroom_m:\n"+
         "\tdb 0ah,0dh\n"
         "\t.cstr \"### OUT OF MEMORY\"\n"
+    },
+    "errstop": {
+        uses:["printstr"],
+        code:
+        "\tlxi h,errstop_m\n"+
+        "\tcall printstr\n"+
+        "\tjmp errgo\n"+
+        "errstop_m:\n"+
+        "\tdb 0ah,0dh\n"
+        "\t.cstr \"### STOP\"\n"
 
     },
 

@@ -269,8 +269,11 @@ var generator = function(basic) {
     				out+="\tRET\n";
     				continue;
                 case "end":
+                    out+="\tRST 0\n";
+                    continue;
                 case "stop":
-    				out+="\tRST 0\n";
+                    ENV.addUse("errstop");
+    				out+="\tJMP ERRSTOP\n";
     				continue;
                 case "repeat":
                     //out+="RP"+i+":\n";
