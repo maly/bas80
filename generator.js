@@ -134,7 +134,6 @@
             return "\tXCHG\n\tLHLD vs_"+expr.value+"\n\tXCHG\n"
         }
         if (type=="binary") {
-            console.log(expr)
             //spec ops, optimalised
             if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="+") {
                 out = exprAsm(expr.left,line,etype,)+"\tINX H\n"

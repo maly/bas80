@@ -31,6 +31,7 @@ var fnAsm = function() {
 
 var LIB = {
     "__heap": {
+        uses:["erroom"],
         code:
         ";heap management 1.0\n"+
         "        HP_INIT:            \n"+
@@ -72,7 +73,7 @@ var LIB = {
         "        MOV     a,d \n"+
         "        ANA     e \n"+
         "        INR     a \n"+
-        "        JZ      ERRGO \n"+
+        "        JZ      ERROOM \n"+
         "HP_FEN:             \n"+
         "        CALL    hp_n \n"+
         "        JMP     hp_fe2 \n"+
@@ -268,6 +269,30 @@ var LIB = {
         "    call hp_a\n"+
         "    lxi d,i_buffer\n"+
         "    jmp s_strcpy\n"
+    },
+
+    //ERROR management
+    "errovfl": {
+        uses:["printstr"],
+        code:
+        "\tlxi h,errovfl_m\n"+
+        "\tcall printstr\n"+
+        "\tjmp errgo\n"+
+        "errovfl_m:\n"+
+        "\tdb 0ah,0dh\n"
+        "\t.cstr \"### MULT OVFL\"\n"
+
+    },
+    "erroom": {
+        uses:["printstr"],
+        code:
+        "\tlxi h,erroom_m\n"+
+        "\tcall printstr\n"+
+        "\tjmp errgo\n"+
+        "erroom_m:\n"+
+        "\tdb 0ah,0dh\n"
+        "\t.cstr \"### OUT OF MEMORY\"\n"
+
     },
 
     //SYSTEM
@@ -466,11 +491,11 @@ var LIB = {
         ""
     },
     "o_mul": {
-        uses:["mul16"],
+        uses:["mul16","errovfl"],
         code: "\tcall mul16\n"+
         "\tmov a,d\n"+
         "\tora e\n"+
-        "\tjnz errgo\n"+
+        "\tjnz errovfl\n"+
         "\tRET\n"
     },
     "o_sub": {
