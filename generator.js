@@ -363,11 +363,8 @@ var generator = function(basic) {
     				if (par.type!="var") croak("No usable variable name",line)
     				next = tokens.shift();
     				if (next.type!="op" || next.value!="=") croak("FOR without an initial assignment",line)
-                    var ex = expr(tokens,line);
-                    var et = exprType(ex,line);
-                    out+=exprAsm(ex,line,et);  
-                    ENV.addVar(par.value,"int")
-                    out+="\tSHLD v_"+par.value+"\n";                        
+                    var exi = expr(tokens,line);
+                    var eti = exprType(exi,line);
                     next = tokens.shift();
     				if (next.type!="kw" || next.value!="to") croak("FOR without TO",line)
 
@@ -404,7 +401,12 @@ var generator = function(basic) {
                         }
                     }
 
-                    out+="\tJMP FCCMD"+i+"\n"; 
+                    //Initial value defined here
+                    out+=exprAsm(exi,line,eti);  
+                    ENV.addVar(par.value,"int")
+                    out+="\tSHLD v_"+par.value+"\n";                        
+
+                    out+="\tJMP FTCMD"+i+"\n"; 
                     out+="FLCMD"+i+":\n"; 
                                                       
                     loops.unshift(["CMD"+i,"F",i,par.value,step,limit]);
@@ -430,6 +432,7 @@ var generator = function(basic) {
                     }
                     out+="\tSHLD v_"+par.value+"\n"
                     
+                    out+="FT"+loops[0][0]+":\n" //test
                     var limit = loops[0][5];
                     if (limit=="ex") {
                         out+="\tXCHG\n"
