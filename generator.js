@@ -550,7 +550,7 @@ var generator = function(basic) {
                             continue;
                         }
                     }
-                    //out+="\tcall hp_gc\n";
+                    out+="\tcall hp_gc\n";
                     continue
     
 
