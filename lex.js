@@ -29,7 +29,7 @@ function InputStream(input) {
             "gosub return end stop data read restore repeat until continue break "+
             "poke dpoke "+
             "while endwhile ";
-    var functions = " abs neg rnd max chr$ sgn len peek dpeek ";
+    var functions = " abs neg rnd max chr$ sgn len val peek dpeek ";
     return {
         next  : next,
         peek  : peek,
