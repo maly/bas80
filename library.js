@@ -224,6 +224,52 @@ var LIB = {
         "\tCALL SEROUT\n"+
         "\tRET\n"
     },
+    "printtab": {
+        uses:["serout"],
+        code: "\tMVI A,20h\n"+
+        "\tCALL SEROUT\n"+
+        "\tMVI A,09h\n"+
+        "\tCALL SEROUT\n"+
+        "\tRET\n"
+    },
+    "input": {
+        uses:["serin"],
+        code:
+        "    lxi h,i_buffer\n"+
+        "    mvi c,0\n"+
+        "i_rd_l:\n"+
+        "    call serin\n"+
+        "    jz i_rd_l\n"+
+        "    cpi 0dh\n"+
+        "    jz i_eol\n"+
+        "    cpi 0ah\n"+
+        "    jz i_eol\n"+
+        "    mov m,a\n"+
+        "    inx h\n"+
+        "    inr c\n"+
+        "    jnz i_rd_l\n"+
+        "i_eol:\n"+
+        "    mvi m,0\n"+
+        "    ret \n"
+    },
+    "inputint": {
+        uses:["input","f_val"],
+        code:
+        "    call input\n"+
+        "    lxi h,i_buffer\n"+
+        "    call f_val\n"+
+        "    ret        \n"
+    },
+    "inputstr": {
+        uses:["input","__heap","s_strcpy"],
+        code:
+        "    call input\n"+
+        "    inx b\n"+
+        "    call hp_a\n"+
+        "    lxi d,i_buffer\n"+
+        "    jmp s_strcpy\n"
+    },
+
     //SYSTEM
     "serout": {
         uses:null,
@@ -232,7 +278,30 @@ var LIB = {
         "\tRST 1\n"+
         "\tRET\n"
     },
-
+    "serin": {
+        uses:null,
+        sysdb:["prtchan"],
+        code: "\tIN 0deh ;acias\n"+
+        "\tani 1\n"+
+        "\trz\n"+
+        "\tin 0dfh ;aciad\n"+
+        "\tora a\n"+
+        "\tRET\n"
+    },
+    "s_strcpy": {
+        uses:null,
+        code:
+    "    ldax d\n"+
+    "    mov m,a\n"+
+    "    ora a\n"+
+    "    jz strcpe\n"+
+    "    inx d\n"+
+    "    inx h\n"+
+    "    jmp s_strcpy\n"+
+    "strcpe:\n"+
+    "    pop h\n"+
+    "    ret        \n"
+    },
     "s_div10": {
         uses:null,
         code: ""+
@@ -251,6 +320,35 @@ var LIB = {
         "\tjnz s_d10_1\n"+     
         "\tRET\n"
     },  
+
+    "s_mul10": {
+        uses:null,
+        code: ""+
+        "    push d\n"+
+        "    dad h\n"+
+        "    mov d,h\n"+
+        "    mov e,l\n"+
+        "    dad h\n"+
+        "    dad h\n"+
+        "    dad d\n"+
+        "    pop d\n"+
+        "    ret\n"
+    },  
+    "s_mul10add": {
+        uses:null,
+        code: ""+
+        "    push d\n"+
+        "    dad h\n"+
+        "    mov d,h\n"+
+        "    mov e,l\n"+
+        "    dad h\n"+
+        "    dad h\n"+
+        "    dad d\n"+
+        "    pop d\n"+
+        "    dad d\n"+
+        "    ret\n"
+    },  
+
 
     //operators
     "o_logic": {
@@ -499,6 +597,33 @@ var LIB = {
         "f_le:\tXCHG\n"+
         "\tPOP D\n"+
         "\tRET\n"
+    },        
+    "f_val": {
+        uses:["s_mul10add"],
+        code: "\tpush d\n"+
+        "    lxi d,0\n"+
+        "f_v_c:    \n"+
+        "    mov a,m\n"+
+        "    ora a\n"+
+        "    jz f_v_ret\n"+
+        "    cpi 30h ;0\n"+
+        "    jc f_v_ret\n"+
+        "    cpi 3ah\n"+
+        "    jnc f_v_ret\n"+
+        "    push h\n"+
+        "    xchg\n"+
+        "    sui 30h\n"+
+        "    mov e,a\n"+
+        "    mvi d,0\n"+
+        "    call s_mul10add\n"+
+        "    xchg\n"+
+        "    pop h\n"+
+        "    inx h\n"+
+        "    jmp f_v_c\n"+
+        "f_v_ret:\n"+
+        "    xchg\n"+
+        "\tpop d\n"+
+        "    ret\n"
     },        
     "f_chrS": {
         uses:null,

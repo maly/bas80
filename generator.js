@@ -471,6 +471,66 @@ var generator = function(basic) {
     				continue;
                     
 
+                case "input":
+                    while(tokens.length) {
+                        par = tokens[0]
+                        if (isPunc("#",tokens[0])) {
+                            //channel swap
+                            var chan = expr(tokens,line,true);
+                            out+=exprAsm(chan,line,"int");
+                            ENV.addUse("inpchan")
+                            out+="\tCALL inpchan\n"
+                            if (!isPunc(",",tokens[0])) croak("Syntax error",line)
+                            continue;
+                        }
+                        if (par.type=="var") {
+                            //good, lets input a number
+                            ENV.addUse("inputint")
+                            out+="\tCALL inputint\n"
+                            ENV.addVar(par.value,"int")
+                            out+="\tSHLD v_"+par.value+"\n";
+                            //consume remainder
+                            tokens.shift();
+                            if (!tokens.length) break; //the last one
+                            if (!isPunc(",",tokens[0])) croak("Syntax error",line)
+                            continue;
+                        } else if (par.type=="var$") {
+                            //good, lets input a string
+                            ENV.addUse("inputstr")
+                            out+="\tCALL inputstr\n"
+                            ENV.addUse("__heap")
+                            //heap test
+                            out+="\tpush h\n\tlhld vs_"+par.value+"\n\tcall hp_test\n\tpop h\n"
+                            out+="\tSHLD vs_"+par.value+"\n";
+                            tokens.shift();
+                            if (!tokens.length) break; //the last one
+                            if (!isPunc(",",tokens[0])) croak("Syntax error",line)
+                            tokens.shift();                            
+                            continue;
+                        }
+
+
+                        var ex = expr(tokens,line,true);
+                        var et = exprType(ex,line);
+                        out+=exprAsm(ex,line,et);
+                        ENV.addUse("print"+et)
+                        out+="\tCALL print"+et+"\n"
+                        println = true;
+                        if (isPunc(";",tokens[0])) {
+                            println = false;
+                            continue;
+                        }
+                        if (isPunc(",",tokens[0])) {
+                            ENV.addUse("printtab")
+                            out+="\tCALL printtab\n"
+                            println = false;
+                            continue;
+                        }
+                    }
+                    
+                    continue
+    
+
                 case "print":
                 var println = true;
                     while(tokens.length) {
@@ -517,6 +577,12 @@ var generator = function(basic) {
 
     if (loops.length) croak ("Non-closed loops", line)
 
+    var appendInput = false
+    if(ENV.uses.indexOf("inputint")>=0) appendInput=true;
+    if(ENV.uses.indexOf("inputstr")>=0) appendInput=true;
+
+    console.log(appendInput)
+
     //prepend
     if (ENV.uses.indexOf("__heap")>=0) {
         out = "\tCALL HP_INIT\n" + out;
@@ -536,6 +602,12 @@ var generator = function(basic) {
 
     //vardump
     out+=varAsm();
+
+    //append
+    if (appendInput) {
+        out += "i_buffer: ds 257\n";
+    }
+
 
     out +="\n\nHEAP EQU $\nRAMTOP EQU 0F000h\nds RAMTOP-$\n\n"; //zapati
 
