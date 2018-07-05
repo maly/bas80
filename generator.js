@@ -256,13 +256,13 @@ var generator = function(basic) {
     			case "goto":
                     par = tokens[0];
                     var target = findLabel(par.value,labels);
-                    if (!target) croak("Target line not found",line)
+                    if (target===null) croak("Target line not found",line)
     				out+="\tJMP CMD"+target+"\n";
     				continue;
                 case "gosub":
     				par = tokens[0];
                     var target = findLabel(par.value,labels);
-                    if (!target) croak("Target line not found",line)
+                    if (target===null) croak("Target line not found",line)
     				out+="\tCALL CMD"+target+"\n";
     				continue;
                 case "return":

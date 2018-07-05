@@ -288,6 +288,33 @@ var LIB = {
         "\tora a\n"+
         "\tRET\n"
     },
+    "mul16": {
+        uses:null,
+        code: 
+            "    push h\n"+
+            "    pop b\n"+
+            "    lxi h,0\n"+
+            "    mvi a,16\n"+
+            "mul16loop:\n"+
+            "    dad h\n"+
+            "    push psw\n"+
+            "    mov a,e\n"+
+            "    ral\n"+
+            "    mov e,a\n"+
+            "    mov a,d\n"+
+            "    ral\n"+
+            "    mov d,a\n"+
+            "    jnc mul16no\n"+
+            "    dad b\n"+
+            "    jnc mul16no\n"+
+            "    inx d\n"+
+            "mul16no:\n"+
+            "    pop psw\n"+
+            "    dcr a\n"+
+            "    jnz mul16loop\n"+
+            "    ret\n"
+    },
+
     "s_strcpy": {
         uses:null,
         code:
@@ -439,9 +466,11 @@ var LIB = {
         ""
     },
     "o_mul": {
-        uses:null,
-        code: ""+
-        ""+
+        uses:["mul16"],
+        code: "\tcall mul16\n"+
+        "\tmov a,d\n"+
+        "\tora e\n"+
+        "\tjnz errgo\n"+
         "\tRET\n"
     },
     "o_sub": {
