@@ -28,7 +28,9 @@
     }
 
     var findLabel = function(label,labels) {
-    	if(labels[label]!==undefined) return labels[label];
+        if(labels[label]!==undefined) return labels[label];
+        //find 
+        return null
     }
 
     var croak = function(msg,ln) {
@@ -253,12 +255,15 @@ var generator = function(basic) {
     		switch(cmd) {
     			case "goto":
                     par = tokens[0];
-                    console.log(par)
-    				out+="\tJMP CMD"+findLabel(par.value,labels)+"\n";
+                    var target = findLabel(par.value,labels);
+                    if (!target) croak("Target line not found",line)
+    				out+="\tJMP CMD"+target+"\n";
     				continue;
                 case "gosub":
     				par = tokens[0];
-    				out+="\tCALL CMD"+findLabel(par.value,labels)+"\n";
+                    var target = findLabel(par.value,labels);
+                    if (!target) croak("Target line not found",line)
+    				out+="\tCALL CMD"+target+"\n";
     				continue;
                 case "return":
     				out+="\tRET\n";
