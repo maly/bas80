@@ -818,13 +818,16 @@ var LIB = {
         "    jmp f_neg\n"
     },        
     "f_chrS": {
-        uses:null,
-        sysdw:["chrS"],
+        uses:["__heap"],
         code: "\tMOV A,L\n"+
-        "\tSTA sv_chrS\n"+
-        "\tXRA A\n"+
-        "\tSTA sv_chrS+1\n"+
-        "\tLXI H,sv_chrS\n"+
+        "\tpush psw\n"+
+        "\tlxi b,2\n"+
+        "\tcall hp_a\n"+
+        "\tpop psw\n"+
+        "\tmov m,a\n"+
+        "\tinx h\n"+
+        "\tmvi m,0\n"+
+        "\tdcx h\n"+
         "\tRET\n"
     },      
 }
