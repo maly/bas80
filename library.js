@@ -225,14 +225,7 @@ var LIB = {
         "\tCALL SEROUT\n"+
         "\tRET\n"
     },
-    "printtab": {
-        uses:["serout"],
-        code: "\tMVI A,20h\n"+
-        "\tCALL SEROUT\n"+
-        "\tMVI A,09h\n"+
-        "\tCALL SEROUT\n"+
-        "\tRET\n"
-    },
+
     "input": {
         uses:["serin"],
         code:
@@ -662,11 +655,18 @@ var LIB = {
         "\tRET\n"
     },        
     "f_val": {
-        uses:["s_mul10add"],
+        uses:["s_mul10add","f_neg"],
         code: "\tpush d\n"+
+        "    mvi c,0 ;sign\n"+
         "    lxi d,0\n"+
+        "    mov a,m\n"+
+        "    cpi 2Dh ;-\n"+
+        "    jnz f_v_c1\n"+
+        "    inx h\n"+
+        "    mvi c,1 ;sign\n"+
         "f_v_c:    \n"+
         "    mov a,m\n"+
+        "f_v_1:    \n"+
         "    ora a\n"+
         "    jz f_v_ret\n"+
         "    cpi 30h ;0\n"+
@@ -686,7 +686,10 @@ var LIB = {
         "f_v_ret:\n"+
         "    xchg\n"+
         "\tpop d\n"+
-        "    ret\n"
+        "    mov a,c\n"+
+        "    ora a\n"+
+        "    rz\n"+
+        "    jmp f_neg\n"
     },        
     "f_chrS": {
         uses:null,
