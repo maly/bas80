@@ -33,7 +33,7 @@ var LIB = {
     "__heap": {
         uses:["erroom"],
         code:
-        ";heap management 1.0\n"+
+        ";heap management 1.1\n"+
         "        HP_INIT:            \n"+
         "\n"+
         "        LXI     H,((RAMTOP-HEAP)&0xfffe)-4 \n"+
@@ -81,8 +81,8 @@ var LIB = {
         "        MOV     a,m \n"+
         "        ANI     0feh \n"+
         "        MOV     m,a \n"+
-        "HP_FRE2:    CALL    hp_join \n"+
-        "        JNZ     hp_fre2 \n"+
+//        "HP_FRE2:    CALL    hp_join \n"+
+//        "        JNZ     hp_fre2 \n"+
         "        RET     \n"+
         "HP_JOIN:            \n"+
         "        CALL    hp_fe \n"+
@@ -114,6 +114,7 @@ var LIB = {
         "        ORI     1 ; Z=0\n"+
         "        RET     \n"+
         "HP_A:\n"+
+        "        INX     b \n"+
         "        MOV     a,c \n"+
         "        RRC     \n"+
         "        JNC     hp_aeven \n"+
@@ -124,13 +125,32 @@ var LIB = {
         "        MOV     a,d \n"+
         "        CMP     b \n"+
         "        JC      hp_alow \n"+
-        "        JNZ     hp_amore \n"+
+        "        ;JNZ     hp_amore \n"+
         "        MOV     a,e \n"+
         "        CMP     c \n"+
-        "        JNC     hp_amore \n"+
+        "        jz hp_aexact\n"+
+        "        ;porovnat, jestli zbývá alespoň n+6\n"+
+        "        push b\n"+
+        "        inx b\n"+
+        "        inx b\n"+
+        "        inx b\n"+
+        "        inx b\n"+
+        "        inx b\n"+
+        "        inx b\n"+
+        "		mov a,d\n"+
+        "		cmp b\n"+
+        "		jc hp_alow6        \n"+
+        "        jnz hp_amore6\n"+
+        "        mov a,e\n"+
+        "        cmp c\n"+
+        "        jnc hp_amore6\n"+
+        "hp_alow6:\n"+
+        "		pop b\n"+
         "HP_ALOW:\n"+
         "        CALL    hp_fen \n"+
         "        JMP     hp_alop \n"+
+        "hp_amore6:\n"+
+        "		pop b\n"+
         "HP_AMORE:           \n"+
         "        MOV     a,e \n"+
         "        SUB     c \n"+
@@ -147,11 +167,14 @@ var LIB = {
         "        MOV     m,e \n"+
         "        INX     h \n"+
         "        MOV     m,d \n"+
-        "        INX     b \n"+
         "        POP     h \n"+
+        "hp_aexact:\n"+
+        "        INX     b \n"+
         "        MOV     m,c \n"+
         "        INX     h \n"+
         "        MOV     m,b \n"+
+        "        INX     h\n"+
+        "        MVI     m,0aah \n"+
         "        INX     h\n"+
         "        RET     \n"+
         "hp_test:\n"+
@@ -160,15 +183,51 @@ var LIB = {
         "        mov a,h\n"+
         "        cmp d\n"+
         "        jc hp_noheap\n"+
+        "        jnz hp_noheap\n"+
         "        mov a,l\n"+
         "        cmp e\n"+
-        "        jc hp_noheap\n"+
-        "        dcx h\n"+
-        "        dcx h\n"+
-        "        call hp_free\n"+
-        "        \n"+
         "hp_noheap: \n"+
         "        pop d\n"+
+        "        ret        \n"+
+        "hp_unass: \n"+
+        "        call hp_test\n"+
+        "        rc\n"+
+        "        dcx h\n"+
+        "        MVI     m,0aah \n"+
+        "        INX     h\n"+
+        "        ret        \n"+
+        "hp_assign: \n"+
+        "        call hp_test\n"+
+        "        rc\n"+
+        "        dcx h\n"+
+        "        MVI     m,055h \n"+
+        "        INX     h\n"+
+        "        ret        \n"+
+        "hp_gc:\n"+
+        "        CALL    hp_f \n"+
+        "HP_gc1:             \n"+
+        "        JZ hp_gcn\n"+
+        "hp_gc2:        \n"+
+        "        MOV     a,d \n"+
+        "        ANA     e \n"+
+        "        INR     a \n"+
+        "        JZ hp_gcf\n"+
+        "        inx h\n"+
+        "        inx h\n"+
+        "        mov a,m\n"+
+        "        dcx h\n"+
+        "        dcx h\n"+
+        "        cpi 0aah ;unassigned\n"+
+        "        jnz hp_gcn\n"+
+        "        push h\n"+
+        "        call hp_free\n"+
+        "        pop h\n"+
+        "HP_gcN:             \n"+
+        "        CALL    hp_n \n"+
+        "        JMP     hp_gc2 	\n"+
+        "        \n"+
+        "HP_gcf:    CALL    hp_join \n"+
+        "        JNZ     hp_gcf\n"+
         "        ret        \n"+
         "HP_DONE:            \n"
 

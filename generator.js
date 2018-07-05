@@ -300,7 +300,13 @@ var generator = function(basic) {
     				par = tokens.shift();
     				if (par.type!="var" && par.type!="var$") croak("No variable name",line)
     				next = tokens.shift();
-    				if (next.type!="op" || next.value!="=") croak("LET without an assignment")
+                    if (next.type!="op" || next.value!="=") croak("LET without an assignment")
+                    if (par.type=="var$") {
+                        ENV.addVar(par.value,"str")
+                        ENV.addUse("__heap")
+                        out+="\tlhld vs_"+par.value+"\n\tcall hp_unass\n"
+
+                    }
                     var ex = expr(tokens,line);
                     var et = exprType(ex,line);
     				out+=exprAsm(ex,line,et);
@@ -310,11 +316,10 @@ var generator = function(basic) {
     					out+="\tSHLD v_"+par.value+"\n";
     				} else if (par.type=="var$") {
                         if (et!="str") croak("Cannot assign this to string variable",line)
-                        ENV.addVar(par.value,"str")
-                        ENV.addUse("__heap")
-                        //heap test
-                        out+="\tpush h\n\tlhld vs_"+par.value+"\n\tcall hp_test\n\tpop h\n"
-    					out+="\tSHLD vs_"+par.value+"\n";
+                        //heap test - old one
+                        //out+="\tpush h\n\tlhld vs_"+par.value+"\n\tcall hp_test\n\tpop h\n"
+                        out+="\tSHLD vs_"+par.value+"\n\tcall hp_assign\n";
+                        out+="\tcall hp_gc\n"; //poor man optimalization - garbage on LET
     				}
                     continue;
                 case "poke":
@@ -513,8 +518,8 @@ var generator = function(basic) {
                             out+="\tCALL inputstr\n"
                             ENV.addUse("__heap")
                             //heap test
-                            out+="\tpush h\n\tlhld vs_"+par.value+"\n\tcall hp_test\n\tpop h\n"
-                            out+="\tSHLD vs_"+par.value+"\n";
+                            //out+="\tpush h\n\tlhld vs_"+par.value+"\n\tcall hp_test\n\tpop h\n"
+                            out+="\tSHLD vs_"+par.value+"\n\tcall hp_assign\n";
                             tokens.shift();
                             if (!tokens.length) break; //the last one
                             if (!isPunc(",",tokens[0])) croak("Syntax error",line)
@@ -540,7 +545,7 @@ var generator = function(basic) {
                             continue;
                         }
                     }
-                    
+                    //out+="\tcall hp_gc\n";
                     continue
     
 
