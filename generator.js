@@ -537,6 +537,7 @@ var generator = function(basic) {
                     
 
                 case "input":
+                    var hasstr = false;
                     while(tokens.length) {
                         par = tokens[0]
                         if (isPunc("#",tokens[0])) {
@@ -567,6 +568,7 @@ var generator = function(basic) {
                             ENV.addUse("inputstr")
                             out+="\tCALL inputstr\n"
                             ENV.addUse("__heap")
+                            hasstr = true
                             //heap test
                             //out+="\tpush h\n\tlhld vs_"+par.value+"\n\tcall hp_test\n\tpop h\n"
                             out+="\tSHLD vs_"+par.value+"\n\tcall hp_assign\n";
@@ -595,7 +597,7 @@ var generator = function(basic) {
                             continue;
                         }
                     }
-                    out+="\tcall hp_gc\n";
+                    if (hasstr) out+="\tcall hp_gc\n";
                     continue
     
 
