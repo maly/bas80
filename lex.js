@@ -45,6 +45,9 @@ function InputStream(input) {
     function is_digit(ch) {
         return /[0-9]/i.test(ch);
     }
+    function is_hexdigit(ch) {
+        return /[0-9a-fA-F]/i.test(ch);
+    }
     function is_id_start(ch) {
         return /[a-z_]/i.test(ch);
     }
@@ -80,6 +83,13 @@ function InputStream(input) {
             return is_digit(ch);
         });
         return { type: "num", value: parseFloat(number) };
+    }
+    function read_hexnumber() {
+        input.next()
+        var number = read_while(function(ch){
+            return is_hexdigit(ch);
+        });
+        return { type: "num", value: parseInt(number,16) };
     }
     function read_ident() {
         var id = read_while(is_id);
@@ -134,6 +144,7 @@ function InputStream(input) {
         var ch = input.peek();
 
         if (ch == '"') return read_string();
+        if (ch == '$') return read_hexnumber();
         if (is_digit(ch)) return read_number();
         if (is_id_start(ch)) {
             var ident = read_ident();
