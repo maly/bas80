@@ -28,7 +28,7 @@
     }
 
     var findLabel = function(label,labels) {
-    	if(labels[label]) return labels[label];
+    	if(labels[label]!==undefined) return labels[label];
     }
 
     var croak = function(msg,ln) {
@@ -252,11 +252,12 @@ var generator = function(basic) {
     		out+="; "+cmd+"\n"
     		switch(cmd) {
     			case "goto":
-    				par = tokens.shift();
+                    par = tokens[0];
+                    console.log(par)
     				out+="\tJMP CMD"+findLabel(par.value,labels)+"\n";
     				continue;
                 case "gosub":
-    				par = tokens.shift();
+    				par = tokens[0];
     				out+="\tCALL CMD"+findLabel(par.value,labels)+"\n";
     				continue;
                 case "return":
@@ -581,7 +582,6 @@ var generator = function(basic) {
     if(ENV.uses.indexOf("inputint")>=0) appendInput=true;
     if(ENV.uses.indexOf("inputstr")>=0) appendInput=true;
 
-    console.log(appendInput)
 
     //prepend
     if (ENV.uses.indexOf("__heap")>=0) {
