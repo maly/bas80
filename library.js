@@ -375,12 +375,13 @@ var LIB = {
         "\tRET\n"
     },
     "serin": {
-        uses:null,
+        uses:["serout"],
         sysdb:["prtchan"],
         code: "\tIN 0deh ;acias\n"+
         "\tani 1\n"+
         "\trz\n"+
         "\tin 0dfh ;aciad\n"+
+        "\tcall serout\n"+
         "\tora a\n"+
         "\tRET\n"
     },
