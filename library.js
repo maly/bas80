@@ -482,8 +482,8 @@ var LIB = {
         uses:null,
         code: "\tMOV A,M\n"+
         "\tINX H\n"+
-        "\tMOV L,M\n"+
-        "\tMOV H,A\n"+
+        "\tMOV H,M\n"+
+        "\tMOV L,A\n"+
         "\tRET\n"
     },
     "f_len": {
