@@ -488,7 +488,7 @@ var LIB = {
     },
     "f_len": {
         uses:[],
-        code: ""+
+        code: "\tPUSH D\n"+
         "\tLXI D,0\n"+
         "f_ll:MOV A,M\n"+
         "\tORA A\n"+
@@ -497,6 +497,7 @@ var LIB = {
         "\tINX H\n"+
         "\tJMP f_ll\n"+
         "f_le:\tXCHG\n"+
+        "\tPOP D\n"+
         "\tRET\n"
     },        
     "f_chrS": {
