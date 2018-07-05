@@ -516,6 +516,9 @@ var generator = function(basic) {
                             continue;
                         } else if (par.type=="var$") {
                             //good, lets input a string
+                            ENV.addVar(par.value,"str")
+                            out+="\tlhld vs_"+par.value+"\n\tcall hp_unass\n"
+        
                             ENV.addUse("inputstr")
                             out+="\tCALL inputstr\n"
                             ENV.addUse("__heap")
