@@ -1,33 +1,4 @@
-var fnAsm = function() {
-    out = "";
-    var fname;
-    while(fname = ENV.uses.shift()) {
-        var fn = LIB[fname]
-        if (!fn) throw new Error("Cannot link "+fname)
-
-        if (fn.sysdb) {
-            var sv;
-            for(var i=0;i<fn.sysdb.length;i++){
-                ENV.addVar(fn.sysdb[i],"sysdb")
-            }
-        }
-        if (fn.sysdw) {
-            var sv;
-            for(var i=0;i<fn.sysdw.length;i++){
-                ENV.addVar(fn.sysdw[i],"sysdw")
-            }
-        }
-        out+=";---"+fname+"---\n"
-        out+=fname+":\n"
-        out += fn.code
-        out+=";---"+fname+"-end---\n\n"
-    }
-    return out;
-
-}
-
-
-/// a big library
+// a big library
 
 var LIB = {
     "__heap": {
