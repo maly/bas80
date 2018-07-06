@@ -170,9 +170,18 @@
         if (type=="var[]") {
             if (!ENV.intarr[expr.value])  croak("You have to DIM array first",line)
             if (expr.index.type=="num" && expr.index.value>=ENV.intarr[expr.value]) croak("Index out of bound",line)
-            ENV.addUse("s_check");
+            
         }
         if (type=="var[]" && !left) {
+            if (expr.index.type=="num") {
+                //precompute
+                if (expr.index.value) {
+                    return "\tLHLD vai_"+expr.value+"+"+(expr.index.value*2)+"\n";
+                } else {
+                    return "\tLHLD vai_"+expr.value+"\n";
+                }
+            }
+            ENV.addUse("s_check");
             var out = "\tPUSH D\n"+exprAsm(expr.index,line,"int")
             out += "\tLXI D,vai_"+expr.value+"\n"
             out += "\tLXI B,"+ENV.intarr[expr.value]+"\n";
@@ -182,6 +191,15 @@
         }
 
         if (type=="var[]" && left) {
+            if (expr.index.type=="num") {
+                //precompute
+                if (expr.index.value) {
+                    return "\tXCHG\n\tLHLD vai_"+expr.value+"+"+(expr.index.value*2)+"\n\tXCHG\n";
+                } else {
+                    return "\tXCHG\n\tLHLD vai_"+expr.value+"\n\tXCHG\n";
+                }
+            }            
+            ENV.addUse("s_check");
             var out = "\tPUSH H\n"+exprAsm(expr.index,line,"int")
             out += "\tLXI D,vai_"+expr.value+"\n"
             out += "\tLXI B,"+ENV.intarr[expr.value]+"\n";
@@ -450,18 +468,28 @@ var generator = function(basic, CFG) {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         if (!ENV.intarr[par.value])  croak("You have to DIM array first",line)
                         if (par.index.type=="num" && par.index.value>=ENV.intarr[par.value]) croak("Index out of bound",line)
-                        ENV.addUse("s_check");
-                        out += "\tPUSH H\n"
-                        out+=exprAsm(par.index,line,et);
-                        //out += "\tDAD H\n"
-                        out += "\tLXI D,vai_"+par.value+"\n";
-                        out += "\tLXI B,"+ENV.intarr[par.value]+"\n";
-                        out += "\tCALL s_check\n";
-                        //out += "\tDAD D\n"
-                        out += "\tPOP D\n"
-                        out += "\tMOV M,E\n"
-                        out += "\tINX H\n"
-                        out += "\tMOV M,D\n"
+                        
+                        if (par.index.type=="num") {
+                            //precompute
+                            if (par.index.value) {
+                                out+="\tSHLD vai_"+par.value+"+"+(par.index.value*2)+"\n";
+                            } else {
+                                out+="\tSHLD vai_"+par.value+"\n";
+                            }
+                        } else {
+                            ENV.addUse("s_check");
+                            out += "\tPUSH H\n"
+                            out+=exprAsm(par.index,line,et);
+                            //out += "\tDAD H\n"
+                            out += "\tLXI D,vai_"+par.value+"\n";
+                            out += "\tLXI B,"+ENV.intarr[par.value]+"\n";
+                            out += "\tCALL s_check\n";
+                            //out += "\tDAD D\n"
+                            out += "\tPOP D\n"
+                            out += "\tMOV M,E\n"
+                            out += "\tINX H\n"
+                            out += "\tMOV M,D\n"
+                        }
     					//out+="\tSHLD v_"+par.value+"\n";
     				} else if (par.type=="var$") {
                         if (et!="str") croak("Cannot assign this to string variable",line)
@@ -673,15 +701,24 @@ var generator = function(basic, CFG) {
                             ENV.addUse("inputint")
                             ENV.addUse("s_check")
                             out+="\tCALL inputint\n"
-                            out+="\tPUSH H\n"
-                            out+=exprAsm(par.index,line,et);
-                            out += "\tLXI D,vai_"+par.value+"\n";
-                            out += "\tLXI B,"+ENV.intarr[par.value]+"\n";
-                            out += "\tCALL s_check\n";
-                            out += "\tPOP D\n"
-                            out += "\tMOV M,E\n"
-                            out += "\tINX H\n"
-                            out += "\tMOV M,D\n"                            
+                            if (par.index.type=="num") {
+                                //precompute
+                                if (par.index.value) {
+                                    out+="\tSHLD vai_"+par.value+"+"+(par.index.value*2)+"\n";
+                                } else {
+                                    out+="\tSHLD vai_"+par.value+"\n";
+                                }
+                            } else {
+                                out+="\tPUSH H\n"
+                                out+=exprAsm(par.index,line,et);
+                                out += "\tLXI D,vai_"+par.value+"\n";
+                                out += "\tLXI B,"+ENV.intarr[par.value]+"\n";
+                                out += "\tCALL s_check\n";
+                                out += "\tPOP D\n"
+                                out += "\tMOV M,E\n"
+                                out += "\tINX H\n"
+                                out += "\tMOV M,D\n"
+                            }
                             //consume remainder
                             //tokens.shift();
                             if (!tokens.length) break; //the last one
