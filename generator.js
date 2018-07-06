@@ -295,6 +295,13 @@ var generator = function(basic, CFG) {
         tokens.shift()
         return true;
     }
+    var isOp = function(op,token) {
+        if (!token) return false
+        if (token.type!="op") return false
+        if (token.value!=op) return false
+        tokens.shift()
+        return true;
+    }
 
     var out="";
     out+=";----CODE SEGMENT (ROMable)\n"
@@ -366,7 +373,61 @@ var generator = function(basic, CFG) {
     			case "let":
                     //par = tokens.shift();
                     var epar = expr(tokens,line)
-                    //console.log(epar)
+//                    console.log(epar)
+                    if (epar.type=="var") {
+                        //inc,dec
+                        if (!tokens.length) croak("LET should assign something",line)
+                        if(isOp("++",tokens[0])) {
+                            //INC short
+                            ENV.addVar(epar.value,"int")
+                            out+="\tLHLD v_"+epar.value+"\n"
+                            out+="\tINX H\n"
+                            out+="\tSHLD v_"+epar.value+"\n"
+                            tokens.shift();
+                            continue
+                        }
+                        if(isOp("--",tokens[0])) {
+                            //DEC short
+                            ENV.addVar(epar.value,"int")
+                            out+="\tLHLD v_"+epar.value+"\n"
+                            out+="\tDCX H\n"
+                            out+="\tSHLD v_"+epar.value+"\n"
+                            tokens.shift();
+                            continue
+                        }
+                        if(isOp("**",tokens[0])) {
+                            //*2 short
+                            ENV.addVar(epar.value,"int")
+                            out+="\tLHLD v_"+epar.value+"\n"
+                            out+="\tDAD H\n"
+                            out+="\tSHLD v_"+epar.value+"\n"
+                            tokens.shift();
+                            continue
+                        }
+                        if(isOp("+++",tokens[0])) {
+                            //INC short
+                            ENV.addVar(epar.value,"int")
+                            out+="\tLHLD v_"+epar.value+"\n"
+                            out+="\tINX H\n"
+                            out+="\tINX H\n"
+                            out+="\tSHLD v_"+epar.value+"\n"
+                            tokens.shift();
+                            continue
+                        }
+                        if(isOp("---",tokens[0])) {
+                            //DEC short
+                            ENV.addVar(epar.value,"int")
+                            out+="\tLHLD v_"+epar.value+"\n"
+                            out+="\tDCX H\n"
+                            out+="\tDCX H\n"
+                            out+="\tSHLD v_"+epar.value+"\n"
+                            tokens.shift();
+                            continue
+                        }
+                        console.log(tokens)
+                        croak("LET syntax mismatch",line)
+                    }
+                    if (epar.type!=="assign") croak("LET should assign",line)
                     par = epar.left
     				if (par.type!="var" && par.type!="var[]" && par.type!="var$") croak("No variable name",line)
 //                    next = tokens.shift();

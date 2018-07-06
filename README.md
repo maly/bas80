@@ -139,3 +139,16 @@ Returns the word value (two bytes) at given address
 ### int VAL (string)
 
 Returns the decimal value of string.
+
+
+## Operators
+
+=, <>, <, >, <=, >= as usual
+
+### Shorthands
+
+- var++ increment
+- var+++ var+=2
+- var-- decrement
+- var--- var-=2
+- var** var*=2
