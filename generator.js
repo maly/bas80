@@ -642,7 +642,7 @@ var generator = function(basic, CFG) {
                 case "input":
                     var hasstr = false;
                     while(tokens.length) {
-                        par = tokens[0]
+                        //par = tokens[0]
                         if (isPunc("#",tokens[0])) {
                             //channel swap
                             var chan = expr(tokens,line,true);
@@ -652,6 +652,9 @@ var generator = function(basic, CFG) {
                             if (!isPunc(",",tokens[0])) croak("Syntax error",line)
                             continue;
                         }
+                        var par = expr(tokens,line)
+                        //console.log(par,tokens)
+
                         if (par.type=="var") {
                             //good, lets input a number
                             ENV.addUse("inputint")
@@ -659,7 +662,28 @@ var generator = function(basic, CFG) {
                             ENV.addVar(par.value,"int")
                             out+="\tSHLD v_"+par.value+"\n";
                             //consume remainder
-                            tokens.shift();
+                            //tokens.shift();
+                            if (!tokens.length) break; //the last one
+                            if (!isPunc(",",tokens[0])) croak("Syntax error",line)
+                            continue;
+                        } else if (par.type=="var[]") {
+                            //good, lets input a number into an array
+                            if (!ENV.intarr[par.value])  croak("You have to DIM array first",line)
+                            if (par.index.type=="num" && par.index.value>=ENV.intarr[par.value]) croak("Index out of bound",line)
+                            ENV.addUse("inputint")
+                            ENV.addUse("s_check")
+                            out+="\tCALL inputint\n"
+                            out+="\tPUSH H\n"
+                            out+=exprAsm(par.index,line,et);
+                            out += "\tLXI D,vai_"+par.value+"\n";
+                            out += "\tLXI B,"+ENV.intarr[par.value]+"\n";
+                            out += "\tCALL s_check\n";
+                            out += "\tPOP D\n"
+                            out += "\tMOV M,E\n"
+                            out += "\tINX H\n"
+                            out += "\tMOV M,D\n"                            
+                            //consume remainder
+                            //tokens.shift();
                             if (!tokens.length) break; //the last one
                             if (!isPunc(",",tokens[0])) croak("Syntax error",line)
                             continue;
@@ -675,15 +699,15 @@ var generator = function(basic, CFG) {
                             //heap test
                             //out+="\tpush h\n\tlhld vs_"+par.value+"\n\tcall hp_test\n\tpop h\n"
                             out+="\tSHLD vs_"+par.value+"\n\tcall hp_assign\n";
-                            tokens.shift();
+                            //tokens.shift();
                             if (!tokens.length) break; //the last one
                             if (!isPunc(",",tokens[0])) croak("Syntax error",line)
                             tokens.shift();                            
                             continue;
                         }
 
-
-                        var ex = expr(tokens,line,true);
+                        var ex = par
+                        //var ex = expr(tokens,line,true);
                         var et = exprType(ex,line);
                         out+=exprAsm(ex,line,et);
                         ENV.addUse("print"+et)
