@@ -334,6 +334,16 @@ var LIB = {
         "\tdb 0ah,0dh\n"+
         "\t.cstr \"### MULT OVFL\",0dh,0ah\n"
     },
+    "erridx": {
+        uses:["printstr"],
+        code:
+        "\tlxi h,erridx_m\n"+
+        "\tcall printstr\n"+
+        "\tjmp errgo\n"+
+        "erridx_m:\n"+
+        "\tdb 0ah,0dh\n"+
+        "\t.cstr \"### INDEX OUT OF LIMITS\",0dh,0ah\n"
+    },
     "errdiv": {
         uses:["printstr"],
         code:
@@ -512,6 +522,21 @@ var LIB = {
         "    dad h\n"+
         "    dad d\n"+
         "    pop d\n"+
+        "    dad d\n"+
+        "    ret\n"
+    },  
+
+    "s_check": {
+        uses:["erridx"],
+        code: ""+
+        "    mov a,h\n"+
+        "    cmp b\n"+
+        "    jc s_c_g\n"+
+        "    mov a,l\n"+
+        "    cmp c\n"+
+        "    jnc erridx\n"+
+        "s_c_g:\n"+
+        "    dad h\n"+
         "    dad d\n"+
         "    ret\n"
     },  

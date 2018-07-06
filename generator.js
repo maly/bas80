@@ -139,16 +139,26 @@
             ENV.addVar(expr.value,"str")
             return "\tXCHG\n\tLHLD vs_"+expr.value+"\n\tXCHG\n"
         }
+        if (type=="var[]") {
+            if (!ENV.intarr[expr.value])  croak("You have to DIM array first",line)
+            if (expr.index.type=="num" && expr.index.value>=ENV.intarr[expr.value]) croak("Index out of bound",line)
+            ENV.addUse("s_check");
+        }
         if (type=="var[]" && !left) {
             var out = "\tPUSH D\n"+exprAsm(expr.index,line,"int")
-            out += "\tDAD H\n\tLXI D,vai_"+expr.value+"\n"
-            out += "\tDAD D\n\tMOV E,M\n\tINX H\n\tMOV D,M\n\tXCHG\n\tPOP D\n"
+            out += "\tLXI D,vai_"+expr.value+"\n"
+            out += "\tLXI B,"+ENV.intarr[expr.value]+"\n";
+            out += "\tCALL s_check\n";
+                out += "\tMOV E,M\n\tINX H\n\tMOV D,M\n\tXCHG\n\tPOP D\n"
             return out
         }
+
         if (type=="var[]" && left) {
             var out = "\tPUSH H\n"+exprAsm(expr.index,line,"int")
-            out += "\tDAD H\n\tLXI D,vai_"+expr.value+"\n"
-            out += "\tDAD D\n\tMOV E,M\n\tINX H\n\tMOV D,M\n\tPOP H\n"
+            out += "\tLXI D,vai_"+expr.value+"\n"
+            out += "\tLXI B,"+ENV.intarr[expr.value]+"\n";
+            out += "\tCALL s_check\n";
+            out += "\tMOV E,M\n\tINX H\n\tMOV D,M\n\tPOP H\n"
             return out
         }
         if (type=="binary") {
@@ -351,11 +361,14 @@ var generator = function(basic, CFG) {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         if (!ENV.intarr[par.value])  croak("You have to DIM array first",line)
                         if (par.index.type=="num" && par.index.value>=ENV.intarr[par.value]) croak("Index out of bound",line)
+                        ENV.addUse("s_check");
                         out += "\tPUSH H\n"
                         out+=exprAsm(par.index,line,et);
-                        out += "\tDAD H\n"
+                        //out += "\tDAD H\n"
                         out += "\tLXI D,vai_"+par.value+"\n";
-                        out += "\tDAD D\n"
+                        out += "\tLXI B,"+ENV.intarr[par.value]+"\n";
+                        out += "\tCALL s_check\n";
+                        //out += "\tDAD D\n"
                         out += "\tPOP D\n"
                         out += "\tMOV M,E\n"
                         out += "\tINX H\n"
