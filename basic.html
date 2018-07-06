@@ -27,6 +27,16 @@
 <script src="parsing.js"></script>
 <script src="generator.js"></script>
 <script>
+
+var CONFIG = {
+    "OMENALPHA": {
+        org:"8000h",
+        ramtop:"0f800h",
+        goback:"RST 0"
+    }
+}
+
+
 var compile = function(){
     var source = document.getElementById("source").value
 
@@ -38,7 +48,9 @@ var compile = function(){
 
     console.log(basic)
 
-    document.getElementById("out").value = (generator(basic))
+    var asm = generator(basic,CONFIG.OMENALPHA)
+
+    document.getElementById("out").value = (asm)
 }
 
 compile()

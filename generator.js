@@ -243,7 +243,7 @@ var ENV= {
     }
 };
 
-var generator = function(basic) {
+var generator = function(basic, CFG) {
 
     ENV.vars={}
     ENV.strs=[]
@@ -259,6 +259,7 @@ var generator = function(basic) {
     }
 
     var out="";
+    out+=";----CODE SEGMENT (ROMable)\n"
     var labels = labelIndex(basic);
     ENV.labels = labels;
     var loops=[];
@@ -657,19 +658,21 @@ var generator = function(basic) {
         out = "\tCALL HP_INIT\n" + out;
     }
 
-    out ="\tORG 8000h\n\t.ent $\n\n" + out; //zahlavi
+    out ="\tORG "+CFG.org+"\n\t.ent $\n\n" + out; //zahlavi
 
     //append
-    out+="ERRGO:\tRST 0\n"; //error handling poor man
+    out+="ERRGO:\t"+CFG.goback+"\n"; //error handling poor man
 
     //fndump
     out+=fnAsm();
 
 
     //strdump
+    out+=";----DATA SEGMENT\n"
     out+=strAsm();
 
     //vardump
+    out+=";----BSS SEGMENT\n"
     out+=varAsm();
 
     //append
@@ -678,7 +681,7 @@ var generator = function(basic) {
     }
 
 
-    out +="\n\nHEAP EQU $\nRAMTOP EQU 0F000h\nds RAMTOP-$\n\n"; //zapati
+    out +="\n\nHEAP EQU $\nRAMTOP EQU "+CFG.ramtop+"\nds RAMTOP-$\n\n"; //zapati
 
 
     return out;
