@@ -64,7 +64,7 @@ function InputStream(input) {
         return ",;#(){}[]".indexOf(ch) >= 0;
     }
     function is_whitespace(ch) {
-        return " \t\n".indexOf(ch) >= 0;
+        return " \t\n\r".indexOf(ch) >= 0;
     }
     function read_while(predicate) {
         var str = "";

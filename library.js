@@ -5,202 +5,202 @@ var LIB = {
         uses:["erroom"],
         code:
         ";heap management 1.1\n"+
-        "        HP_INIT:            \n"+
+        "\tHP_INIT:\n"+
         "\n"+
-        "        LXI     H,((RAMTOP-HEAP)&0xfffe)-4 \n"+
-        "        SHLD    HEAP \n"+
-        "        LXI     H,HEAP \n"+
-        "        CALL    hp_n \n"+
-        "        MVI     A,0FFh \n"+
-        "        MOV     m,a \n"+
-        "        INX     h \n"+
-        "        MOV     m,a \n"+
-        "        RET \n"+
-        "HP_F:       LXI     H,HEAP+1 \n"+
-        "HP_F2:              \n"+
-        "        MOV     d,m \n"+
-        "        DCX     h \n"+
-        "        MOV     e,m \n"+
-        "        MOV     A,E \n"+
-        "        ANI     01h ;0=empty,1=full\n"+
-        "        RET     \n"+
-        "HP_N:               \n"+
-        "        MOV     A,M \n"+
-        "        ANI     0FEh\n"+
-        "        MOV     E,A \n"+
-        "        INX     H \n"+
-        "        MOV     D,M \n"+
-        "        DCX     H \n"+
-        "        DAD     D \n"+
-        "        INX     H \n"+
-        "        INX     H \n"+
-        "        INX     H \n"+
-        "        JMP     HP_F2 \n"+
+        "\tLXI     H,((RAMTOP-HEAP)&0xfffe)-4 \n"+
+        "\tSHLD    HEAP \n"+
+        "\tLXI     H,HEAP \n"+
+        "\tCALL    hp_n \n"+
+        "\tMVI     A,0FFh \n"+
+        "\tMOV     m,a \n"+
+        "\tINX     h \n"+
+        "\tMOV     m,a \n"+
+        "\tRET \n"+
+        "HP_F: LXI     H,HEAP+1 \n"+
+        "HP_F2:\n"+
+        "\tMOV     d,m \n"+
+        "\tDCX     h \n"+
+        "\tMOV     e,m \n"+
+        "\tMOV     A,E \n"+
+        "\tANI     01h ;0=empty,1=full\n"+
+        "\tRET     \n"+
+        "HP_N:   \n"+
+        "\tMOV     A,M \n"+
+        "\tANI     0FEh\n"+
+        "\tMOV     E,A \n"+
+        "\tINX     H \n"+
+        "\tMOV     D,M \n"+
+        "\tDCX     H \n"+
+        "\tDAD     D \n"+
+        "\tINX     H \n"+
+        "\tINX     H \n"+
+        "\tINX     H \n"+
+        "\tJMP     HP_F2 \n"+
         "\n"+
         "HP_FE:\n"+
-        "        CALL    hp_f \n"+
-        "HP_FE2:             \n"+
-        "        RZ\n"+
-        "        MOV     a,d \n"+
-        "        ANA     e \n"+
-        "        INR     a \n"+
-        "        JZ      ERROOM \n"+
-        "HP_FEN:             \n"+
-        "        CALL    hp_n \n"+
-        "        JMP     hp_fe2 \n"+
+        "\tCALL    hp_f \n"+
+        "HP_FE2: \n"+
+        "\tRZ\n"+
+        "\tMOV     a,d \n"+
+        "\tANA     e \n"+
+        "\tINR     a \n"+
+        "\tJZ      ERROOM \n"+
+        "HP_FEN: \n"+
+        "\tCALL    hp_n \n"+
+        "\tJMP     hp_fe2 \n"+
         "HP_FREE:\n"+
-        "        MOV     a,m \n"+
-        "        ANI     0feh \n"+
-        "        MOV     m,a \n"+
+        "\tMOV     a,m \n"+
+        "\tANI     0feh \n"+
+        "\tMOV     m,a \n"+
 //        "HP_FRE2:    CALL    hp_join \n"+
-//        "        JNZ     hp_fre2 \n"+
-        "        RET     \n"+
-        "HP_JOIN:            \n"+
-        "        CALL    hp_fe \n"+
-        "HP_J0:              \n"+
-        "        PUSH    h \n"+
-        "        CALL    hp_n \n"+
-        "        JZ      hp_j \n"+
-        "        MOV     a,e \n"+
-        "        ANA     d \n"+
-        "        INR     a \n"+
-        "        POP     d \n"+
-        "        RZ      \n"+
-        "        CALL    hp_fe2 \n"+
-        "        JMP     hp_j0 \n"+
-        "HP_J:               \n"+
-        "        POP     h \n"+
-        "        MOV     a,e \n"+
-        "        ADD     m \n"+
-        "        MOV     e,a \n"+
-        "        INX     h \n"+
-        "        MOV     a,d \n"+
-        "        ADC     m \n"+
-        "        MOV     d,a \n"+
-        "        INX     d \n"+
-        "        INX     d \n"+
-        "        MOV     m,d \n"+
-        "        DCX     h \n"+
-        "        MOV     m,e \n"+
-        "        ORI     1 ; Z=0\n"+
-        "        RET     \n"+
+//        "\tJNZ     hp_fre2 \n"+
+        "\tRET     \n"+
+        "HP_JOIN:\n"+
+        "\tCALL    hp_fe \n"+
+        "HP_J0:  \n"+
+        "\tPUSH    h \n"+
+        "\tCALL    hp_n \n"+
+        "\tJZ      hp_j \n"+
+        "\tMOV     a,e \n"+
+        "\tANA     d \n"+
+        "\tINR     a \n"+
+        "\tPOP     d \n"+
+        "\tRZ      \n"+
+        "\tCALL    hp_fe2 \n"+
+        "\tJMP     hp_j0 \n"+
+        "HP_J:   \n"+
+        "\tPOP     h \n"+
+        "\tMOV     a,e \n"+
+        "\tADD     m \n"+
+        "\tMOV     e,a \n"+
+        "\tINX     h \n"+
+        "\tMOV     a,d \n"+
+        "\tADC     m \n"+
+        "\tMOV     d,a \n"+
+        "\tINX     d \n"+
+        "\tINX     d \n"+
+        "\tMOV     m,d \n"+
+        "\tDCX     h \n"+
+        "\tMOV     m,e \n"+
+        "\tORI     1 ; Z=0\n"+
+        "\tRET     \n"+
         "HP_A:\n"+
-        "        INX     b \n"+
-        "        MOV     a,c \n"+
-        "        RRC     \n"+
-        "        JNC     hp_aeven \n"+
-        "        INX     b \n"+
+        "\tINX     b \n"+
+        "\tMOV     a,c \n"+
+        "\tRRC     \n"+
+        "\tJNC     hp_aeven \n"+
+        "\tINX     b \n"+
         "HP_AEVEN:           \n"+
-        "        CALL    hp_fe \n"+
-        "HP_ALOP:            \n"+
-        "        MOV     a,d \n"+
-        "        CMP     b \n"+
-        "        JC      hp_alow \n"+
-        "        ;JNZ     hp_amore \n"+
-        "        MOV     a,e \n"+
-        "        CMP     c \n"+
-        "        jz hp_aexact\n"+
-        "        ;porovnat, jestli zbývá alespoň n+6\n"+
-        "        push b\n"+
-        "        inx b\n"+
-        "        inx b\n"+
-        "        inx b\n"+
-        "        inx b\n"+
-        "        inx b\n"+
-        "        inx b\n"+
-        "		mov a,d\n"+
-        "		cmp b\n"+
-        "		jc hp_alow6        \n"+
-        "        jnz hp_amore6\n"+
-        "        mov a,e\n"+
-        "        cmp c\n"+
-        "        jnc hp_amore6\n"+
+        "\tCALL    hp_fe \n"+
+        "HP_ALOP:\n"+
+        "\tMOV     a,d \n"+
+        "\tCMP     b \n"+
+        "\tJC      hp_alow \n"+
+        "\t;JNZ     hp_amore \n"+
+        "\tMOV     a,e \n"+
+        "\tCMP     c \n"+
+        "\tjz hp_aexact\n"+
+        "\t;porovnat, jestli zbývá alespoň n+6\n"+
+        "\tpush b\n"+
+        "\tinx b\n"+
+        "\tinx b\n"+
+        "\tinx b\n"+
+        "\tinx b\n"+
+        "\tinx b\n"+
+        "\tinx b\n"+
+        "\tmov a,d\n"+
+        "\tcmp b\n"+
+        "\tjc hp_alow6        \n"+
+        "\tjnz hp_amore6\n"+
+        "\tmov a,e\n"+
+        "\tcmp c\n"+
+        "\tjnc hp_amore6\n"+
         "hp_alow6:\n"+
-        "		pop b\n"+
+        "\tpop b\n"+
         "HP_ALOW:\n"+
-        "        CALL    hp_fen \n"+
-        "        JMP     hp_alop \n"+
+        "\tCALL    hp_fen \n"+
+        "\tJMP     hp_alop \n"+
         "hp_amore6:\n"+
-        "		pop b\n"+
+        "\tpop b\n"+
         "HP_AMORE:           \n"+
-        "        MOV     a,e \n"+
-        "        SUB     c \n"+
-        "        MOV     e,a \n"+
-        "        MOV     a,d \n"+
-        "        SBB     b \n"+
-        "        MOV     d,a \n"+
-        "        DCX     d \n"+
-        "        DCX     d \n"+
-        "        PUSH    h \n"+
-        "        DAD     b\n"+
-        "        INX     h \n"+
-        "        INX     h \n"+
-        "        MOV     m,e \n"+
-        "        INX     h \n"+
-        "        MOV     m,d \n"+
-        "        POP     h \n"+
+        "\tMOV     a,e \n"+
+        "\tSUB     c \n"+
+        "\tMOV     e,a \n"+
+        "\tMOV     a,d \n"+
+        "\tSBB     b \n"+
+        "\tMOV     d,a \n"+
+        "\tDCX     d \n"+
+        "\tDCX     d \n"+
+        "\tPUSH    h \n"+
+        "\tDAD     b\n"+
+        "\tINX     h \n"+
+        "\tINX     h \n"+
+        "\tMOV     m,e \n"+
+        "\tINX     h \n"+
+        "\tMOV     m,d \n"+
+        "\tPOP     h \n"+
         "hp_aexact:\n"+
-        "        INX     b \n"+
-        "        MOV     m,c \n"+
-        "        INX     h \n"+
-        "        MOV     m,b \n"+
-        "        INX     h\n"+
-        "        MVI     m,0aah \n"+
-        "        INX     h\n"+
-        "        RET     \n"+
+        "\tINX     b \n"+
+        "\tMOV     m,c \n"+
+        "\tINX     h \n"+
+        "\tMOV     m,b \n"+
+        "\tINX     h\n"+
+        "\tMVI     m,0aah \n"+
+        "\tINX     h\n"+
+        "\tRET     \n"+
         "hp_test:\n"+
-        "        push d\n"+
-        "        lxi d,HEAP\n"+
-        "        mov a,h\n"+
-        "        cmp d\n"+
-        "        jc hp_noheap\n"+
-        "        jnz hp_noheap\n"+
-        "        mov a,l\n"+
-        "        cmp e\n"+
+        "\tpush d\n"+
+        "\tlxi d,HEAP\n"+
+        "\tmov a,h\n"+
+        "\tcmp d\n"+
+        "\tjc hp_noheap\n"+
+        "\tjnz hp_noheap\n"+
+        "\tmov a,l\n"+
+        "\tcmp e\n"+
         "hp_noheap: \n"+
-        "        pop d\n"+
-        "        ret        \n"+
+        "\tpop d\n"+
+        "\tret        \n"+
         "hp_unass: \n"+
-        "        call hp_test\n"+
-        "        rc\n"+
-        "        dcx h\n"+
-        "        MVI     m,0aah \n"+
-        "        INX     h\n"+
-        "        ret        \n"+
+        "\tcall hp_test\n"+
+        "\trc\n"+
+        "\tdcx h\n"+
+        "\tMVI     m,0aah \n"+
+        "\tINX     h\n"+
+        "\tret        \n"+
         "hp_assign: \n"+
-        "        call hp_test\n"+
-        "        rc\n"+
-        "        dcx h\n"+
-        "        MVI     m,055h \n"+
-        "        INX     h\n"+
-        "        ret        \n"+
+        "\tcall hp_test\n"+
+        "\trc\n"+
+        "\tdcx h\n"+
+        "\tMVI     m,055h \n"+
+        "\tINX     h\n"+
+        "\tret        \n"+
         "hp_gc:\n"+
-        "        CALL    hp_f \n"+
-        "HP_gc1:             \n"+
-        "        JZ hp_gcn\n"+
+        "\tCALL    hp_f \n"+
+        "HP_gc1: \n"+
+        "\tJZ hp_gcn\n"+
         "hp_gc2:        \n"+
-        "        MOV     a,d \n"+
-        "        ANA     e \n"+
-        "        INR     a \n"+
-        "        JZ hp_gcf\n"+
-        "        inx h\n"+
-        "        inx h\n"+
-        "        mov a,m\n"+
-        "        dcx h\n"+
-        "        dcx h\n"+
-        "        cpi 0aah ;unassigned\n"+
-        "        jnz hp_gcn\n"+
-        "        push h\n"+
-        "        call hp_free\n"+
-        "        pop h\n"+
-        "HP_gcN:             \n"+
-        "        CALL    hp_n \n"+
-        "        JMP     hp_gc2 	\n"+
-        "        \n"+
+        "\tMOV     a,d \n"+
+        "\tANA     e \n"+
+        "\tINR     a \n"+
+        "\tJZ hp_gcf\n"+
+        "\tinx h\n"+
+        "\tinx h\n"+
+        "\tmov a,m\n"+
+        "\tdcx h\n"+
+        "\tdcx h\n"+
+        "\tcpi 0aah ;unassigned\n"+
+        "\tjnz hp_gcn\n"+
+        "\tpush h\n"+
+        "\tcall hp_free\n"+
+        "\tpop h\n"+
+        "HP_gcN: \n"+
+        "\tCALL    hp_n \n"+
+        "\tJMP     hp_gc2 	\n"+
+        "\t\n"+
         "HP_gcf:    CALL    hp_join \n"+
-        "        JNZ     hp_gcf\n"+
-        "        ret        \n"+
-        "HP_DONE:            \n"
+        "\tJNZ     hp_gcf\n"+
+        "\tret        \n"+
+        "HP_DONE:\n"
 
     },
     "printstr": {

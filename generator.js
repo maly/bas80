@@ -106,7 +106,7 @@
     }
 
     var fnAsm = function() {
-        out = "";
+        var out = "";
         var fname;
         while(fname = ENV.uses.shift()) {
             var fn = LIB[fname]
@@ -218,15 +218,15 @@
                 return out
             }
             if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="-") {
-                out = exprAsm(expr.left,line,etype,)+"\tDCX H\n"
+                out = exprAsm(expr.left,line,etype)+"\tDCX H\n"
                 return out
             }
             if (expr.right.type=="num" && expr.right.value==2 && expr.operator=="*") {
-                out = exprAsm(expr.left,line,etype,)+"\tDAD H\n"
+                out = exprAsm(expr.left,line,etype)+"\tDAD H\n"
                 return out
             }
             if (expr.right.type=="num" && expr.right.value==4 && expr.operator=="*") {
-                out = exprAsm(expr.left,line,etype,)+"\tDAD H\n\tDAD H\n"
+                out = exprAsm(expr.left,line,etype)+"\tDAD H\n\tDAD H\n"
                 return out
             }
 
