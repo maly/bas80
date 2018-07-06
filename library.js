@@ -559,7 +559,7 @@ var LIB = {
         "\tJC dofalse\n"+
         "\tJNZ dotrue\n"+
         "\tMOV A,E\n"+
-        "\tCMP D\n"+
+        "\tCMP L\n"+
         "\tJZ dofalse\n"+
         "\tJC dofalse\n"+
         "\tJMP dotrue\n"
@@ -572,7 +572,7 @@ var LIB = {
         "\tJC dotrue\n"+
         "\tJNZ dofalse\n"+
         "\tMOV A,E\n"+
-        "\tCMP D\n"+
+        "\tCMP L\n"+
         "\tJZ dotrue\n"+
         "\tJC dotrue\n"+
         "\tJMP dofalse\n"
