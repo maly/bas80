@@ -349,7 +349,7 @@ var generator = function(basic) {
     				} else if (par.type=="var[]") {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         if (!ENV.intarr[par.value])  croak("You have to DIM array first",line)
-                        //ENV.addArrInt(par.value,)
+                        if (par.index.type=="num" && par.index.value>=ENV.intarr[par.value]) croak("Index out of bound",line)
                         out += "\tPUSH H\n"
                         out+=exprAsm(par.index,line,et);
                         out += "\tDAD H\n"
