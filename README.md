@@ -106,6 +106,22 @@ Store one byte to given address
 
 Store two bytes to given address
 
+### DIM var(length)
+
+Prepare an array of int. Arrays are indexed from 0, so DIM A(10) prepares an array with 10 items, denotes as A(0) .. A(9)
+
+DIM should appears in the source code prior to the first using of array! Not in program flow, so this won't work:
+``` 
+10 GOTO 50
+20 A(5) = 5
+...
+50 DIM A(10)
+60 GOTO 20
+```
+You have to place DIM at the top of code. DIM does nothing in code, it just inform the compiler about the array limits.
+
+Array length has to be a constant, so no computed DIMs allowed!
+
 ## FUNCTIONS
 
 ### int ABS (int)
