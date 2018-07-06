@@ -1,0 +1,16 @@
+{
+
+	"./monolith.js": {
+		"files":
+		[
+			{"file":"./monolith-prefix.js", "minify":false},
+			{"file":"./library.js", "minify":true},
+			{"file":"./lex.js", "minify":true},
+			{"file":"./parsing.js", "minify":true},
+			{"file":"./generator.js", "minify":true},
+			{"file":"./monolith-postfix.js", "minify":false}
+		]
+	}
+
+}
+
