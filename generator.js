@@ -267,6 +267,23 @@ var generator = function(basic, CFG) {
             return CFG.xp.fn(expr,line,ENV,exprAsm, LIB);
         }
         if (type=="fn" && left) {
+
+            if (expr.value == "fn") {
+                var call = expr.operands[0]
+                //console.log(call.value,ENV.labels)
+                var target = findLabel(call.value,ENV.labels);
+                if (target===null) croak("Target line not found",line)
+                var out = "\tPUSH H\n";
+                out += exprAsm(expr.operands[1],line,"int")
+                if(expr.operands.length==3) {
+                    out += exprAsm(expr.operands[2],line,"int",true)
+                }
+                out+=CFG.asm.docall("CMD"+target)
+                out += "\tPOP D\n\tXCHG\n";
+                return out;
+
+            }
+
             return CFG.xp.fnL(expr,line,ENV,exprAsm, LIB);
         }
         croak("Cannot evaluate "+JSON.stringify(expr),line)
