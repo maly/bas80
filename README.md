@@ -10,6 +10,7 @@ Version 0 - early alpha. Use on your own risk.
 - You can omit the line number, if it is not necessary
 - The output is compatible with ASM80 syntax
 - Case insensitive (you can write PRINT as well as print or Print)
+- label can be an integer ("line number") or string (ended with a colon, e.g. `hello:`)
 
 ## Limitations:
 
