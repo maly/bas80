@@ -348,24 +348,6 @@ var LIB = {
     },
 
     //SYSTEM
-    "serout": {
-        uses:null,
-        sysdb:["prtchan"],
-        code: ""+
-        "\tRST 1\n"+
-        "\tRET\n"
-    },
-    "serin": {
-        uses:["serout"],
-        sysdb:["prtchan"],
-        code: "\tIN 0deh ;acias\n"+
-        "\tani 1\n"+
-        "\trz\n"+
-        "\tin 0dfh ;aciad\n"+
-        "\tcall serout\n"+
-        "\tora a\n"+
-        "\tRET\n"
-    },
     "mul16": {
         uses:null,
         code: 

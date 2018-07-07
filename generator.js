@@ -175,6 +175,12 @@ var generator = function(basic, CFG) {
     ENV.strs=[]
     ENV.uses=[]
 
+    //library uses some system routines
+    //so copy them there
+    for (var k in CFG.system) {
+        LIB[k]=CFG.system[k]
+    }
+
     //CFG.ENV = ENV
     var exprAsm = function(expr,line,etype,left) {
 
@@ -290,23 +296,23 @@ var generator = function(basic, CFG) {
                     par = tokens[0];
                     var target = findLabel(par.value,labels);
                     if (target===null) croak("Target line not found",line)
-    				out+="\tJMP CMD"+target+"\n";
+                    out+=CFG.asm.jmp("CMD"+target);
     				continue;
                 case "gosub":
     				par = tokens[0];
                     var target = findLabel(par.value,labels);
                     if (target===null) croak("Target line not found",line)
-    				out+="\tCALL CMD"+target+"\n";
+                    out+=CFG.asm.call("CMD"+target);
     				continue;
                 case "return":
-    				out+="\tRET\n";
+    				out+=CFG.asm.ret();
     				continue;
                 case "end":
-                    out+="\tRST 0\n";
+                    out+=CFG.asm.end();
                     continue;
                 case "stop":
                     ENV.addUse("errstop");
-    				out+="\tJMP ERRSTOP\n";
+                    out+=CFG.asm.jmp("ERRSTOP");
     				continue;
                 case "repeat":
                     //out+="RP"+i+":\n";
@@ -316,17 +322,20 @@ var generator = function(basic, CFG) {
                     if (!loops.length) croak("ENDWHILE without WHILE",line)
                     if (loops[0][1]!="W") croak("WHILE / ENDWHILE mismatched",line)
                     //loops.unshift(["CMD"+i,"R"]);
-    				out+="\tJMP "+loops[0][0]+"\n";
+                    //out+="\tJMP "+loops[0][0]+"\n";
+                    out+=CFG.asm.jmp(loops[0][0]);
                     out+="WB"+loops[0][0]+":\n"
                     loops.shift()                    
                     continue;
                 case "break":
                     if (!loops.length) croak("BREAK outside the loop",line);
-                    out+="\tJMP "+loops[0][1]+"B"+loops[0][0]+"\n"
+                    out+=CFG.asm.jmp(loops[0][1]+"B"+loops[0][0]);
+                    //out+="\tJMP "+loops[0][1]+"B"+loops[0][0]+"\n"
                     continue;                    
                 case "continue":
                     if (!loops.length) croak("CONTINUE outside the loop",line);
-                    out+="\tJMP "+loops[0][1]+"C"+loops[0][0]+"\n"
+                    out+=CFG.asm.jmp(loops[0][1]+"C"+loops[0][0]);
+                    //out+="\tJMP "+loops[0][1]+"C"+loops[0][0]+"\n"
                     continue;      
                 case "dim":
                     var epar = expr(tokens,line)
@@ -345,72 +354,56 @@ var generator = function(basic, CFG) {
                         if(isOp("++",tokens[0])) {
                             //INC short
                             ENV.addVar(epar.value,"int")
-                            out+="\tLHLD v_"+epar.value+"\n"
-                            out+="\tINX H\n"
-                            out+="\tSHLD v_"+epar.value+"\n"
+                            out+=CFG.asm.varplus1(epar.value)
                             tokens.shift();
                             continue
                         }
                         if(isOp("--",tokens[0])) {
                             //DEC short
                             ENV.addVar(epar.value,"int")
-                            out+="\tLHLD v_"+epar.value+"\n"
-                            out+="\tDCX H\n"
-                            out+="\tSHLD v_"+epar.value+"\n"
+                            out+=CFG.asm.varminus1(epar.value)
                             tokens.shift();
                             continue
                         }
                         if(isOp("**",tokens[0])) {
                             //*2 short
                             ENV.addVar(epar.value,"int")
-                            out+="\tLHLD v_"+epar.value+"\n"
-                            out+="\tDAD H\n"
-                            out+="\tSHLD v_"+epar.value+"\n"
+                            out+=CFG.asm.vartimes2(epar.value)
                             tokens.shift();
                             continue
                         }
                         if(isOp("+++",tokens[0])) {
                             //INC short
                             ENV.addVar(epar.value,"int")
-                            out+="\tLHLD v_"+epar.value+"\n"
-                            out+="\tINX H\n"
-                            out+="\tINX H\n"
-                            out+="\tSHLD v_"+epar.value+"\n"
+                            out+=CFG.asm.varplus2(epar.value)
                             tokens.shift();
                             continue
                         }
                         if(isOp("---",tokens[0])) {
                             //DEC short
                             ENV.addVar(epar.value,"int")
-                            out+="\tLHLD v_"+epar.value+"\n"
-                            out+="\tDCX H\n"
-                            out+="\tDCX H\n"
-                            out+="\tSHLD v_"+epar.value+"\n"
+                            out+=CFG.asm.varminus2(epar.value)
                             tokens.shift();
                             continue
                         }
-                        console.log(tokens)
+                        //console.log(tokens)
                         croak("LET syntax mismatch",line)
                     }
                     if (epar.type!=="assign") croak("LET should assign",line)
                     par = epar.left
     				if (par.type!="var" && par.type!="var[]" && par.type!="var$") croak("No variable name",line)
-//                    next = tokens.shift();
-//                    if (next.type!="op" || next.value!="=") croak("LET without an assignment",line)
                     if (par.type=="var$") {
                         ENV.addVar(par.value,"str")
                         ENV.addUse("__heap")
-                        out+="\tlhld vs_"+par.value+"\n\tcall hp_unass\n"
-
+                        out+=CFG.asm.strUnassign(epar.value)
                     }
-//                    var ex = expr(tokens,line);
                     var ex = epar.right
                     var et = exprType(ex,line);
     				out+=exprAsm(ex,line,et);
     				if (par.type=="var") {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         ENV.addVar(par.value,"int")
-    					out+="\tSHLD v_"+par.value+"\n";
+                        out+=CFG.asm.storeInt(par.value)
     				} else if (par.type=="var[]") {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         if (!ENV.intarr[par.value])  croak("You have to DIM array first",line)
@@ -418,43 +411,27 @@ var generator = function(basic, CFG) {
                         
                         if (par.index.type=="num") {
                             //precompute
-                            if (par.index.value) {
-                                out+="\tSHLD vai_"+par.value+"+"+(par.index.value*2)+"\n";
-                            } else {
-                                out+="\tSHLD vai_"+par.value+"\n";
-                            }
+                            out+=CFG.asm.storeAI(par.value,par.index.value)
                         } else {
-                            ENV.addUse("s_check");
-                            out += "\tPUSH H\n"
-                            out+=exprAsm(par.index,line,et);
-                            //out += "\tDAD H\n"
-                            out += "\tLXI D,vai_"+par.value+"\n";
-                            out += "\tLXI B,"+ENV.intarr[par.value]+"\n";
-                            out += "\tCALL s_check\n";
-                            //out += "\tDAD D\n"
-                            out += "\tPOP D\n"
-                            out += "\tMOV M,E\n"
-                            out += "\tINX H\n"
-                            out += "\tMOV M,D\n"
+                            out += CFG.asm.storeA(par,line,et,ENV,exprAsm);
                         }
-    					//out+="\tSHLD v_"+par.value+"\n";
     				} else if (par.type=="var$") {
                         if (et!="str") croak("Cannot assign this to string variable",line)
-                        //heap test - old one
-                        //out+="\tpush h\n\tlhld vs_"+par.value+"\n\tcall hp_test\n\tpop h\n"
-                        out+="\tSHLD vs_"+par.value+"\n\tcall hp_assign\n";
-                        out+="\tcall hp_gc\n"; //poor man optimalization - garbage on LET
+                        out+=CFG.asm.storeStr(par.value)
     				}
                     continue;
                 case "poke":
+                    //addr
                     var ex = expr(tokens,line);
                     var et = exprType(ex,line);
-                    next = tokens.shift();
-                    if (next.type!="punc" || next.value!=",") croak("Syntax error",line)
+                    if (!isPunc(",",tokens[0])) croak("Syntax error",line)
+                    //value
                     var ex2 = expr(tokens,line);
                     var et2 = exprType(ex2,line);
+                    out+=CFG.asm.poke(ex,et,ex2,et2,exprAsm,line)
+                    /*
                     if (ex2.type!="num") {
-                        out+=exprAsm(ex2,line,et2);  
+                        out+=exprAsm(ex2,line,et2);  //value is not a constant
                         out+="\tpush h\n"
                     }
                     out+=exprAsm(ex,line,et);  
@@ -464,29 +441,15 @@ var generator = function(basic, CFG) {
                     } else {
                         out+="\tmvi m,"+(ex2.value % 256)+"\n"
                     }
+                    */
                     continue
                 case "dpoke":
                     var ex = expr(tokens,line);
                     var et = exprType(ex,line);
-                    next = tokens.shift();
-                    if (next.type!="punc" || next.value!=",") croak("Syntax error",line)
+                    if (!isPunc(",",tokens[0])) croak("Syntax error",line)
                     var ex2 = expr(tokens,line);
                     var et2 = exprType(ex2,line);
-                    if (ex2.type!="num") {
-                        out+=exprAsm(ex2,line,et2);  
-                        out+="\tpush h\n"
-                    }
-                    out+=exprAsm(ex,line,et);  
-                    if (ex2.type!="num") {
-                        out+="\tpop d\n"
-                        out+="\tmov m,e\n"
-                        out+="\tinx h\n"
-                        out+="\tmov m,d\n"
-                    } else {
-                        out+="\tmvi m,"+(ex2.value % 256)+"\n"
-                        out+="\tinx h\n"
-                        out+="\tmvi m,"+(ex2.value >> 8)+"\n"
-                    }
+                    out+=CFG.asm.dpoke(ex,et,ex2,et2,exprAsm,line)
                     continue
 
                 
@@ -510,7 +473,8 @@ var generator = function(basic, CFG) {
                     } else {
                         //step counted
                         out+=exprAsm(ex,line,et);  
-                        out+="\tSHLD sv_forL"+i+"\n"; 
+                        out+=CFG.asm.storeAnyInt("sv_forL"+i)
+                        //out+="\tSHLD sv_forL"+i+"\n"; 
                         ENV.addVar("forL"+i,"sysdw")
                     }
 
@@ -528,7 +492,8 @@ var generator = function(basic, CFG) {
                         } else {
                             //step counted
                             out+=exprAsm(ex,line,et);  
-                            out+="\tSHLD sv_forS"+i+"\n"; 
+                            out+=CFG.asm.storeAnyInt("sv_forS"+i)
+                            //out+="\tSHLD sv_forS"+i+"\n"; 
                             ENV.addVar("forS"+i,"sysdw")
                             step="ex"
                         }
@@ -537,9 +502,11 @@ var generator = function(basic, CFG) {
                     //Initial value defined here
                     out+=exprAsm(exi,line,eti);  
                     ENV.addVar(par.value,"int")
-                    out+="\tSHLD v_"+par.value+"\n";                        
+                    out+=CFG.asm.storeInt(par.value)
+                    //out+="\tSHLD v_"+par.value+"\n";                        
 
-                    out+="\tJMP FTCMD"+i+"\n"; 
+                    //out+="\tJMP FTCMD"+i+"\n"; 
+                    out+=CFG.asm.jmp("FTCMD"+i);
                     out+="FLCMD"+i+":\n"; 
                                                       
                     loops.unshift(["CMD"+i,"F",i,par.value,step,limit]);
@@ -551,7 +518,10 @@ var generator = function(basic, CFG) {
                     if (par.type!="var") croak("No usable variable name",line)
                     if (par.value!=loops[0][3]) croak("FOR / NEXT variable mismatch",line)
                     out+="FC"+loops[0][0]+":\n"
-                    out+="\tLHLD v_"+par.value+"\n"
+                    out+=CFG.xp.var(par.value)
+                    //out+="\tLHLD v_"+par.value+"\n"
+                    out+=CFG.asm._forstep(loops);
+                    /*
                     var step = loops[0][4];
                     if (step=="ex") {
                         out+="\tXCHG\n"
@@ -563,9 +533,13 @@ var generator = function(basic, CFG) {
                         out+="\tLXI D,"+step+"\n"
                         out+="\tDAD D\n"
                     }
-                    out+="\tSHLD v_"+par.value+"\n"
+                    */
+                    out+=CFG.asm.storeInt(par.value)
+                    //out+="\tSHLD v_"+par.value+"\n"
                     
                     out+="FT"+loops[0][0]+":\n" //test
+                    out+=CFG.asm._fortest(loops);
+                    /*
                     var limit = loops[0][5];
                     if (limit=="ex") {
                         out+="\tXCHG\n"
@@ -579,6 +553,8 @@ var generator = function(basic, CFG) {
                     out+="\tMOV A,H\n"
                     out+="\tCMP D\n"
                     out+="\tJNZ FLCMD"+loops[0][2]+"\n"
+                    */
+
                     out+="FB"+loops[0][0]+":\n"
 
                     loops.shift()
@@ -588,8 +564,9 @@ var generator = function(basic, CFG) {
                     var et = exprType(ex,line);
     				skipMark(i,basic)
 					out+=exprAsm(ex,line,et);
-    				out+="\tMOV A,H\n\tORA L\n";
-    				out+="\tJZ SKIP"+i+"\n";
+                    out+=CFG.asm.jmpEx0("SKIP"+i);
+                    //out+="\tMOV A,H\n\tORA L\n";
+    				//out+="\tJZ SKIP"+i+"\n";
     				continue;
 
                 case "until":
@@ -597,9 +574,10 @@ var generator = function(basic, CFG) {
                     if (loops[0][1]!="R") croak("UNTIL / REPEAT mismatched",line)
                     var ex = expr(tokens,line,true);
                     out+="RC"+loops[0][0]+":\n"
-					out+=exprAsm(ex,line);
-    				out+="\tMOV A,H\n\tORA L\n";
-    				out+="\tJZ "+loops[0][0]+"\n";
+                    out+=exprAsm(ex,line);
+                    out+=CFG.asm.jmpEx0(loops[0][0]);
+    				//out+="\tMOV A,H\n\tORA L\n";
+    				//out+="\tJZ "+loops[0][0]+"\n";
                     out+="RB"+loops[0][0]+":\n"
                     loops.shift()
     				continue;
@@ -608,9 +586,10 @@ var generator = function(basic, CFG) {
                     loops.unshift(["CMD"+i,"W"])
                     var ex = expr(tokens,line,true);
                     out+="WC"+loops[0][0]+":\n"
-					out+=exprAsm(ex,line);
-    				out+="\tMOV A,H\n\tORA L\n";
-    				out+="\tJZ WB"+loops[0][0]+"\n";
+                    out+=exprAsm(ex,line);
+                    out+=CFG.asm.jmpEx0("WB"+loops[0][0]);
+    				//out+="\tMOV A,H\n\tORA L\n";
+    				//out+="\tJZ WB"+loops[0][0]+"\n";
     				continue;
                     
 

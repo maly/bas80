@@ -162,6 +162,184 @@ var CONFIG = {
                 return this.binary(expr,line,etype,ENV,exprAsm,LIB) + "\tXCHG\n"
             }
 
+        },
+        system: {
+            "serout": {
+                uses:null,
+                sysdb:["prtchan"],
+                code: "PUSH PSW"+
+                "so_wait: IN 0deh ;acias\n"+
+                "\tani 2\n"+
+                "\tjz so_wait\n"+
+                "\tpop psw ;aciad\n"+
+                "\tout 0dfh\n"+
+                "\tRET\n"
+            },
+            "serin": {
+                uses:["serout"],
+                sysdb:["prtchan","inpchan"],
+                code: "\tIN 0deh ;acias\n"+
+                "\tani 1\n"+
+                "\trz\n"+
+                "\tin 0dfh ;aciad\n"+
+                "\tcall serout\n"+
+                "\tora a\n"+
+                "\tRET\n"
+            }
+        },
+        asm:{
+            jmp: function(target) {
+                return "\tJMP "+target+"\n"
+            },
+            jmpNZ: function(target) {
+                return "\tJNZ "+target+"\n"
+            },
+            jmpZ: function(target) {
+                return "\tJZ "+target+"\n"
+            },
+            jmpEx0: function(target) {
+                return "\tMOV A,H\n\tORA L\n\tJZ "+target+"\n"
+            },
+            call: function(target) {
+                return "\tCALL "+target+"\n"
+            },
+            ret: function() {
+                return "\tRET\n"
+            },
+            end: function() {
+                return "\tRST 0\n"
+            },
+            varplus1: function(name) {
+                return "\tLHLD v_"+name+"\n\tINX H\n\tSHLD v_"+name+"\n"
+            },
+            varminus1: function(name) {
+                return "\tLHLD v_"+name+"\n\tDCX H\n\tSHLD v_"+name+"\n"
+            },
+            varplus2: function(name) {
+                return "\tLHLD v_"+name+"\n\tINX H\n\tINX H\n\tSHLD v_"+name+"\n"
+            },
+            varminus2: function(name) {
+                return "\tLHLD v_"+name+"\n\tDCX H\n\tDCX H\n\tSHLD v_"+name+"\n"
+            },
+            vartimes2: function(name) {
+                return "\tLHLD v_"+name+"\n\tDAD H\n\tSHLD v_"+name+"\n"
+            },
+
+            storeInt: function(name) {
+                return "\tSHLD v_"+name+"\n"
+            },
+            storeStr: function(name) {
+                return "\tSHLD vs_"+name+"\n\tCALL hp_assign\n\tcall hp_gc\n"
+            },
+            storeA: function(par,line,et, ENV, exprAsm) {
+                var out="";
+                ENV.addUse("s_check");
+                out += "\tPUSH H\n"
+                out+=exprAsm(par.index,line,et);
+                //out += "\tDAD H\n"
+                out += "\tLXI D,vai_"+par.value+"\n";
+                out += "\tLXI B,"+ENV.intarr[par.value]+"\n";
+                out += "\tCALL s_check\n";
+                //out += "\tDAD D\n"
+                out += "\tPOP D\n"
+                out += "\tMOV M,E\n"
+                out += "\tINX H\n"
+                out += "\tMOV M,D\n"
+                return out;
+            },
+
+            storeAI: function(name,index) {
+                if (index) {
+                    return "\tSHLD vai_"+name+"+"+(index*2)+"\n";
+                } else {
+                    return "\tSHLD vai_"+name+"\n";
+                }
+            },
+            storeAnyInt: function(name) {
+                return "\tSHLD "+name+"\n"
+            },
+
+            poke: function(addr,addrT,value,valueT,exprAsm,line) {
+                var out=""
+                if (value.type!="num") {
+                    out+=exprAsm(value,line,valueT);  //value is not a constant
+                    out+="\tpush h\n"
+                }
+                out+=exprAsm(addr,line,addrT);  
+                if (value.type!="num") {
+                    out+="\tpop d\n"
+                    out+="\tmov m,e\n"
+                } else {
+                    out+="\tmvi m,"+(value.value % 256)+"\n"
+                }
+                return out;
+            },
+
+            dpoke: function(addr,addrT,value,valueT,exprAsm,line) {
+                var out=""
+                if(addr.type=="num") {
+                    //constant address
+                    out+=exprAsm(value,line,valueT);
+                    out+="\tSHLD "+addr.value+"\n"
+                    return out;
+                }
+                if (value.type!="num") {
+                    out+=exprAsm(value,line,valueT);  //value is not a constant
+                    out+="\tpush h\n"
+                }
+                out+=exprAsm(addr,line,addrT);  
+                if (value.type!="num") {
+                    out+="\tpop d\n"
+                    out+="\tmov m,e\n"
+                    out+="\tinx h\n"
+                    out+="\tmov m,d\n"
+                } else {
+                    out+="\tmvi m,"+(value.value % 256)+"\n"
+                    out+="\tinx h\n"
+                    out+="\tmvi m,"+(value.value >> 8)+"\n"
+                }
+                return out;
+            },
+
+            _forstep: function(loops) {
+                var out = "";
+                var step = loops[0][4];
+                if (step=="ex") {
+                    out+="\tXCHG\n"
+                    out+="\tLHLD sv_forS"+loops[0][2]+"\n"
+                    out+="\tDAD D\n"
+                } else if (step==1) {
+                    out+="\tINX H\n"
+                } else {
+                    out+="\tLXI D,"+step+"\n"
+                    out+="\tDAD D\n"
+                }            
+                return out    
+            },
+            _fortest: function(loops) {
+                var out = "";
+                var limit = loops[0][5];
+                if (limit=="ex") {
+                    out+="\tXCHG\n"
+                    out+="\tLHLD sv_forL"+loops[0][2]+"\n"
+                } else {
+                    out+="\tLXI D,"+limit+"\n"
+                }
+                out+="\tMOV A,L\n"
+                out+="\tCMP E\n"
+                out+="\tJNZ FLCMD"+loops[0][2]+"\n"
+                out+="\tMOV A,H\n"
+                out+="\tCMP D\n"
+                out+="\tJNZ FLCMD"+loops[0][2]+"\n"
+      
+                return out    
+            },
+
+
+            strUnassign: function(name) {
+                return "\tLHLD vs_"+name+"\n\tCALL hp_unass\n"
+            },
+
         }
     }
 }
