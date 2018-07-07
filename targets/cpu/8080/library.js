@@ -346,6 +346,17 @@ var LIB = {
         "\t.cstr \"### STOP\",0dh,0ah\n"
 
     },
+    "errnodata": {
+        uses:["printstr"],
+        code:
+        "\tlxi h,errnodata_m\n"+
+        "\tcall printstr\n"+
+        "\tjmp errgo\n"+
+        "errnodata_m:\n"+
+        "\tdb 0ah,0dh\n"+
+        "\t.cstr \"### NO DATA\",0dh,0ah\n"
+
+    },
 
     //SYSTEM
     "mul16": {
@@ -415,6 +426,49 @@ var LIB = {
             "    jmp div16_lop2        \n"
     },
 
+    "s_lut":{
+        uses:null,
+        code:
+        "\txchg\n"+
+        "\tlxi b,datatable+2\n"+
+        "lut_l:\n"+
+        "\tldax b\n"+
+        "\tmov l,a\n"+
+        "\tinx b\n"+
+        "\tldax b\n"+
+        "\tmov h,a\n"+
+        "\tora l\n"+
+        "\tjz lut_prev\n"+
+        "\tmov a,h\n"+
+        "\tcmp d\n"+
+        "\tjc lut_prev\n"+
+        "\tmov a,l\n"+
+        "\tcmp e   \n"+
+        "\tjnc lut_next\n"+
+        "lut_prev:\n"+
+        "\tdcx b\n"+
+        "\tdcx b\n"+
+        "\tldax b\n"+
+        "\tmov h,a\n"+
+        "\tdcx b\n"+
+        "\tldax b\n"+
+        "\tmov l,a\n"+
+        "\tora h\n"+
+        "\tret\n"+
+        "lut_next:\n"+
+        "\tinx b\n"+
+        "\tinx b\n"+
+        "\tinx b\n"+
+        "\tjmp lut_l\n"
+    },
+
+    "s_read": {
+        uses:null,
+        code:
+        "\tlhld datapoint\n\tmov e,m\n\tinx h\n\tmov d,m\n\tinx h\n"+
+        "\tshld datapoint\n\txchg\n"+
+        "\tret\n"
+    },
 
     "s_strcpy": {
         uses:null,

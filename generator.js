@@ -162,6 +162,15 @@ var ENV= {
         if (ENV.strs.indexOf(s)<0) ENV.strs.push(s)
         return ENV.strs.indexOf(s)
     },
+    datas:[],
+    datalabels:[],
+    addData:function(s,label) {
+        if (label) {
+            ENV.datas.push("dt_"+label+":\n");
+            ENV.datalabels.push(label)
+        }
+        ENV.datas.push("\t DW "+s+"\n")
+    },
     uses:[],
     addUse:function(s) {
         if (ENV.uses.indexOf(s)<0) {
@@ -186,6 +195,7 @@ var generator = function(basic, CFG) {
     ENV.uses=[]
     ENV.fns={}
     ENV.procs={}
+    ENV.datas=[]
 
     //library uses some system routines
     //so copy them there
@@ -392,6 +402,48 @@ var generator = function(basic, CFG) {
                     if (epar.index.type!="num") croak("DIM needs a constant size",line);
                     ENV.addArrInt(epar.value,epar.index.value)
                     continue
+                case "data":
+                    var label = line.label
+                    while(par = tokens.shift()) {
+                        if (par.type=="num") {
+                            //console.log(par.value,label)
+                            ENV.addData(par.value,label)
+                            if(!isPunc(",")) break
+                        } else {
+                            croak("Invalid data",line)
+                        }
+                        label = null;                        
+                    }
+                    continue
+                case "restore":
+                    if (tokens.length) {
+                        ENV.addUse("s_lut")
+                        ENV.addUse("errnodata")
+                        var ex = expr(tokens,line);
+                        var et = exprType(ex,line);
+                        out+=exprAsm(ex,line,et)
+                        out+=CFG.asm.docall("s_lut");
+                        out+=CFG.asm.jmpZ("errnodata");
+                        out+=CFG.asm.storeAnyInt("datapoint")
+                        continue
+                    }
+                    out+=CFG.xp.num({value:"databegin"},line)
+                    out+=CFG.asm.storeAnyInt("datapoint")
+
+                    continue
+
+                case "read":
+                    ENV.addUse("s_read")
+                    while(tokens.length) {
+                        var ex = isVar()
+                        if (!ex) croak ("DATA needs a variable name",line)
+                        ENV.addVar(ex.value,"int")
+                        out+=CFG.asm.docall("s_read");                      
+                        out+=CFG.asm.storeInt(ex.value,line)
+                        if (!tokens.length) continue;
+                        if (!isPunc(",")) croak ("Separate names with a comma",line)
+                    }
+                    continue                    
                 case "def":
                     par = tokens[0];
                     if (par.type=="fn" && par.value=="fn") {
@@ -905,7 +957,18 @@ var generator = function(basic, CFG) {
     out+=";----DATA SEGMENT (ROM)\n"
     out+=strAsm();
 
+    //datadump
     out+=";----INITIALIZED DATA SEGMENT (RAM)\n"
+    out+="datapoint: dw $+2\n"
+    out+="databegin:\n"
+    out+=ENV.datas.join("")
+    out+="datatable: dw 0\n"
+    ENV.datalabels = ENV.datalabels.sort(function(a,b){return b-a;})
+    for (var i=0;i<ENV.datalabels.length;i++) {
+        var l =ENV.datalabels[i];
+        out+="\tdw "+l+",dt_"+l+"\n"
+    }
+    out+="\tdw 0\n"
 
     //vardump
     out+=";----BSS SEGMENT\n"
