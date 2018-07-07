@@ -133,139 +133,9 @@
     
     }    
 
-    var exprAsm = function(expr,line,etype,left) {
-        if (typeof etype=="undefined") etype="int";
-        if (typeof left=="undefined") left=false;
-        var type = expr.type;
-        if (type=="num" && !left) {
-            return "\tLXI H,"+expr.value+"\n"
-        }
-        if (type=="str" && !left) {
-            var cs=ENV.addStr(expr.value);
-            return "\tLXI H,cs_"+cs+"\t;"+expr.value+"\n"
-        }
-        if (type=="num" && left) {
-            return "\tLXI D,"+expr.value+"\n"
-        }
-        if (type=="str" && left) {
-            var cs=ENV.addStr(expr.value);
-            return "\tLXI D,cs_"+cs+"\t;"+expr.value+"\n"
-        }
-        if (type=="var" && !left) {
-            ENV.addVar(expr.value,"int")
-            return "\tLHLD v_"+expr.value+"\n"
-        }
-        if (type=="var" && left) {
-            ENV.addVar(expr.value,"int")
-            return "\tXCHG\n\tLHLD v_"+expr.value+"\n\tXCHG\n"
-        }
-        if (type=="var$" && !left) {
-            ENV.addVar(expr.value,"str")
-            return "\tLHLD vs_"+expr.value+"\n"
-        }
-        if (type=="var$" && left) {
-            ENV.addVar(expr.value,"str")
-            return "\tXCHG\n\tLHLD vs_"+expr.value+"\n\tXCHG\n"
-        }
-        if (type=="var[]") {
-            if (!ENV.intarr[expr.value])  croak("You have to DIM array first",line)
-            if (expr.index.type=="num" && expr.index.value>=ENV.intarr[expr.value]) croak("Index out of bound",line)
-            
-        }
-        if (type=="var[]" && !left) {
-            if (expr.index.type=="num") {
-                //precompute
-                if (expr.index.value) {
-                    return "\tLHLD vai_"+expr.value+"+"+(expr.index.value*2)+"\n";
-                } else {
-                    return "\tLHLD vai_"+expr.value+"\n";
-                }
-            }
-            ENV.addUse("s_check");
-            var out = "\tPUSH D\n"+exprAsm(expr.index,line,"int")
-            out += "\tLXI D,vai_"+expr.value+"\n"
-            out += "\tLXI B,"+ENV.intarr[expr.value]+"\n";
-            out += "\tCALL s_check\n";
-                out += "\tMOV E,M\n\tINX H\n\tMOV D,M\n\tXCHG\n\tPOP D\n"
-            return out
-        }
 
-        if (type=="var[]" && left) {
-            if (expr.index.type=="num") {
-                //precompute
-                if (expr.index.value) {
-                    return "\tXCHG\n\tLHLD vai_"+expr.value+"+"+(expr.index.value*2)+"\n\tXCHG\n";
-                } else {
-                    return "\tXCHG\n\tLHLD vai_"+expr.value+"\n\tXCHG\n";
-                }
-            }            
-            ENV.addUse("s_check");
-            var out = "\tPUSH H\n"+exprAsm(expr.index,line,"int")
-            out += "\tLXI D,vai_"+expr.value+"\n"
-            out += "\tLXI B,"+ENV.intarr[expr.value]+"\n";
-            out += "\tCALL s_check\n";
-            out += "\tMOV E,M\n\tINX H\n\tMOV D,M\n\tPOP H\n"
-            return out
-        }
-        if (type=="binary") {
-            //spec ops, optimalised
-            if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="+") {
-                out = exprAsm(expr.left,line,etype)+"\tINX H\n"
-                return out
-            }
-            if (expr.left.type=="num" && expr.left.value==1 && expr.operator=="+") {
-                out = exprAsm(expr.right,line,etype)+"\tINX H\n"
-                return out
-            }
-            if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="-") {
-                out = exprAsm(expr.left,line,etype)+"\tDCX H\n"
-                return out
-            }
-            if (expr.right.type=="num" && expr.right.value==2 && expr.operator=="*") {
-                out = exprAsm(expr.left,line,etype)+"\tDAD H\n"
-                return out
-            }
-            if (expr.right.type=="num" && expr.right.value==4 && expr.operator=="*") {
-                out = exprAsm(expr.left,line,etype)+"\tDAD H\n\tDAD H\n"
-                return out
-            }
 
-            if (expr.left.type=="num" && expr.right.type=="binary") {
-                out = exprAsm(expr.right,line,etype)+exprAsm(expr.left,line,etype,true)
-            } else if (expr.left.type=="num" && expr.right.type=="fn") {
-                out = exprAsm(expr.right,line,etype)+exprAsm(expr.left,line,etype,true)
-            } else {
-                out = exprAsm(expr.left,line,etype,true)+"\tpush d\n"+exprAsm(expr.right,line,etype)+"\tpop d\n"
-            }
-            var opfn = "o_"+opAsm(expr.operator,line,etype);
-            if (LIB[opfn].inline) {
-                out+=LIB[opfn].code
-                return out;
-            }
-            ENV.addUse(opfn);
-            out += "\tCALL "+opfn+"\n"+(left?"\tXCHG\n":"")
-            return out;
-        }
-        
-        if (type=="fn") {
-            out="";
-            if (expr.operands.length==1) {
-                out += exprAsm(expr.operands[0])
-            } else if (expr.operands.length==2) {
-                out += exprAsm(expr.operands[0],true)
-                out += exprAsm(expr.operands[1])
-            } else
-            for(var i=0;i<expr.operands.length;i++) {
-                out += exprAsm(expr.operands[i])+"\tPUSH\n"
-            }
-            ENV.addUse("f_"+expr.value);
-            out += "\tCALL f_"+expr.value+"\n"+(left?"\tXCHG\n":"")
-            return out;
-        }
-        
-        return "\tUNKNOWN "+JSON.stringify(expr)+"\n"
-    
-    }
+
 
 
 var ENV= {
@@ -305,6 +175,83 @@ var generator = function(basic, CFG) {
     ENV.strs=[]
     ENV.uses=[]
 
+    //CFG.ENV = ENV
+    var exprAsm = function(expr,line,etype,left) {
+
+        if (typeof etype=="undefined") etype="int";
+        if (typeof left=="undefined") left=false;
+        var type = expr.type;
+        if (type=="num" && !left) {
+            return CFG.xp.num(expr,line)
+        }
+        if (type=="str" && !left) {
+            var cs=ENV.addStr(expr.value);
+            return CFG.xp.str(expr,line,cs);
+        }
+        if (type=="num" && left) {
+            return CFG.xp.numL(expr,line)
+        }
+        if (type=="str" && left) {
+            var cs=ENV.addStr(expr.value);
+            return CFG.xp.strL(expr,line,cs);
+        }
+        if (type=="var" && !left) {
+            ENV.addVar(expr.value,"int")
+            return CFG.xp.var(expr,line)
+        }
+        if (type=="var" && left) {
+            ENV.addVar(expr.value,"int")
+            return CFG.xp.varL(expr,line)
+        }
+        if (type=="var$" && !left) {
+            ENV.addVar(expr.value,"str")
+            return CFG.xp.vaSL(expr,line)
+        }
+        if (type=="var$" && left) {
+            ENV.addVar(expr.value,"str")
+            return CFG.xp.varSL(expr,line)
+        }
+        if (type=="var[]") {
+            if (!ENV.intarr[expr.value])  croak("You have to DIM array first",line)
+            if (expr.index.type=="num" && expr.index.value>=ENV.intarr[expr.value]) croak("Index out of bound",line)
+            
+        }
+        if (type=="var[]" && !left) {
+            if (expr.index.type=="num") {
+                //precompute
+                return CFG.xp.varAI(expr,line)                
+            }
+            return CFG.xp.varA(expr,line,ENV, exprAsm);
+        }
+        if (type=="var[]" && left) {
+            if (expr.index.type=="num") {
+                //precompute
+                return CFG.xp.varAIL(expr,line)                
+            }
+            return CFG.xp.varAL(expr,line,ENV, exprAsm);
+        }
+        if (type=="binary") {
+            //spec ops, optimalised
+            var shortcut = CFG.xp.shortcuts(expr,line,etype, ENV, exprAsm);
+            if (shortcut) {return shortcut}
+
+            if (left) return CFG.xp.binaryL(expr,line,etype,ENV,exprAsm,LIB)
+            return CFG.xp.binary(expr,line,etype,ENV,exprAsm,LIB)
+
+        }
+        
+        if (type=="fn" && !left) {
+            return CFG.xp.fn(expr,line,ENV,exprAsm);
+        }
+        if (type=="fn" && left) {
+            return CFG.xp.fnL(expr,line,ENV,exprAsm);
+        }
+        croak("Cannot evaluate "+JSON.stringify(expr),line)
+        //return "\tUNKNOWN "+JSON.stringify(expr)+"\n"
+    
+    }
+
+//----------------------------------------------------
 
     var isPunc = function(punc,token) {
         if (!token) return false
