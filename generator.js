@@ -148,6 +148,11 @@ var ENV= {
         name=name.toLowerCase()
         ENV.fns[name] = name
     },
+    procs:{},
+    addProc:function(name) {
+        name=name.toLowerCase()
+        ENV.procs[name] = name
+    },
     intarr:{},
     addArrInt:function(name,limit) {
         ENV.intarr[name] = limit
@@ -179,6 +184,8 @@ var generator = function(basic, CFG) {
     ENV.vars={}
     ENV.strs=[]
     ENV.uses=[]
+    ENV.fns={}
+    ENV.procs={}
 
     //library uses some system routines
     //so copy them there
@@ -413,10 +420,16 @@ var generator = function(basic, CFG) {
                         ENV.addFn(par.value)
                         continue;
                     }
+                    if (par.type=="var" && par.value=="proc") {
+                        //def proc
+                        tokens.shift()
+                        par = tokens[0];
+                        var target = findLabel(par.value,labels);
+                        if (target===null) croak("Target line not found",line)
+                        ENV.addProc(par.value)
+                        continue;
+                    }
                     croak("DEF without FN",line)
-                    if (epar.type!="var[]") croak("DIM needs a variable name",line);
-                    if (epar.index.type!="num") croak("DIM needs a constant size",line);
-                    ENV.addArrInt(epar.value,epar.index.value)
                     continue
                 case "ramtop":
                     par = tokens[0];
@@ -481,7 +494,27 @@ var generator = function(basic, CFG) {
                     out+=CFG.asm.docall("CMD"+target)
 
                     continue
-    			case "let":
+                case "let":
+                    if (tokens[0].type=="var" && ENV.procs[tokens[0].value]==tokens[0].value) {
+                        //vskutčnosti volání procedury
+                        par = tokens[0];
+                        var target = findLabel(par.value,labels);
+                        if (target===null) croak("Target line not found",line)
+                        tokens.shift()
+                        //if (!isPunc(",",tokens[0])) croak("Syntax error",line)  
+                        var ex = expr(tokens,line);
+                        var et = exprType(ex,line);
+                        out+=exprAsm(ex,line,et)
+                        if (isPunc(",",tokens[0])) {
+                            var ex2 = expr(tokens,line);
+                            var et = exprType(ex2,line);    
+                            out+=exprAsm(ex2,line,et2,true)
+                        }
+                        //console.log(ex,ex2)
+                        out+=CFG.asm.docall("CMD"+target)
+    
+                        continue
+                    }
                     //par = tokens.shift();
                     var multiassign = [];
                     var epar = expr(tokens,line)

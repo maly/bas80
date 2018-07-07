@@ -108,6 +108,24 @@ var expr = function(tokens, ln, bool) {
                 return {type:"fn",value:"fn",operands:op}
             }
 
+            if (ENV.procs[n.value]==n.value) {
+                console.log(n)
+                //it's a procedure, dude!
+                var op=[{type:"var",value:n.value}];
+                //expectPunctuation("(")
+                var ex = expr(tokens,ln,bool)
+                //var et = exprType(ex,ln);
+                op.push(ex)
+                if (tokens[0].type=="punc"&&tokens[0].value==",") {
+                    expectPunctuation(",")
+                    ex = expr(tokens,ln,bool)
+                    op.push(ex)
+                }
+                //expectPunctuation(")")
+                return {type:"kw",value:"call",operands:op}
+            }
+
+
             expectPunctuation("(")
 //            console.log(JSON.parse(JSON.stringify(tokens)))
             var ex = expr(tokens,ln,bool)

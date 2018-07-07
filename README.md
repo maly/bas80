@@ -198,6 +198,25 @@ DEF FN factorial
 PRINT factorial(5)
 ```
 
+### DEF PROC funcLabel
+
+Another sugar for you. If you annotate function with DEF PROC on the beginning of a source code, you can use the function name as a procedure without CALL funcLabel,..., just directly like funcLabel par[,par]
+
+So you can use both of those variants:
+
+```
+CALL myproc,5,10*a
+```
+
+or
+
+```
+DEF PROC myproc
+...
+myproc 5,10*a
+```
+Of course you can use one label as FN and PROC.
+
 ## FUNCTIONS
 
 ### int ABS (int)
