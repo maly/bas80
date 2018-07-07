@@ -4,6 +4,8 @@ The BASIC compiler for 8bit CPUs
 
 Version 0 - early alpha. Use on your own risk.
 
+[A live compiler](https://maly.github.io/bas80/basic.html)
+
 ## Features:
 
 - Numbers can be decimal (123, -456) or hexadecimal ($BEEF)
