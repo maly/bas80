@@ -27,7 +27,7 @@ function InputStream(input) {
     var current = null;
     var keywords = " if then else rem print input goto let for to next step "+
             "gosub return end stop data read restore repeat until continue break "+
-            "poke dpoke dim ramtop push pop take "+
+            "poke dpoke dim ramtop push pop take def "+
             "while endwhile ";
     var functions = " abs neg rnd max chr$ sgn len val peek dpeek low high fn ";
     return {

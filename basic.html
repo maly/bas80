@@ -1,15 +1,15 @@
 <textarea id="source" cols=60 rows=40>
-let a = fn(testfn,10,20)
+DEF FN factorial
+print factorial(5)
 end
-testfn: take a,b
-return
 
 factorial: take fact
     if fact=1 then return 1
     push fact
-    b = fn(factorial,fact-1)
-    pop fact
-    return b*fact
+    return fn(factorial,fact-1)*fact,fact
+        
+
+
         
 
 </textarea>

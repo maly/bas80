@@ -90,7 +90,24 @@ var expr = function(tokens, ln, bool) {
         }
 
         if (n.type=="var" && tokens.length && tokens[0].type=="punc" && tokens[0].value=="(") {
-            //it should be an array
+            //it should be an array or func
+
+            if (ENV.fns[n.value]==n.value) {
+                //it's a function, dude!
+                var op=[{type:"var",value:n.value}];
+                expectPunctuation("(")
+                var ex = expr(tokens,ln,bool)
+                //var et = exprType(ex,ln);
+                op.push(ex)
+                if (tokens[0].type=="punc"&&tokens[0].value==",") {
+                    expectPunctuation(",")
+                    ex = expr(tokens,ln,bool)
+                    op.push(ex)
+                }
+                expectPunctuation(")")
+                return {type:"fn",value:"fn",operands:op}
+            }
+
             expectPunctuation("(")
 //            console.log(JSON.parse(JSON.stringify(tokens)))
             var ex = expr(tokens,ln,bool)

@@ -175,6 +175,23 @@ factorial: take fact
     return fact*fn(factorial,fact-1),fact
 ```    
 
+### DEF FN label
+
+It's a syntactic sugar again. If you annotate function with DEF FN on the beginning of a source code, you can use the function name without FN(label,...)
+
+So you can use both of those variants:
+
+```
+PRINT fn(factorial,5)
+```
+
+or
+
+```
+DEF FN factorial
+...
+PRINT factorial(5)
+```
 
 ## FUNCTIONS
 

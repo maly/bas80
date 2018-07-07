@@ -143,6 +143,10 @@ var ENV= {
     addVar:function(name,type) {
         ENV.vars[name+"_"+type] = type
     },
+    fns:{},
+    addFn:function(name) {
+        ENV.fns[name] = name
+    },
     intarr:{},
     addArrInt:function(name,limit) {
         ENV.intarr[name] = limit
@@ -399,6 +403,22 @@ var generator = function(basic, CFG) {
                 case "dim":
                     var epar = expr(tokens,line)
                     //console.log(epar)
+                    if (epar.type!="var[]") croak("DIM needs a variable name",line);
+                    if (epar.index.type!="num") croak("DIM needs a constant size",line);
+                    ENV.addArrInt(epar.value,epar.index.value)
+                    continue
+                case "def":
+                    par = tokens[0];
+                    if (par.type=="fn" && par.value=="fn") {
+                        //def fn
+                        tokens.shift()
+                        par = tokens[0];
+                        var target = findLabel(par.value,labels);
+                        if (target===null) croak("Target line not found",line)
+                        ENV.addFn(par.value)
+                        continue;
+                    }
+                    croak("DEF without FN",line)
                     if (epar.type!="var[]") croak("DIM needs a variable name",line);
                     if (epar.index.type!="num") croak("DIM needs a constant size",line);
                     ENV.addArrInt(epar.value,epar.index.value)
