@@ -893,8 +893,10 @@ var generator = function(basic, CFG) {
 
 
     //strdump
-    out+=";----DATA SEGMENT\n"
+    out+=";----DATA SEGMENT (ROM)\n"
     out+=strAsm();
+
+    out+=";----INITIALIZED DATA SEGMENT (RAM)\n"
 
     //vardump
     out+=";----BSS SEGMENT\n"
