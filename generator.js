@@ -347,8 +347,9 @@ var generator = function(basic, CFG) {
                     continue
     			case "let":
                     //par = tokens.shift();
+                    var multiassign = [];
                     var epar = expr(tokens,line)
-//                    console.log(epar)
+                    //console.log(epar,JSON.stringify(tokens))
                     if (epar.type=="var") {
                         //inc,dec
                         if (!tokens.length) croak("LET should assign something",line)
@@ -358,37 +359,43 @@ var generator = function(basic, CFG) {
                             out+=CFG.asm.varplus1(epar.value)
                             tokens.shift();
                             continue
-                        }
-                        if(isOp("--",tokens[0])) {
+                        } else if(isOp("--",tokens[0])) {
                             //DEC short
                             ENV.addVar(epar.value,"int")
                             out+=CFG.asm.varminus1(epar.value)
                             tokens.shift();
                             continue
-                        }
-                        if(isOp("**",tokens[0])) {
+                        } else if(isOp("**",tokens[0])) {
                             //*2 short
                             ENV.addVar(epar.value,"int")
                             out+=CFG.asm.vartimes2(epar.value)
                             tokens.shift();
                             continue
-                        }
-                        if(isOp("+++",tokens[0])) {
+                        } else if(isOp("+++",tokens[0])) {
                             //INC short
                             ENV.addVar(epar.value,"int")
                             out+=CFG.asm.varplus2(epar.value)
                             tokens.shift();
                             continue
-                        }
-                        if(isOp("---",tokens[0])) {
+                        } else if(isOp("---",tokens[0])) {
                             //DEC short
                             ENV.addVar(epar.value,"int")
                             out+=CFG.asm.varminus2(epar.value)
                             tokens.shift();
                             continue
+                        } else if (tokens[0].type=="punc" && tokens[0].value==",") {
+                            while(isPunc(",",tokens[0])) {
+                                //let x,x,x = something
+                                if (epar.type!="var") {
+                                    croak("Multiassigning needs a scalar int",line)
+                                }
+                                multiassign.push(epar)
+                                epar = expr(tokens,line)
+                            }
+                        } else {
+                            //console.log(tokens)
+                            croak("LET syntax mismatch",line)
                         }
-                        //console.log(tokens)
-                        croak("LET syntax mismatch",line)
                     }
                     if (epar.type!=="assign") croak("LET should assign",line)
                     par = epar.left
@@ -404,7 +411,11 @@ var generator = function(basic, CFG) {
     				if (par.type=="var") {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         ENV.addVar(par.value,"int")
-                        out+=CFG.asm.storeInt(par.value)
+                        out+=CFG.asm.storeInt(par.value);
+                        while(multiassign.length) {
+                            par = multiassign.pop()
+                            out+=CFG.asm.storeInt(par.value);
+                        }
     				} else if (par.type=="var[]") {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         if (!ENV.intarr[par.value])  croak("You have to DIM array first",line)
