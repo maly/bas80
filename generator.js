@@ -274,6 +274,11 @@ var generator = function(basic, CFG) {
         tokens.shift()
         return true;
     }
+    var isVar = function(token) {
+        if (!token) return false
+        if (token.type!="var") return false
+        return tokens.shift();
+    }
 
     var out="";
     out+=";----CODE SEGMENT (ROMable)\n"
@@ -356,6 +361,17 @@ var generator = function(basic, CFG) {
                     //console.log(epar)
                     if (par.type!="num") croak("RAMTOP needs a constant value",line);
                     CFG.ramtop = par.value
+                    continue
+                case "push":
+                    while(tokens.length) {
+                        var ex = isVar(tokens[0])
+                        if (!ex) croak ("PUSH needs a variable name",line)
+                        out+=CFG.xp.var(ex,line)
+                        ENV.addVar(ex.value,"int")
+                        out+="\tPUSH H\n"
+                        if (!tokens.length) continue;
+                        if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
+                    }
                     continue
     			case "let":
                     //par = tokens.shift();
