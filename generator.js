@@ -259,6 +259,7 @@ var generator = function(basic, CFG) {
                 //console.log(call.value,ENV.labels)
                 var target = findLabel(call.value,ENV.labels);
                 if (target===null) croak("Target line not found",line)
+                /*
                 var out = "\tPUSH D\n";
                 out += exprAsm(expr.operands[1],line,"int")
                 if(expr.operands.length==3) {
@@ -267,7 +268,8 @@ var generator = function(basic, CFG) {
                 out+=CFG.asm.docall("CMD"+target)
                 out += "\tPOP D\n";
                 return out;
-
+                */
+               return CFG.asm.userfn(expr,line,ENV,exprAsm)
             }
             return CFG.xp.fn(expr,line,ENV,exprAsm, LIB);
         }
@@ -278,6 +280,7 @@ var generator = function(basic, CFG) {
                 //console.log(call.value,ENV.labels)
                 var target = findLabel(call.value,ENV.labels);
                 if (target===null) croak("Target line not found",line)
+                /*
                 var out = "\tPUSH H\n";
                 out += exprAsm(expr.operands[1],line,"int")
                 if(expr.operands.length==3) {
@@ -286,7 +289,8 @@ var generator = function(basic, CFG) {
                 out+=CFG.asm.docall("CMD"+target)
                 out += "\tPOP D\n\tXCHG\n";
                 return out;
-
+                */
+               return CFG.asm.userfnL(expr,line,ENV,exprAsm)
             }
 
             return CFG.xp.fnL(expr,line,ENV,exprAsm, LIB);
