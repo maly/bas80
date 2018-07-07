@@ -14,6 +14,7 @@ var ARITY = {
     "low":["int"],
     "high":["int"],
     "peek":["int"],
+    "fn":["int","int"],
     "dpeek":["int"],
     "sgn":["int"],
     "rnd":[],
@@ -108,8 +109,16 @@ var expr = function(tokens, ln, bool) {
             while(nn>0) {
                 var ex = expr(tokens,ln,bool)
                 var et = exprType(ex,ln);
-                if (ARITY[n.value][argNum]!=et) croak("Argument type mismatch, expected: "+ARITY[n.value][argNum],ln)
+                if (ARITY[n.value][argNum]!=et) croak("Argument type mismatch, given:"+et+", expected: "+ARITY[n.value][argNum],ln)
                 op.push(ex)
+                if (n.value=="fn") {
+                    //multiparameter!
+                    if (tokens[0].type=="punc"&&tokens[0].value==")") break;
+                    if (tokens[0].type=="punc"&&tokens[0].value==",") {
+                        //dalsi parametr
+                        nn++
+                    }
+                }
                 nn--
                 if (nn) expectPunctuation(",")
             }

@@ -129,6 +129,41 @@ Array length has to be a constant, so no computed DIMs allowed!
 
 Sets the first unused addr to given constant expression. BASIC will not use any memory above the RAMTOP (stack is not affected)
 
+### TAKE var
+### TAKE var1,var2
+### FN(label,expr)
+### FN(label,expr1,expr2)
+### PUSH var[,var...]
+### POP var[,var...]
+
+This is an attempt to bring a FUNCTION concept into BASIC. Write function as a regular subroutine (like one for the GOSUB) and begin it with TAKE command.
+
+TAKE takes one or two integers from calling environment and store them into given variables.
+FN() acts like a GOSUB - the first argument is a label (line number or string), the second argument (and the third, if given) acts like a parameters. They are passed to the subroutine. Subroutine can take them with the TAKE command.
+
+```
+print "10+20=",fn(adding,10,20)
+end
+
+adding: take p1,p2
+ return p1+p2
+```
+
+TAKE does not any variable checking, so if you use the same name for parameter and a regular variable, it takes the same place, i.e. TAKE overwrites the global variable...
+
+PUSH and POP helps to simulate local variables for recursion. PUSH just store the values of given variables somewhere to the LIFO structure (on the stack in fact), POP takes the values from the same structure (i.e. from the stack) and assigned them back to the variables. Caution: it works only with scalar int variables (no arrays, no strings) and the orders of POP must be reversed (remember: LIFO!). So `PUSH a,b,c` needs `POP c,b,a`
+
+```
+print fn(factorial,5)
+
+factorial: take fact
+    if fact=1 then return 1
+    push fact
+    temp = fn(factorial,fact-1)
+    pop fact
+    return temp*fact
+```
+
 ## FUNCTIONS
 
 ### int ABS (int)

@@ -175,7 +175,7 @@ var CONFIG = {
             "serout": {
                 uses:null,
                 sysdb:["prtchan"],
-                code: "PUSH PSW"+
+                code: "\tPUSH PSW\n"+
                 "so_wait: IN 0deh ;acias\n"+
                 "\tani 2\n"+
                 "\tjz so_wait\n"+
@@ -208,7 +208,7 @@ var CONFIG = {
             jmpEx0: function(target) {
                 return "\tMOV A,H\n\tORA L\n\tJZ "+target+"\n"
             },
-            call: function(target) {
+            docall: function(target) {
                 return "\tCALL "+target+"\n"
             },
             ret: function() {
@@ -216,6 +216,12 @@ var CONFIG = {
             },
             end: function() {
                 return "\tRST 0\n"
+            },
+            dopush: function() {
+                return "\tPUSH H\n"
+            },
+            dopop: function() {
+                return "\tPOP H\n"
             },
             varplus1: function(name) {
                 return "\tLHLD v_"+name+"\n\tINX H\n\tSHLD v_"+name+"\n"

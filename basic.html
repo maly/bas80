@@ -1,10 +1,13 @@
 <textarea id="source" cols=60 rows=40>
-let a,b,c=0
+let a = fn(testfn,10,20)
+end
+testfn: take a,b
+return
 
-factorial:
+factorial: take fact
     if fact=1 then return 1
     push fact
-rem b = fn(factorial,fact-1)
+    b = fn(factorial,fact-1)
     pop fact
     return b*fact
         

@@ -248,6 +248,21 @@ var generator = function(basic, CFG) {
         
         if (type=="fn" && !left) {
             //console.log("E",LIB)
+            //special call
+            if (expr.value == "fn") {
+                var call = expr.operands[0]
+                console.log(call.value,ENV.labels)
+                var target = findLabel(call.value,ENV.labels);
+                if (target===null) croak("Target line not found",line)
+                var out = "";
+                out += exprAsm(expr.operands[1],line,"int")
+                if(expr.operands.length==3) {
+                    out += exprAsm(expr.operands[2],line,"int",true)
+                }
+                out+=CFG.asm.docall("CMD"+target)
+                return out;
+
+            }
             return CFG.xp.fn(expr,line,ENV,exprAsm, LIB);
         }
         if (type=="fn" && left) {
@@ -308,7 +323,7 @@ var generator = function(basic, CFG) {
     				par = tokens[0];
                     var target = findLabel(par.value,labels);
                     if (target===null) croak("Target line not found",line)
-                    out+=CFG.asm.call("CMD"+target);
+                    out+=CFG.asm.docall("CMD"+target);
     				continue;
                 case "return":
                     if (tokens.length) {
@@ -368,7 +383,7 @@ var generator = function(basic, CFG) {
                         if (!ex) croak ("PUSH needs a variable name",line)
                         out+=CFG.xp.var(ex,line)
                         ENV.addVar(ex.value,"int")
-                        out+="\tPUSH H\n"
+                        out+=CFG.asm.dopush();
                         if (!tokens.length) continue;
                         if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
                     }
@@ -378,11 +393,28 @@ var generator = function(basic, CFG) {
                         var ex = isVar(tokens[0])
                         if (!ex) croak ("POP needs a variable name",line)
                         ENV.addVar(ex.value,"int")
-                        out+="\tPOP H\n"                        
+                        out+=CFG.asm.dopop();                      
                         out+=CFG.asm.storeInt(ex.value,line)
                         if (!tokens.length) continue;
                         if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
                     }
+                    continue
+                case "take":
+                    var ex = isVar(tokens[0])
+                    if (!ex) croak ("TAKE needs a variable name",line)
+                    ENV.addVar(ex.value,"int")
+                    out+=CFG.asm.storeInt(ex.value,line)
+                    if (!tokens.length) continue;
+                    if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
+
+                    //second take
+                    ex = isVar(tokens[0])
+                    if (!ex) croak ("Second TAKE needs a variable name",line)
+                    ENV.addVar(ex.value,"int")
+                    out+="\tXCHG\n"+CFG.asm.storeInt(ex.value,line)
+                    if (!tokens.length) continue;
+                    croak ("TAKE has 2 parameters max",line)
+
                     continue
     			case "let":
                     //par = tokens.shift();
@@ -653,7 +685,7 @@ var generator = function(basic, CFG) {
                             var chan = expr(tokens,line,true);
                             out+=exprAsm(chan,line,"int");
                             ENV.addUse("inpchan")
-                            out+=CFG.asm.call("inpchan")
+                            out+=CFG.asm.docall("inpchan")
                             //out+="\tCALL inpchan\n"
                             if (!isPunc(",",tokens[0])) croak("Syntax error",line)
                             continue;
@@ -665,7 +697,7 @@ var generator = function(basic, CFG) {
                             //good, lets input a number
                             ENV.addUse("inputint")
                             ENV.addVar(par.value,"int")
-                            out+=CFG.asm.call("inputint")
+                            out+=CFG.asm.docall("inputint")
                             out+=CFG.asm.storeInt(par.value)
                             //consume remainder
                             //tokens.shift();
@@ -678,7 +710,7 @@ var generator = function(basic, CFG) {
                             if (par.index.type=="num" && par.index.value>=ENV.intarr[par.value]) croak("Index out of bound",line)
                             ENV.addUse("inputint")
                             //ENV.addUse("s_check")
-                            out+=CFG.asm.call("inputint")
+                            out+=CFG.asm.docall("inputint")
                             //out+="\tCALL inputint\n"
 
                             if (par.index.type=="num") {
@@ -699,7 +731,7 @@ var generator = function(basic, CFG) {
                             out+=CFG.asm.strUnassign(par.value)
         
                             ENV.addUse("inputstr")
-                            out+=CFG.asm.call("inputstr")
+                            out+=CFG.asm.docall("inputstr")
                             //out+="\tCALL inputstr\n"
                             ENV.addUse("__heap")
                             hasstr = true
@@ -719,7 +751,7 @@ var generator = function(basic, CFG) {
                         var et = exprType(ex,line);
                         out+=exprAsm(ex,line,et);
                         ENV.addUse("print"+et)
-                        out+=CFG.asm.call("print"+et)
+                        out+=CFG.asm.docall("print"+et)
                         //out+="\tCALL print"+et+"\n"
                         println = true;
                         if (isPunc(";",tokens[0])) {
@@ -728,13 +760,13 @@ var generator = function(basic, CFG) {
                         }
                         if (isPunc(",",tokens[0])) {
                             ENV.addUse("printtab")
-                            out+=CFG.asm.call("printtab")
+                            out+=CFG.asm.docall("printtab")
                             //out+="\tCALL printtab\n"
                             println = false;
                             continue;
                         }
                     }
-                    if (hasstr) out+=CFG.asm.call("hp_gc");
+                    if (hasstr) out+=CFG.asm.docall("hp_gc");
                     continue
     
 
@@ -746,7 +778,7 @@ var generator = function(basic, CFG) {
                             var chan = expr(tokens,line,true);
                             out+=exprAsm(chan,line,"int");
                             ENV.addUse("prtchan")
-                            out+=CFG.asm.call("prtchan")
+                            out+=CFG.asm.docall("prtchan")
                             out+="\tCALL prtchan\n"
                             if (!isPunc(",",tokens[0])) croak("Syntax error",line)
                             continue
@@ -755,7 +787,7 @@ var generator = function(basic, CFG) {
                         var et = exprType(ex,line);
                         out+=exprAsm(ex,line,et);
                         ENV.addUse("print"+et)
-                        out+=CFG.asm.call("print"+et)
+                        out+=CFG.asm.docall("print"+et)
                         //out+="\tCALL print"+et+"\n"
                         println = true;
                         if (isPunc(";",tokens[0])) {
@@ -764,7 +796,7 @@ var generator = function(basic, CFG) {
                         }
                         if (isPunc(",",tokens[0])) {
                             ENV.addUse("printtab")
-                            out+=CFG.asm.call("printtab")
+                            out+=CFG.asm.docall("printtab")
                             //out+="\tCALL printtab\n"
                             println = false;
                             continue;
@@ -773,7 +805,7 @@ var generator = function(basic, CFG) {
                     }
                     if (println) {
                         ENV.addUse("println")
-                        out+=CFG.asm.call("println")
+                        out+=CFG.asm.docall("println")
                         //out+="\tCALL println\n"
                     }
                     
