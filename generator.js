@@ -357,7 +357,7 @@ var generator = function(basic, CFG) {
                         out+=exprAsm(ex,line,et);
                         //pops?
                         if (isPunc(";",tokens[0])){
-                            out+="\tXCHG\n"
+                            out+=CFG.asm.swap()
                             while(tokens.length) {
                                 var ex = isVar(tokens[0])
                                 if (!ex) croak ("POP needs a variable name",line)
@@ -367,7 +367,7 @@ var generator = function(basic, CFG) {
                                 if (!tokens.length) continue;
                                 if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
                             }              
-                            out+="\tXCHG\n"          
+                            out+=CFG.asm.swap()          
                         }
                     }
     				out+=CFG.asm.ret();
@@ -448,10 +448,10 @@ var generator = function(basic, CFG) {
                     var ex2 = isVar(tokens[0])
                     if (!ex2) croak ("SWAP needs two variables",line)
                     ENV.addVar(ex2.value,"int")
-                    out+="\tXCHG\n"
+                    out+=CFG.asm.swap()
                     out+=CFG.xp.var(ex2,line)
                     out+=CFG.asm.storeInt(ex.value)
-                    out+="\tXCHG\n"
+                    out+=CFG.asm.swap()
                     out+=CFG.asm.storeInt(ex2.value)
 
                     continue
@@ -490,12 +490,12 @@ var generator = function(basic, CFG) {
                     //pushs?
                     if (isPunc(";",tokens[0])){
                         while(tokens.length) {
-                            out+="\tPUSH H\n"
+                            out+=CFG.asm.dopush()
                             var pex = isVar(tokens[0])
                             if (!pex) croak ("TAKE PUSH needs a variable name",line)
                             ENV.addVar(pex.value,"int")
                             out+=CFG.xp.var(pex,line)
-                            out+="\tXTHL\n"
+                            out+=CFG.asm.stackSwap()
                             if (!tokens.length) continue;
                             if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
                         }              
@@ -503,7 +503,7 @@ var generator = function(basic, CFG) {
                         out+=CFG.asm.storeInt(ex.value,line)
                         continue      
                     }
-                    var firstPar = CFG.asm.storeInt(ex.value,line)+"\tXCHG\n"
+                    var firstPar = CFG.asm.storeInt(ex.value,line)+CFG.asm.swap()
                     if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
 
                     //second take
@@ -517,12 +517,12 @@ var generator = function(basic, CFG) {
                     //pushs?
                     if (isPunc(";",tokens[0])){
                         while(tokens.length) {
-                            out+="\tPUSH H\n"
+                            out+=CFG.asm.dopush()
                             var pex = isVar(tokens[0])
                             if (!pex) croak ("TAKE PUSH needs a variable name",line)
                             ENV.addVar(pex.value,"int")
                             out+=CFG.xp.var(pex,line)
-                            out+="\tXTHL\n"
+                            out+=CFG.asm.stackSwap()
                             if (!tokens.length) continue;
                             if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
                         }              

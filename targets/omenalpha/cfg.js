@@ -244,6 +244,12 @@ var CONFIG = {
             dopop: function() {
                 return "\tPOP H\n"
             },
+            stackSwap: function() {
+                return "\tXTHL\n"
+            },
+            swap: function() {
+                return "\tXCHG\n"
+            },
             varplus1: function(name) {
                 return "\tLHLD v_"+name+"\n\tINX H\n\tSHLD v_"+name+"\n"
             },
