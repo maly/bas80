@@ -204,6 +204,14 @@ function parse(source) {
             out.label = out.tokens.shift().value;
             if (!out.tokens.length) continue
         }
+        console.log(JSON.stringify(out.tokens))
+        if (out.tokens[0].type=="var") { //line label?
+            if (out.tokens.length>1 && out.tokens[1].type=="colon" && out.tokens[1].value==":") {
+                out.label = out.tokens.shift().value;
+                out.tokens.shift();
+                if (!out.tokens.length) continue
+            }
+        }
 
         //decolonization
         var nout = [];
