@@ -351,6 +351,12 @@ var generator = function(basic, CFG) {
                     if (epar.index.type!="num") croak("DIM needs a constant size",line);
                     ENV.addArrInt(epar.value,epar.index.value)
                     continue
+                case "ramtop":
+                    par = tokens[0];
+                    //console.log(epar)
+                    if (par.type!="num") croak("RAMTOP needs a constant value",line);
+                    CFG.ramtop = par.value
+                    continue
     			case "let":
                     //par = tokens.shift();
                     var multiassign = [];
