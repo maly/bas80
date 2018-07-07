@@ -82,6 +82,27 @@ var CONFIG = {
                 }
             },
 
+            userfn: function(expr,line,ENV,exprAsm) {
+                var out = "\tPUSH D\n";
+                out += exprAsm(expr.operands[1],line,"int")
+                if(expr.operands.length==3) {
+                    out += exprAsm(expr.operands[2],line,"int",true)
+                }
+                out+=CFG.asm.docall("CMD"+target)
+                out += "\tPOP D\n";
+                return out;
+            },
+            userfnL: function(expr,line,ENV,exprAsm) {
+                var out = "\tPUSH H\n";
+                out += exprAsm(expr.operands[1],line,"int")
+                if(expr.operands.length==3) {
+                    out += exprAsm(expr.operands[2],line,"int",true)
+                }
+                out+=CFG.asm.docall("CMD"+target)
+                out += "\tPOP D\n\tXCHG\n";
+                return out;
+            },
+
             fn: function(expr,line,ENV, exprAsm, LIB) {
                 out="";
                 if (expr.operands.length==1) {
