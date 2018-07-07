@@ -145,6 +145,7 @@ var ENV= {
     },
     fns:{},
     addFn:function(name) {
+        name=name.toLowerCase()
         ENV.fns[name] = name
     },
     intarr:{},
