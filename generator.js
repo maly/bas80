@@ -306,6 +306,12 @@ var generator = function(basic, CFG) {
                     out+=CFG.asm.call("CMD"+target);
     				continue;
                 case "return":
+                    if (tokens.length) {
+                        //return expr.
+                        var ex = expr(tokens,line)
+                        var et = exprType(ex,line);
+                        out+=exprAsm(ex,line,et);
+                    }
     				out+=CFG.asm.ret();
     				continue;
                 case "end":
