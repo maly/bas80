@@ -233,7 +233,7 @@ var generator = function(basic, CFG) {
         }
         if (type=="var$" && !left) {
             ENV.addVar(expr.value,"str")
-            return CFG.xp.vaSL(expr,line)
+            return CFG.xp.varS(expr,line)
         }
         if (type=="var$" && left) {
             ENV.addVar(expr.value,"str")
@@ -314,6 +314,11 @@ var generator = function(basic, CFG) {
     var isVar = function() {
         if (!tokens.length) return false
         if (tokens[0].type!="var") return false
+        return tokens.shift();
+    }
+    var isVarVarS = function() {
+        if (!tokens.length) return false
+        if (tokens[0].type!="var" && tokens[0].type!="var$") return false
         return tokens.shift();
     }
 
@@ -409,6 +414,10 @@ var generator = function(basic, CFG) {
                             //console.log(par.value,label)
                             ENV.addData(par.value,label)
                             if(!isPunc(",")) break
+                        } else if (par.type=="str") {
+                            //console.log(par.value,label)
+                            ENV.addData("cs_"+ENV.addStr(par.value),label)
+                            if(!isPunc(",")) break
                         } else {
                             croak("Invalid data",line)
                         }
@@ -435,11 +444,20 @@ var generator = function(basic, CFG) {
                 case "read":
                     ENV.addUse("s_read")
                     while(tokens.length) {
-                        var ex = isVar()
-                        if (!ex) croak ("DATA needs a variable name",line)
-                        ENV.addVar(ex.value,"int")
-                        out+=CFG.asm.docall("s_read");                      
-                        out+=CFG.asm.storeInt(ex.value,line)
+                        var ex = isVarVarS()
+                        if (!ex) croak ("READ needs a variable name",line)
+                        if (ex.type=="var") {
+                            ENV.addVar(ex.value,"int")
+                            out+=CFG.asm.docall("s_read");                      
+                            out+=CFG.asm.storeInt(ex.value,line)
+                        } else {
+                            //read string
+                            ENV.addUse("__heap")
+                            ENV.addVar(ex.value,"int")
+                            out+=CFG.asm.strUnassign(ex.value)
+                            out+=CFG.asm.docall("s_read");                      
+                            out+=CFG.asm.storeStr(ex.value,line)
+                        }
                         if (!tokens.length) continue;
                         if (!isPunc(",")) croak ("Separate names with a comma",line)
                     }
@@ -660,7 +678,7 @@ var generator = function(basic, CFG) {
                     if (par.type=="var$") {
                         ENV.addVar(par.value,"str")
                         ENV.addUse("__heap")
-                        out+=CFG.asm.strUnassign(epar.value)
+                        out+=CFG.asm.strUnassign(par.value)
                     }
                     var ex = epar.right
                     var et = exprType(ex,line);
@@ -900,8 +918,9 @@ var generator = function(basic, CFG) {
                             if (!isPunc(",")) croak("Syntax error",line)
                             continue
                         }
-                        var ex = expr(tokens,line,true);
+                        var ex = expr(tokens,line);
                         var et = exprType(ex,line);
+                        console.log(ex,et)
                         out+=exprAsm(ex,line,et);
                         ENV.addUse("print"+et)
                         out+=CFG.asm.docall("print"+et)
