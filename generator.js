@@ -269,7 +269,7 @@ var generator = function(basic, CFG) {
                 out += "\tPOP D\n";
                 return out;
                 */
-               return CFG.asm.userfn(expr,line,ENV,exprAsm)
+               return CFG.xp.userfn(expr,line,ENV,exprAsm, target)
             }
             return CFG.xp.fn(expr,line,ENV,exprAsm, LIB);
         }
@@ -280,17 +280,7 @@ var generator = function(basic, CFG) {
                 //console.log(call.value,ENV.labels)
                 var target = findLabel(call.value,ENV.labels);
                 if (target===null) croak("Target line not found",line)
-                /*
-                var out = "\tPUSH H\n";
-                out += exprAsm(expr.operands[1],line,"int")
-                if(expr.operands.length==3) {
-                    out += exprAsm(expr.operands[2],line,"int",true)
-                }
-                out+=CFG.asm.docall("CMD"+target)
-                out += "\tPOP D\n\tXCHG\n";
-                return out;
-                */
-               return CFG.asm.userfnL(expr,line,ENV,exprAsm)
+               return CFG.xp.userfnL(expr,line,ENV,exprAsm, target)
             }
 
             return CFG.xp.fnL(expr,line,ENV,exprAsm, LIB);
@@ -471,6 +461,24 @@ var generator = function(basic, CFG) {
                     out+="\tXCHG\n"+CFG.asm.storeInt(ex.value,line)
                     if (!tokens.length) continue;
                     croak ("TAKE has 2 parameters max",line)
+
+                    continue
+                case "call":
+                    par = tokens[0];
+                    var target = findLabel(par.value,labels);
+                    if (target===null) croak("Target line not found",line)
+                    tokens.shift()
+                    if (!isPunc(",",tokens[0])) croak("Syntax error",line)  
+                    var ex = expr(tokens,line);
+                    var et = exprType(ex,line);
+                    out+=exprAsm(ex,line,et)
+                    if (isPunc(",",tokens[0])) {
+                        var ex2 = expr(tokens,line);
+                        var et = exprType(ex2,line);    
+                        out+=exprAsm(ex2,line,et2,true)
+                    }
+                    //console.log(ex,ex2)
+                    out+=CFG.asm.docall("CMD"+target)
 
                     continue
     			case "let":

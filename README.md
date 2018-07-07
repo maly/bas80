@@ -175,6 +175,11 @@ factorial: take fact
     return fact*fn(factorial,fact-1),fact
 ```    
 
+### CALL label,par
+### CALL label,par1,par2
+
+Like FN(label,par) or FN(label,par1,par2), but drops the return value and acts just like a command. Useful when you need just to invoke a function with parameters, but ignore the result.
+
 ### DEF FN funcLabel
 
 It's a syntactic sugar again. If you annotate function with DEF FN on the beginning of a source code, you can use the function name without FN(funcLabel,...), just directly like funcLabel(...)
