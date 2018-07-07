@@ -373,6 +373,17 @@ var generator = function(basic, CFG) {
                         if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
                     }
                     continue
+                case "pop":
+                    while(tokens.length) {
+                        var ex = isVar(tokens[0])
+                        if (!ex) croak ("POP needs a variable name",line)
+                        ENV.addVar(ex.value,"int")
+                        out+="\tPOP H\n"                        
+                        out+=CFG.asm.storeInt(ex.value,line)
+                        if (!tokens.length) continue;
+                        if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
+                    }
+                    continue
     			case "let":
                     //par = tokens.shift();
                     var multiassign = [];
