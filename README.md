@@ -164,6 +164,18 @@ factorial: take fact
     return temp*fact
 ```
 
+### RETURN expr,pops
+
+A syntactic sugar for the case you need compute some return value and THEN pop some variables. Good for tail recursion.
+
+```
+factorial: take fact
+    if fact=1 then return 1
+    push fact
+    return fact*fn(factorial,fact-1),fact
+```    
+
+
 ## FUNCTIONS
 
 ### int ABS (int)

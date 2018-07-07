@@ -251,15 +251,16 @@ var generator = function(basic, CFG) {
             //special call
             if (expr.value == "fn") {
                 var call = expr.operands[0]
-                console.log(call.value,ENV.labels)
+                //console.log(call.value,ENV.labels)
                 var target = findLabel(call.value,ENV.labels);
                 if (target===null) croak("Target line not found",line)
-                var out = "";
+                var out = "\tPUSH D\n";
                 out += exprAsm(expr.operands[1],line,"int")
                 if(expr.operands.length==3) {
                     out += exprAsm(expr.operands[2],line,"int",true)
                 }
                 out+=CFG.asm.docall("CMD"+target)
+                out += "\tPOP D\n";
                 return out;
 
             }
@@ -331,6 +332,20 @@ var generator = function(basic, CFG) {
                         var ex = expr(tokens,line)
                         var et = exprType(ex,line);
                         out+=exprAsm(ex,line,et);
+                        //pops?
+                        if (isPunc(",",tokens[0])){
+                            out+="\tXCHG\n"
+                            while(tokens.length) {
+                                var ex = isVar(tokens[0])
+                                if (!ex) croak ("POP needs a variable name",line)
+                                ENV.addVar(ex.value,"int")
+                                out+=CFG.asm.dopop();                      
+                                out+=CFG.asm.storeInt(ex.value,line)
+                                if (!tokens.length) continue;
+                                if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
+                            }              
+                            out+="\tXCHG\n"          
+                        }
                     }
     				out+=CFG.asm.ret();
     				continue;
