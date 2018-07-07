@@ -287,23 +287,23 @@ var generator = function(basic, CFG) {
 
 //----------------------------------------------------
 
-    var isPunc = function(punc,token) {
-        if (!token) return false
-        if (token.type!="punc") return false
-        if (token.value!=punc) return false
+    var isPunc = function(punc) {
+        if (!tokens.length) return false
+        if (tokens[0].type!="punc") return false
+        if (tokens[0].value!=punc) return false
         tokens.shift()
         return true;
     }
-    var isOp = function(op,token) {
-        if (!token) return false
-        if (token.type!="op") return false
-        if (token.value!=op) return false
+    var isOp = function(op) {
+        if (!tokens.length) return false
+        if (tokens[0].type!="op") return false
+        if (tokens[0].value!=op) return false
         tokens.shift()
         return true;
     }
-    var isVar = function(token) {
-        if (!token) return false
-        if (token.type!="var") return false
+    var isVar = function() {
+        if (!tokens.length) return false
+        if (tokens[0].type!="var") return false
         return tokens.shift();
     }
 
@@ -344,16 +344,16 @@ var generator = function(basic, CFG) {
                         var et = exprType(ex,line);
                         out+=exprAsm(ex,line,et);
                         //pops?
-                        if (isPunc(";",tokens[0])){
+                        if (isPunc(";")){
                             out+=CFG.asm.swap()
                             while(tokens.length) {
-                                var ex = isVar(tokens[0])
+                                var ex = isVar()
                                 if (!ex) croak ("POP needs a variable name",line)
                                 ENV.addVar(ex.value,"int")
                                 out+=CFG.asm.dopop();                      
                                 out+=CFG.asm.storeInt(ex.value,line)
                                 if (!tokens.length) continue;
-                                if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
+                                if (!isPunc(",")) croak ("Separate names with a comma",line)
                             }              
                             out+=CFG.asm.swap()          
                         }
@@ -421,13 +421,13 @@ var generator = function(basic, CFG) {
                     continue
 
                 case "swap":
-                    var ex = isVar(tokens[0])
+                    var ex = isVar()
                     if (!ex) croak ("SWAP needs a variable name",line)
                     out+=CFG.xp.var(ex,line)
                     ENV.addVar(ex.value,"int")
                     if (!tokens.length) continue;
-                    if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
-                    var ex2 = isVar(tokens[0])
+                    if (!isPunc(",")) croak ("Separate names with a comma",line)
+                    var ex2 = isVar()
                     if (!ex2) croak ("SWAP needs two variables",line)
                     ENV.addVar(ex2.value,"int")
                     out+=CFG.asm.swap()
@@ -440,28 +440,28 @@ var generator = function(basic, CFG) {
 
                 case "push":
                     while(tokens.length) {
-                        var ex = isVar(tokens[0])
+                        var ex = isVar()
                         if (!ex) croak ("PUSH needs a variable name",line)
                         out+=CFG.xp.var(ex,line)
                         ENV.addVar(ex.value,"int")
                         out+=CFG.asm.dopush();
                         if (!tokens.length) continue;
-                        if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
+                        if (!isPunc(",")) croak ("Separate names with a comma",line)
                     }
                     continue
                 case "pop":
                     while(tokens.length) {
-                        var ex = isVar(tokens[0])
+                        var ex = isVar()
                         if (!ex) croak ("POP needs a variable name",line)
                         ENV.addVar(ex.value,"int")
                         out+=CFG.asm.dopop();                      
                         out+=CFG.asm.storeInt(ex.value,line)
                         if (!tokens.length) continue;
-                        if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
+                        if (!isPunc(",")) croak ("Separate names with a comma",line)
                     }
                     continue
                 case "take":
-                    var ex = isVar(tokens[0])
+                    var ex = isVar()
                     if (!ex) croak ("TAKE needs a variable name",line)
                     ENV.addVar(ex.value,"int")
                     //
@@ -470,26 +470,26 @@ var generator = function(basic, CFG) {
                         continue;
                     }
                     //pushs?
-                    if (isPunc(";",tokens[0])){
+                    if (isPunc(";")){
                         while(tokens.length) {
                             out+=CFG.asm.dopush()
-                            var pex = isVar(tokens[0])
+                            var pex = isVar()
                             if (!pex) croak ("TAKE PUSH needs a variable name",line)
                             ENV.addVar(pex.value,"int")
                             out+=CFG.xp.var(pex,line)
                             out+=CFG.asm.stackSwap()
                             if (!tokens.length) continue;
-                            if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
+                            if (!isPunc(",")) croak ("Separate names with a comma",line)
                         }              
                             
                         out+=CFG.asm.storeInt(ex.value,line)
                         continue      
                     }
                     var firstPar = CFG.asm.storeInt(ex.value,line)+CFG.asm.swap()
-                    if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
+                    if (!isPunc(",")) croak ("Separate names with a comma",line)
 
                     //second take
-                    ex = isVar(tokens[0])
+                    ex = isVar()
                     if (!ex) croak ("Second TAKE needs a variable name",line)
                     ENV.addVar(ex.value,"int")
                     if (!tokens.length) {
@@ -497,16 +497,16 @@ var generator = function(basic, CFG) {
                         continue;
                     }
                     //pushs?
-                    if (isPunc(";",tokens[0])){
+                    if (isPunc(";")){
                         while(tokens.length) {
                             out+=CFG.asm.dopush()
-                            var pex = isVar(tokens[0])
+                            var pex = isVar()
                             if (!pex) croak ("TAKE PUSH needs a variable name",line)
                             ENV.addVar(pex.value,"int")
                             out+=CFG.xp.var(pex,line)
                             out+=CFG.asm.stackSwap()
                             if (!tokens.length) continue;
-                            if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
+                            if (!isPunc(",")) croak ("Separate names with a comma",line)
                         }              
                             
                         out+=firstPar+CFG.asm.storeInt(ex.value,line)
@@ -522,11 +522,11 @@ var generator = function(basic, CFG) {
                     var target = findLabel(par.value,labels);
                     if (target===null) croak("Target line not found",line)
                     tokens.shift()
-                    if (!isPunc(",",tokens[0])) croak("Syntax error",line)  
+                    if (!isPunc(",")) croak("Syntax error",line)  
                     var ex = expr(tokens,line);
                     var et = exprType(ex,line);
                     out+=exprAsm(ex,line,et)
-                    if (isPunc(",",tokens[0])) {
+                    if (isPunc(",")) {
                         var ex2 = expr(tokens,line);
                         var et = exprType(ex2,line);    
                         out+=exprAsm(ex2,line,et2,true)
@@ -545,7 +545,7 @@ var generator = function(basic, CFG) {
                         var ex = expr(tokens,line);
                         var et = exprType(ex,line);
                         out+=exprAsm(ex,line,et)
-                        if (isPunc(",",tokens[0])) {
+                        if (isPunc(",")) {
                             var ex2 = expr(tokens,line);
                             var et = exprType(ex2,line);    
                             out+=exprAsm(ex2,line,et2,true)
@@ -559,38 +559,38 @@ var generator = function(basic, CFG) {
                     if (epar.type=="var") {
                         //inc,dec
                         if (!tokens.length) croak("LET should assign something",line)
-                        if(isOp("++",tokens[0])) {
+                        if(isOp("++")) {
                             //INC short
                             ENV.addVar(epar.value,"int")
                             out+=CFG.asm.varplus1(epar.value)
                             tokens.shift();
                             continue
-                        } else if(isOp("--",tokens[0])) {
+                        } else if(isOp("--")) {
                             //DEC short
                             ENV.addVar(epar.value,"int")
                             out+=CFG.asm.varminus1(epar.value)
                             tokens.shift();
                             continue
-                        } else if(isOp("**",tokens[0])) {
+                        } else if(isOp("**")) {
                             //*2 short
                             ENV.addVar(epar.value,"int")
                             out+=CFG.asm.vartimes2(epar.value)
                             tokens.shift();
                             continue
-                        } else if(isOp("+++",tokens[0])) {
+                        } else if(isOp("+++")) {
                             //INC short
                             ENV.addVar(epar.value,"int")
                             out+=CFG.asm.varplus2(epar.value)
                             tokens.shift();
                             continue
-                        } else if(isOp("---",tokens[0])) {
+                        } else if(isOp("---")) {
                             //DEC short
                             ENV.addVar(epar.value,"int")
                             out+=CFG.asm.varminus2(epar.value)
                             tokens.shift();
                             continue
                         } else if (tokens[0].type=="punc" && tokens[0].value==",") {
-                            while(isPunc(",",tokens[0])) {
+                            while(isPunc(",")) {
                                 //let x,x,x = something
                                 if (epar.type!="var") {
                                     croak("Multiassigning needs a scalar int",line)
@@ -641,7 +641,7 @@ var generator = function(basic, CFG) {
                     //addr
                     var ex = expr(tokens,line);
                     var et = exprType(ex,line);
-                    if (!isPunc(",",tokens[0])) croak("Syntax error",line)
+                    if (!isPunc(",")) croak("Syntax error",line)
                     //value
                     var ex2 = expr(tokens,line);
                     var et2 = exprType(ex2,line);
@@ -650,7 +650,7 @@ var generator = function(basic, CFG) {
                 case "dpoke":
                     var ex = expr(tokens,line);
                     var et = exprType(ex,line);
-                    if (!isPunc(",",tokens[0])) croak("Syntax error",line)
+                    if (!isPunc(",")) croak("Syntax error",line)
                     var ex2 = expr(tokens,line);
                     var et2 = exprType(ex2,line);
                     out+=CFG.asm.dpoke(ex,et,ex2,et2,exprAsm,line)
@@ -759,13 +759,13 @@ var generator = function(basic, CFG) {
                 case "input":
                     var hasstr = false;
                     while(tokens.length) {
-                        if (isPunc("#",tokens[0])) {
+                        if (isPunc("#")) {
                             //channel swap
                             var chan = expr(tokens,line,true);
                             out+=exprAsm(chan,line,"int");
                             ENV.addUse("inpchan")
                             out+=CFG.asm.docall("inpchan")
-                            if (!isPunc(",",tokens[0])) croak("Syntax error",line)
+                            if (!isPunc(",")) croak("Syntax error",line)
                             continue;
                         }
                         var par = expr(tokens,line)
@@ -778,7 +778,7 @@ var generator = function(basic, CFG) {
                             out+=CFG.asm.storeInt(par.value)
                             //consume remainder
                             if (!tokens.length) break; //the last one
-                            if (!isPunc(",",tokens[0])) croak("Syntax error",line)
+                            if (!isPunc(",")) croak("Syntax error",line)
                             continue;
                         } else if (par.type=="var[]") {
                             //good, lets input a number into an array
@@ -795,7 +795,7 @@ var generator = function(basic, CFG) {
                             }
                             //consume remainder
                             if (!tokens.length) break; //the last one
-                            if (!isPunc(",",tokens[0])) croak("Syntax error",line)
+                            if (!isPunc(",")) croak("Syntax error",line)
                             continue;
                         } else if (par.type=="var$") {
                             //good, lets input a string
@@ -809,7 +809,7 @@ var generator = function(basic, CFG) {
                             //heap test
                             out+=CFG.asm.storeStrNoGC(par.value)
                             if (!tokens.length) break; //the last one
-                            if (!isPunc(",",tokens[0])) croak("Syntax error",line)
+                            if (!isPunc(",")) croak("Syntax error",line)
                             tokens.shift();                            
                             continue;
                         }
@@ -820,11 +820,11 @@ var generator = function(basic, CFG) {
                         ENV.addUse("print"+et)
                         out+=CFG.asm.docall("print"+et)
                         println = true;
-                        if (isPunc(";",tokens[0])) {
+                        if (isPunc(";")) {
                             println = false;
                             continue;
                         }
-                        if (isPunc(",",tokens[0])) {
+                        if (isPunc(",")) {
                             ENV.addUse("printtab")
                             out+=CFG.asm.docall("printtab")
                             println = false;
@@ -838,14 +838,14 @@ var generator = function(basic, CFG) {
                 case "print":
                 var println = true;
                     while(tokens.length) {
-                        if (isPunc("#",tokens[0])) {
+                        if (isPunc("#")) {
                             //channel swap
                             var chan = expr(tokens,line,true);
                             out+=exprAsm(chan,line,"int");
                             ENV.addUse("prtchan")
                             out+=CFG.asm.docall("prtchan")
                             out+="\tCALL prtchan\n"
-                            if (!isPunc(",",tokens[0])) croak("Syntax error",line)
+                            if (!isPunc(",")) croak("Syntax error",line)
                             continue
                         }
                         var ex = expr(tokens,line,true);
@@ -854,11 +854,11 @@ var generator = function(basic, CFG) {
                         ENV.addUse("print"+et)
                         out+=CFG.asm.docall("print"+et)
                         println = true;
-                        if (isPunc(";",tokens[0])) {
+                        if (isPunc(";")) {
                             println = false;
                             continue;
                         }
-                        if (isPunc(",",tokens[0])) {
+                        if (isPunc(",")) {
                             ENV.addUse("printtab")
                             out+=CFG.asm.docall("printtab")
                             println = false;
