@@ -2,7 +2,7 @@
 
 The BASIC compiler for 8bit CPUs
 
-Version 0
+Version 0 - early alpha. Use on your own risk.
 
 ## Features:
 
