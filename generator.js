@@ -463,15 +463,55 @@ var generator = function(basic, CFG) {
                     var ex = isVar(tokens[0])
                     if (!ex) croak ("TAKE needs a variable name",line)
                     ENV.addVar(ex.value,"int")
-                    out+=CFG.asm.storeInt(ex.value,line)
-                    if (!tokens.length) continue;
+                    //
+                    if (!tokens.length) {
+                        out+=CFG.asm.storeInt(ex.value,line)
+                        continue;
+                    }
+                    //pushs?
+                    if (isPunc(";",tokens[0])){
+                        while(tokens.length) {
+                            out+="\tPUSH H\n"
+                            var pex = isVar(tokens[0])
+                            if (!pex) croak ("TAKE PUSH needs a variable name",line)
+                            ENV.addVar(pex.value,"int")
+                            out+=CFG.xp.var(pex,line)
+                            out+="\tXTHL\n"
+                            if (!tokens.length) continue;
+                            if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
+                        }              
+                            
+                        out+=CFG.asm.storeInt(ex.value,line)
+                        continue      
+                    }
+                    var firstPar = CFG.asm.storeInt(ex.value,line)+"\tXCHG\n"
                     if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
 
                     //second take
                     ex = isVar(tokens[0])
                     if (!ex) croak ("Second TAKE needs a variable name",line)
                     ENV.addVar(ex.value,"int")
-                    out+="\tXCHG\n"+CFG.asm.storeInt(ex.value,line)
+                    if (!tokens.length) {
+                        out+=firstPar+CFG.asm.storeInt(ex.value,line)
+                        continue;
+                    }
+                    //pushs?
+                    if (isPunc(";",tokens[0])){
+                        while(tokens.length) {
+                            out+="\tPUSH H\n"
+                            var pex = isVar(tokens[0])
+                            if (!pex) croak ("TAKE PUSH needs a variable name",line)
+                            ENV.addVar(pex.value,"int")
+                            out+=CFG.xp.var(pex,line)
+                            out+="\tXTHL\n"
+                            if (!tokens.length) continue;
+                            if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
+                        }              
+                            
+                        out+=firstPar+CFG.asm.storeInt(ex.value,line)
+                        continue      
+                    }
+                    out+=firstPar+CFG.asm.storeInt(ex.value,line)
                     if (!tokens.length) continue;
                     croak ("TAKE has 2 parameters max",line)
 

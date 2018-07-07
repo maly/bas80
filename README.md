@@ -177,6 +177,26 @@ factorial: take fact
     return fact*fn(factorial,fact-1);fact
 ```    
 
+### TAKE p[,p2];var[,var...]
+
+If you want to PUSH some variables PRIOR to taking a value, use this syntax.
+
+```
+factorial: take fact;fact
+   if fact=1 then return 1;fact
+   return fn(factorial,fact-1)*fact;fact
+```
+
+Or with more sugar:
+```
+DEF FN factorial
+
+factorial: take fact;fact
+    if fact=1 then return 1;fact
+    return factorial(fact-1)*fact;fact
+```
+
+
 ### CALL label,par
 ### CALL label,par1,par2
 
