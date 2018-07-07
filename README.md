@@ -166,7 +166,7 @@ factorial: take fact
     return temp*fact
 ```
 
-### RETURN expr,pops
+### RETURN expr;var[,var...]
 
 A syntactic sugar for the case you need compute some return value and THEN pop some variables. Good for tail recursion.
 
@@ -174,7 +174,7 @@ A syntactic sugar for the case you need compute some return value and THEN pop s
 factorial: take fact
     if fact=1 then return 1
     push fact
-    return fact*fn(factorial,fact-1),fact
+    return fact*fn(factorial,fact-1);fact
 ```    
 
 ### CALL label,par

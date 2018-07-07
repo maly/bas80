@@ -356,7 +356,7 @@ var generator = function(basic, CFG) {
                         var et = exprType(ex,line);
                         out+=exprAsm(ex,line,et);
                         //pops?
-                        if (isPunc(",",tokens[0])){
+                        if (isPunc(";",tokens[0])){
                             out+="\tXCHG\n"
                             while(tokens.length) {
                                 var ex = isVar(tokens[0])
