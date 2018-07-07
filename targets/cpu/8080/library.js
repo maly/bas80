@@ -869,7 +869,17 @@ var LIB = {
         "    ora a\n"+
         "    rz\n"+
         "    jmp f_neg\n"
-    },        
+    },  
+    "f_low": {
+        uses:null,
+        inline:true,
+        code: "\tMVI H,0\n"
+    },            
+    "f_high": {
+        uses:null,
+        inline:true,
+        code: "\tMOV L,H\n\tMVI H,0\n"
+    },            
     "f_chrS": {
         uses:["__heap"],
         code: "\tMOV A,L\n"+

@@ -82,7 +82,7 @@ var CONFIG = {
                 }
             },
 
-            fn: function(expr,line,ENV, exprAsm) {
+            fn: function(expr,line,ENV, exprAsm, LIB) {
                 out="";
                 if (expr.operands.length==1) {
                     out += exprAsm(expr.operands[0])
@@ -94,10 +94,14 @@ var CONFIG = {
                     out += exprAsm(expr.operands[i])+"\tPUSH H\n"
                 }
                 ENV.addUse("f_"+expr.value);
+                if (LIB["f_"+expr.value].inline) {
+                    out+=LIB["f_"+expr.value].code
+                    return out;
+                }
                 out += "\tCALL f_"+expr.value+"\n"
                 return out;
             },
-            fnL: function(expr,line,ENV, exprAsm) {
+            fnL: function(expr,line,ENV, exprAsm,LIB) {
                 out=";[*DD*]\n";
                 if (expr.operands.length==1) {
                     out += exprAsm(expr.operands[0])
@@ -109,6 +113,10 @@ var CONFIG = {
                     out += exprAsm(expr.operands[i])+"\tPUSH H\n"
                 }
                 ENV.addUse("f_"+expr.value);
+                if (LIB["f_"+expr.value].inline) {
+                    out+=LIB["f_"+expr.value].code
+                    return out+"\tXCHG\n";
+                }
                 out += "\tCALL f_"+expr.value+"\n\tXCHG\n"
                 return out;
             },
@@ -230,6 +238,9 @@ var CONFIG = {
             },
             storeStr: function(name) {
                 return "\tSHLD vs_"+name+"\n\tCALL hp_assign\n\tcall hp_gc\n"
+            },
+            storeStrNoGC: function(name) {
+                return "\tSHLD vs_"+name+"\n\tCALL hp_assign\n"
             },
             storeA: function(par,line,et, ENV, exprAsm) {
                 var out="";
