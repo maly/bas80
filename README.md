@@ -23,6 +23,8 @@ Version 0 - early alpha. Use on your own risk.
 ### LET var$ = string expression
 
 The LET keyword can be omitted.
+Multiple assignment is allowed, just use `LET var[,var,var...]=expr` Vars have to be scalar int
+
 
 ### PRINT
 
@@ -50,9 +52,9 @@ Needs a constant target: GOTO 100. No "computed GOTOs"
 
 Call subroutine at given label. 
 
-### RETURN 
+### RETURN [expr]
 
-Return from subroutine.
+Return from subroutine. Expression value is, if used, returned as from function
 
 ### REM
 
@@ -122,6 +124,10 @@ You have to place DIM at the top of code. DIM does nothing in code, it just info
 
 Array length has to be a constant, so no computed DIMs allowed!
 
+### RAMTOP const
+
+Sets the first unused addr to given constant expression. BASIC will not use any memory above the RAMTOP (stack is not affected)
+
 ## FUNCTIONS
 
 ### int ABS (int)
@@ -155,6 +161,11 @@ Returns the word value (two bytes) at given address
 ### int VAL (string)
 
 Returns the decimal value of string.
+
+### int HIGH (int)
+### int LOW (int)
+
+Returns upper / lower byte of int
 
 
 ## Operators
