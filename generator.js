@@ -437,6 +437,25 @@ var generator = function(basic, CFG) {
                     if (par.type!="num") croak("RAMTOP needs a constant value",line);
                     CFG.ramtop = par.value
                     continue
+
+                case "swap":
+                    var ex = isVar(tokens[0])
+                    if (!ex) croak ("SWAP needs a variable name",line)
+                    out+=CFG.xp.var(ex,line)
+                    ENV.addVar(ex.value,"int")
+                    if (!tokens.length) continue;
+                    if (!isPunc(",",tokens[0])) croak ("Separate names with a comma",line)
+                    var ex2 = isVar(tokens[0])
+                    if (!ex2) croak ("SWAP needs two variables",line)
+                    ENV.addVar(ex2.value,"int")
+                    out+="\tXCHG\n"
+                    out+=CFG.xp.var(ex2,line)
+                    out+=CFG.asm.storeInt(ex.value)
+                    out+="\tXCHG\n"
+                    out+=CFG.asm.storeInt(ex2.value)
+
+                    continue
+
                 case "push":
                     while(tokens.length) {
                         var ex = isVar(tokens[0])

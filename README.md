@@ -111,6 +111,10 @@ Store one byte to given address
 
 Store two bytes to given address
 
+### SWAP var1,var2
+
+Swaps values for two scalar variables
+
 ### DIM var(length)
 
 Prepare an array of int. Arrays are indexed from 0, so DIM A(10) prepares an array with 10 items, denotes as A(0) .. A(9)
