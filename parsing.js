@@ -128,7 +128,12 @@ var expr = function(tokens, ln, bool) {
             if (tokens[0].type=="kw" && tokens[0].value=="to") {
                 tokens.shift();
                 var ex = {type:"num",value:0}
-                var ex2 = expr(tokens,ln,bool)
+                if (tokens[0].type=="punc" && tokens[0].value==")") {
+                    var ex2 = {type:"num",value:32767}
+                } else {
+                    var ex2 = expr(tokens,ln,bool)
+                    //var et2 = exprType(ex2,ln);
+                }
                 //var et2 = exprType(ex2,ln);
             } else {
                 var ex = expr(tokens,ln,bool)
