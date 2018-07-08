@@ -196,6 +196,7 @@ var generator = function(basic, CFG) {
     ENV.fns={}
     ENV.procs={}
     ENV.datas=[]
+    ENV.datalabels=[]
 
     //library uses some system routines
     //so copy them there
@@ -920,7 +921,7 @@ var generator = function(basic, CFG) {
                         }
                         var ex = expr(tokens,line);
                         var et = exprType(ex,line);
-                        console.log(ex,et)
+                        //console.log(ex,et)
                         out+=exprAsm(ex,line,et);
                         ENV.addUse("print"+et)
                         out+=CFG.asm.docall("print"+et)
@@ -978,17 +979,18 @@ var generator = function(basic, CFG) {
 
     //datadump
     out+=";----INITIALIZED DATA SEGMENT (RAM)\n"
-    out+="datapoint: dw $+2\n"
-    out+="databegin:\n"
-    out+=ENV.datas.join("")
-    out+="datatable: dw 0\n"
-    ENV.datalabels = ENV.datalabels.sort(function(a,b){return b-a;})
-    for (var i=0;i<ENV.datalabels.length;i++) {
-        var l =ENV.datalabels[i];
-        out+="\tdw "+l+",dt_"+l+"\n"
+    if (ENV.datas.length) {
+        out+="datapoint: dw $+2\n"
+        out+="databegin:\n"
+        out+=ENV.datas.join("")
+        out+="datatable: dw 0\n"
+        ENV.datalabels = ENV.datalabels.sort(function(a,b){return b-a;})
+        for (var i=0;i<ENV.datalabels.length;i++) {
+            var l =ENV.datalabels[i];
+            out+="\tdw "+l+",dt_"+l+"\n"
+        }
+        out+="\tdw 0\n"
     }
-    out+="\tdw 0\n"
-
     //vardump
     out+=";----BSS SEGMENT\n"
     out+=varAsm();
