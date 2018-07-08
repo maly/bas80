@@ -112,6 +112,10 @@ Store one byte to given address
 
 Store two bytes to given address
 
+### OUT port,val
+
+Send one byte to the given I/O port
+
 ### SWAP var1,var2
 
 Swaps values for two scalar variables
@@ -273,6 +277,10 @@ Returns the byte value at given address
 ### int DPEEK (addr)
 
 Returns the word value (two bytes) at given address
+
+### int IN (port)
+
+Returns the byte value from given port number
 
 ### int VAL (string)
 

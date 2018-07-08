@@ -369,7 +369,7 @@ var CONFIG = {
 
                 out+="\tLXI H,00d3h\n"
                 out+="\tSHLD sv_iofix\n"
-                out+="\tLXI H,00c9h\n"
+                out+="\tMVI L,c9h\n"
                 out+="\tSHLD sv_iofix+2\n"
 
                 out+=exprAsm(addr,line,addrT);  

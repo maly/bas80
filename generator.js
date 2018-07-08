@@ -127,6 +127,12 @@
                     ENV.addVar(fn.sysdw[i],"sysdw")
                 }
             }
+            if (fn.sysdq) {
+                var sv;
+                for(var i=0;i<fn.sysdq.length;i++){
+                    ENV.addVar(fn.sysdq[i],"sysdq")
+                }
+            }
             out+=";---"+fname+"---\n"
             out+=fname+":\n"
             out += fn.code

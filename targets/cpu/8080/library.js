@@ -1000,6 +1000,19 @@ var LIB = {
         "\tMOV L,A\n"+
         "\tRET\n"
     },
+    "f_in":{
+        uses:null,
+        sysdq:["iofix"],
+        code: "\tMOV A,L\n"+
+        "\tLXI H,00dbh\n"+
+        "\tSHLD sv_iofix\n"+
+        "\tMVI L,0c9h\n"+
+        "\tSHLD sv_iofix+2\n"+
+        "\tSTA sv_iofix+1\n"+
+        "\tCALL sv_iofix\n"+
+        "\tMOV L,A\n"+
+        "\tRET\n"
+    },
     "f_dpeek":{
         uses:null,
         code: "\tMOV A,M\n"+

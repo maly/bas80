@@ -14,6 +14,7 @@ var ARITY = {
     "low":["int"],
     "high":["int"],
     "peek":["int"],
+    "in":["int"],
     "fn":["int","int"],
     "dpeek":["int"],
     "sgn":["int"],
