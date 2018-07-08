@@ -6,7 +6,16 @@ var LIB = {
         code:
         ";heap management 1.1\n"+
         "\tHP_INIT:\n"+
-        "\n"+
+        "\nlxi h,heap\n"+
+        "\nlxi b,ramtop-heap\n"+
+        "\nmvi e,0\n"+
+        "hp_iclr:\n"+
+        "\nmov m,e\n"+
+        "\ninx h\n"+
+        "\ndcx b\n"+
+        "\nmov a,b\n"+
+        "\nora c\n"+
+        "\njnz hp_iclr\n"+
         "\tLXI     H,((RAMTOP-HEAP)&0xfffe)-4 \n"+
         "\tSHLD    HEAP \n"+
         "\tLXI     H,HEAP \n"+
