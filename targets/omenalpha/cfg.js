@@ -300,6 +300,29 @@ var CONFIG = {
             storeStr: function(name) {
                 return "\tSHLD vs_"+name+"\n\tCALL hp_assign\n\tcall hp_gc\n"
             },
+
+            storeSlice: function(name,expr,line, ENV, exprAsm) {
+                //console.log(expr)
+                ENV.addUse("stslice")
+                ENV.addUse("strclone")
+                ENV.addUse("stcpy")
+                out="\tPUSH H\n"
+                out+="\tLHLD vs_"+name+"\n"
+                out+="\tCALL strclone\n" //kopie řetězce v prac. oblasti
+                out+="\tSHLD vs_"+name+"\n\tPUSH H\n\tCALL hp_assign\n\tcall hp_gc\n"
+                //ještě to přepsat
+                out+=""
+                out += exprAsm(expr.from,line,"int")
+                out+="\tMOV C,L\n\tMOV B,H\n"
+                out += exprAsm(expr.to,line,"int",true)
+                out+="\tPOP H\n"
+                out+="\tCALL stslice\n" //v HL bude adresa, kam kopírovat
+                out+="\tPOP D\n" //co kopírovat
+                out+="\tCALL stcpy\n" //max BC
+
+                return out
+            },   
+
             storeStrNoGC: function(name) {
                 return "\tSHLD vs_"+name+"\n\tCALL hp_assign\n"
             },

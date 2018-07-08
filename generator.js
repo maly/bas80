@@ -683,8 +683,13 @@ var generator = function(basic, CFG) {
                     }
                     if (epar.type!=="assign") croak("LET should assign",line)
                     par = epar.left
-    				if (par.type!="var" && par.type!="var[]" && par.type!="var$") croak("No variable name",line)
+    				if (par.type!="var" && par.type!="var[]" && par.type!="var$" && par.type!="slice$") croak("No variable name",line)
                     if (par.type=="var$") {
+                        ENV.addVar(par.value,"str")
+                        ENV.addUse("__heap")
+                        out+=CFG.asm.strUnassign(par.value)
+                    }
+                    if (par.type=="slice$") {
                         ENV.addVar(par.value,"str")
                         ENV.addUse("__heap")
                         out+=CFG.asm.strUnassign(par.value)
@@ -714,6 +719,9 @@ var generator = function(basic, CFG) {
     				} else if (par.type=="var$") {
                         if (et!="str") croak("Cannot assign this to string variable",line)
                         out+=CFG.asm.storeStr(par.value)
+    				} else if (par.type=="slice$") {
+                        if (et!="str") croak("Cannot assign this to string slice",line)
+                        out+=CFG.asm.storeSlice(par.value,par,line,ENV,exprAsm)
     				}
                     continue;
                 case "poke":

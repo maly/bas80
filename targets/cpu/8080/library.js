@@ -854,6 +854,88 @@ var LIB = {
 
     },
 
+    "stslice": {
+        uses:["__heap"],
+        code:
+        "\tMOV A,B\n"+
+        "\tORA C\n"+
+        "\tJZ sts_skip\n"+
+        "\tDCX B\n"+
+        "\tDCX D\n"+
+        "\tINX H\n"+
+        "\tJMP stslice\n"+
+        "sts_skip:\n"+
+        "\tINX D\n"+
+        "\tpush h\n"+
+        "\t;lxi b,0\n"+
+        "sts_fix:\n"+
+        "\tmov a,m\n"+
+        "\tora a\n"+
+        "\tjz sts_m\n"+
+        "\tinx h\n"+
+        "\tinx b\n"+
+        "\tdcx d\n"+
+        "\tmov a,d\n"+
+        "\tora e\n"+
+        "\tjnz sts_fix\n"+
+        "sts_m:\n"+
+        "\tpop h\n"+
+        "\tRET\n"
+    },
+
+    "stcpy": {
+        uses:["__heap"],
+        code: 
+            "\tMOV A,M\n"+
+            "\tORA A\n"+
+            "\tJZ stcp_d\n"+
+            "\tLDAX D\n"+
+            "\tORA A\n"+
+            "\tJZ stcp_d\n"+
+            "\tMOV M,A\n"+
+            "\tINX H\n"+
+            "\tINX D\n"+
+            "\tDCX B\n"+
+            "\tMOV A,B\n"+
+            "\tORA C\n"+
+            "\tJNZ stcpy\n"+
+            "stcp_d: RET\n"
+
+    },
+
+    //clone string to the heap
+    //input h:origin
+    //output h:clone
+    "strclone": {
+        uses:["__heap"],
+        code: 
+        "\tLXI B,0\n"+
+        "\tPUSH H\n"+
+        "strc_len: MOV A,M\n"+
+        "\tORA A\n"+
+        "\tJZ strc_g\n"+
+        "\tINX B\n"+
+        "\tINX H\n"+
+        "\tJMP strc_len\n"+
+        "strc_g: MOV A,B\n"+
+        "\tORA C\n"+
+        "\tRZ\n"+
+        "\tCALL hp_a\n"+
+        "\tPOP D\n"+
+        "\tPUSH H\n"+
+        "strc_c: LDAX D\n"+
+        "\tORA A\n"+
+        "\tJZ strc_f\n"+
+        "\tMOV M,A\n"+
+        "\tINX H\n"+
+        "\tINX D\n"+
+        "\tJMP strc_c\n"+
+        "strc_f: POP H\n"+
+        "\tRET\n"
+
+    },
+
+
     //functions
     "f_max": {
         uses:null,
