@@ -45,6 +45,9 @@ var exprType = function(expr,ln) {
     if (type=="var$") {
         return "str"
     }
+    if (type=="slice$") {
+        return "str"
+    }
     if (type=="binary") {
         var left = exprType(expr.left,ln);
         var right = exprType(expr.right,ln);
@@ -90,7 +93,7 @@ var expr = function(tokens, ln, bool) {
         }
 
         if (n.type=="var" && tokens.length && tokens[0].type=="punc" && tokens[0].value=="(") {
-            //it should be an array or func
+            //it should be an array
 
             if (ENV.fns[n.value]==n.value) {
                 //it's a function, dude!
@@ -116,6 +119,39 @@ var expr = function(tokens, ln, bool) {
             expectPunctuation(")")
             return {type:"var[]",value:n.value,index:ex}
         }
+
+        if (n.type=="var$" && tokens.length && tokens[0].type=="punc" && tokens[0].value=="(") {
+            //it should be an string slice
+            //console.log(JSON.parse(JSON.stringify(tokens)))
+            expectPunctuation("(")
+//            console.log(JSON.parse(JSON.stringify(tokens)))
+            if (tokens[0].type=="kw" && tokens[0].value=="to") {
+                tokens.shift();
+                var ex = {type:"num",value:0}
+                var ex2 = expr(tokens,ln,bool)
+                //var et2 = exprType(ex2,ln);
+            } else {
+                var ex = expr(tokens,ln,bool)
+                //var et = exprType(ex,ln);
+                if (tokens.length) {
+                    if (tokens[0].type=="kw" && tokens[0].value=="to") {
+                        tokens.shift();
+                        
+                        if (tokens[0].type=="punc" && tokens[0].value==")") {
+                            var ex2 = {type:"num",value:32767}
+                        } else {
+                            var ex2 = expr(tokens,ln,bool)
+                            //var et2 = exprType(ex2,ln);
+                        }
+                    }
+                }
+            }
+            //console.log(ex2)
+            //console.log(JSON.parse(JSON.stringify(tokens)))
+            expectPunctuation(")")
+            return {type:"slice$",value:n.value,from:ex, to:ex2}
+        }
+
 
         if (n.type=="fn") {
             var nn = ARITY[n.value].length;
