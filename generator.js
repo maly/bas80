@@ -754,7 +754,7 @@ var generator = function(basic, CFG) {
                     //value
                     var ex2 = expr(tokens,line);
                     var et2 = exprType(ex2,line);
-                    out+=CFG.asm.ioOut(ex,et,ex2,et2,exprAsm,line)
+                    out+=CFG.asm.ioOut(ex,et,ex2,et2,exprAsm,line,ENV)
                     continue
 
                 

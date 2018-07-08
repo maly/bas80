@@ -356,6 +356,35 @@ var CONFIG = {
                 return "\tSHLD "+name+"\n"
             },
 
+            ioOut: function(addr,addrT,value,valueT,exprAsm,line, ENV) {
+                var out=""
+                if (addr.type=="num") {
+                    //constant out
+                    out+=exprAsm(value,line,valueT);  //value is not a constant
+                    out+="\tMOV A,L\n"
+                    out+="\tOUT "+addr.value+"\n"
+                    return out;
+                }
+                ENV.addVar("iofix","sysdq")
+
+                out+="\tLXI H,00d3h\n"
+                out+="\tSHLD sv_iofix\n"
+                out+="\tLXI H,00c9h\n"
+                out+="\tSHLD sv_iofix+2\n"
+
+                out+=exprAsm(addr,line,addrT);  
+                out+="\tMOV A,L\n"
+                out+="\tSTA sv_iofix+1\n"
+
+
+                out+=exprAsm(value,line,valueT);  //value is not a constant
+                out+="\tMOV A,L\n"
+                out+="\tCALL sv_iofix\n"
+
+
+                return out;
+            },
+
             poke: function(addr,addrT,value,valueT,exprAsm,line) {
                 var out=""
                 if (value.type!="num") {
