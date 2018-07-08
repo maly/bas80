@@ -13,6 +13,7 @@ Version 0 - early alpha. Use on your own risk.
 - The output is compatible with ASM80 syntax
 - Case insensitive (you can write PRINT as well as print or Print)
 - label can be an integer ("line number") or string (ended with a colon, e.g. `hello:`)
+- String slices (like a ZX Spectrum BASIC)
 
 ## Limitations:
 
@@ -282,6 +283,23 @@ Returns the decimal value of string.
 
 Returns upper / lower byte of int
 
+## String slices
+
+String variable can be "sliced" (like with LEFT$, MID$, RIGHT$), but in a more flexible way. Just use the string slice syntax as described below.
+
+Lets assume A$ = "Hello world". Then
+
+`A$(3 TO 5)` = "lo "
+`A$( TO 5)` = "Hello "
+`A$(5 TO )` = "world"
+
+Syntax is `var$(first TO last)`. If `first` is omitted it assumes first=0. If `last` is omitted it assumes last=LEN(var$)-1. Slice returns characters from FIRST to LAST (included).
+
+Slice can be used as left side of assign command (LET):
+
+A$ = "Hello world"
+A$(3,4) = "p,"
+A$ -> "Help, world"
 
 ## Operators
 
