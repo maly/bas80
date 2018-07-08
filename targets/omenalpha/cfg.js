@@ -82,6 +82,34 @@ var CONFIG = {
                 }
             },
 
+            sliceS: function(expr,line, ENV, exprAsm) {
+                //console.log(expr)
+                ENV.addUse("mkslice")
+                out="\tPUSH D\n\tPUSH H\n"
+                out += exprAsm(expr.from,line,"int")
+                out+="\tMOV C,L\n\tMOV B,H\n"
+                out += exprAsm(expr.to,line,"int",true)
+                //out+="\tXCHG\n"
+                out+="\tPOP H\n"
+                out+="\tCALL mkslice\n"
+                out+="\tPOP D\n"
+                return out
+            },
+
+            sliceSL: function(expr,line, ENV, exprAsm) {
+                //console.log(expr)
+                ENV.addUse("mkslice")
+                out="\tPUSH H\n"
+                out += exprAsm(expr.from,line,"int")
+                out+="\tMOV C,L\n\tMOV B,H\n"
+                out += exprAsm(expr.to,line,"int",true)
+                //out+="\tXCHG\n"
+                out+="\tPOP H\n"
+                out+="\tCALL mkslice\n"
+                out+="\tXCHG\n"
+                return out
+            },
+
             userfn: function(expr,line,ENV,exprAsm,target) {
                 var out = "\tPUSH D\n";
                 out += exprAsm(expr.operands[1],line,"int")

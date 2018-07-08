@@ -236,6 +236,14 @@ var generator = function(basic, CFG) {
             ENV.addVar(expr.value,"str")
             return CFG.xp.varS(expr,line)
         }
+        if (type=="slice$" && !left) {
+            ENV.addVar(expr.value,"str")
+            return CFG.xp.varS(expr,line)+CFG.xp.sliceS(expr,line, ENV, exprAsm)
+        }
+        if (type=="slice$" && left) {
+            ENV.addVar(expr.value,"str")
+            return CFG.xp.varS(expr,line)+CFG.xp.sliceSL(expr,line, ENV, exprAsm)
+        }
         if (type=="var$" && left) {
             ENV.addVar(expr.value,"str")
             return CFG.xp.varSL(expr,line)
@@ -907,7 +915,8 @@ var generator = function(basic, CFG) {
     
 
                 case "print":
-                var println = true;
+                    var println = true;
+                    var hasstr = false;
                     while(tokens.length) {
                         if (isPunc("#")) {
                             //channel swap
@@ -925,6 +934,7 @@ var generator = function(basic, CFG) {
                         out+=exprAsm(ex,line,et);
                         ENV.addUse("print"+et)
                         out+=CFG.asm.docall("print"+et)
+                        if (et=="str") hasstr=true
                         println = true;
                         if (isPunc(";")) {
                             println = false;
@@ -942,7 +952,7 @@ var generator = function(basic, CFG) {
                         ENV.addUse("println")
                         out+=CFG.asm.docall("println")
                     }
-                    
+                    if (hasstr) out+=CFG.asm.docall("hp_gc");
 
                     continue
 

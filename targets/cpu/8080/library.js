@@ -801,6 +801,59 @@ var LIB = {
         "\tRET\n"
     },
 
+    "mkslice": {
+        uses:["__heap"],
+        code:
+        "\tMOV A,B\n"+
+        "\tORA C\n"+
+        "\tJZ mks_skip\n"+
+        "\tDCX B\n"+
+        "\tDCX D\n"+
+        "\tINX H\n"+
+        "\tJMP mkslice\n"+
+        "mks_skip:\n"+
+        "\tINX D\n"+
+        "\t;maximum\n"+
+        "\tpush h\n"+
+        "\t;lxi b,0\n"+
+        "mks_fix:\n"+
+        "\tmov a,m\n"+
+        "\tora a\n"+
+        "\tjz mks_m\n"+
+        "\tinx h\n"+
+        "\tinx b\n"+
+        "\tdcx d\n"+
+        "\tmov a,d\n"+
+        "\tora e\n"+
+        "\tjnz mks_fix\n"+
+        "mks_m:\n"+
+        "\tpop h\n"+
+        "\tPUSH B\n"+
+        "\tPUSH H\n"+
+        "\tCALL hp_a\n"+
+        "\tPOP D\n"+
+        "\tPOP B\n"+
+        "\tPUSH H\n"+
+        "mks_loop:\n"+
+        "\tMOV A,B\n"+
+        "\tORA C\n"+
+        "\tJZ mks_end0\n"+
+        "\tLDAX D\n"+
+        "\tMOV M,A\n"+
+        "\tORA A\n"+
+        "\tJZ mks_end\n"+
+        "\tDCX B\n"+
+        "\tINX D\n"+
+        "\tINX H\n"+
+        "\tJMP mks_loop\n"+
+        "mks_end0:\n"+
+        "\tMVI M,0\n"+
+        "mks_end:\n"+
+        "\tPOP H\n"+
+        "\tRET\n"
+
+    },
+
     //functions
     "f_max": {
         uses:null,
