@@ -87,6 +87,9 @@
                 case "sysdw":
                     out +="sv_"+name+":\t DS 2\n";
                     continue
+                case "sysdq":
+                    out +="sv_"+name+":\t DS 4\n";
+                    continue
             }
         }
         for(var k in ENV.intarr) {
@@ -741,6 +744,17 @@ var generator = function(basic, CFG) {
                     var ex2 = expr(tokens,line);
                     var et2 = exprType(ex2,line);
                     out+=CFG.asm.dpoke(ex,et,ex2,et2,exprAsm,line)
+                    continue
+
+                case "out":
+                    //addr
+                    var ex = expr(tokens,line);
+                    var et = exprType(ex,line);
+                    if (!isPunc(",")) croak("Syntax error",line)
+                    //value
+                    var ex2 = expr(tokens,line);
+                    var et2 = exprType(ex2,line);
+                    out+=CFG.asm.ioOut(ex,et,ex2,et2,exprAsm,line)
                     continue
 
                 

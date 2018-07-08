@@ -85,7 +85,7 @@ var CONFIG = {
             sliceS: function(expr,line, ENV, exprAsm) {
                 //console.log(expr)
                 ENV.addUse("mkslice")
-                out="\tPUSH D\n\tPUSH H\n"
+                var out="\tPUSH D\n\tPUSH H\n"
                 out += exprAsm(expr.from,line,"int")
                 out+="\tMOV C,L\n\tMOV B,H\n"
                 out += exprAsm(expr.to,line,"int",true)
@@ -99,7 +99,7 @@ var CONFIG = {
             sliceSL: function(expr,line, ENV, exprAsm) {
                 //console.log(expr)
                 ENV.addUse("mkslice")
-                out="\tPUSH H\n"
+                var out="\tPUSH H\n"
                 out += exprAsm(expr.from,line,"int")
                 out+="\tMOV C,L\n\tMOV B,H\n"
                 out += exprAsm(expr.to,line,"int",true)
@@ -132,7 +132,7 @@ var CONFIG = {
             },
 
             fn: function(expr,line,ENV, exprAsm, LIB) {
-                out="";
+                var out="";
                 if (expr.operands.length==1) {
                     out += exprAsm(expr.operands[0])
                 } else if (expr.operands.length==2) {
@@ -151,7 +151,7 @@ var CONFIG = {
                 return out;
             },
             fnL: function(expr,line,ENV, exprAsm,LIB) {
-                out=";[*DD*]\n";
+                var out=";[*DD*]\n";
                 if (expr.operands.length==1) {
                     out += exprAsm(expr.operands[0])
                 } else if (expr.operands.length==2) {
@@ -172,6 +172,7 @@ var CONFIG = {
 
             //shortcuts for some binary expressions e.g. +1,+2,-1,*2,...
             shortcuts: function(expr,line,etype,ENV, exprAsm) {
+                var out="";
                 if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="+") {
                     out = exprAsm(expr.left,line,etype)+"\tINX H\n"
                     return out
@@ -196,6 +197,7 @@ var CONFIG = {
             },
 
             binary: function(expr,line,etype,ENV,exprAsm,LIB) {
+                var out=""
                 if (expr.left.type=="num" && expr.right.type=="binary") {
                     out = exprAsm(expr.right,line,etype)+exprAsm(expr.left,line,etype,true)
                 } else if (expr.left.type=="num" && expr.right.type=="fn") {
@@ -306,7 +308,7 @@ var CONFIG = {
                 ENV.addUse("stslice")
                 ENV.addUse("strclone")
                 ENV.addUse("stcpy")
-                out="\tPUSH H\n"
+                var out="\tPUSH H\n"
                 out+="\tLHLD vs_"+name+"\n"
                 out+="\tCALL strclone\n" //kopie řetězce v prac. oblasti
                 out+="\tSHLD vs_"+name+"\n\tPUSH H\n\tCALL hp_assign\n\tcall hp_gc\n"

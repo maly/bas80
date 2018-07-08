@@ -4,7 +4,8 @@
 		"files":
 		[
 			{"file":"./monolith-prefix.js", "minify":false},
-			{"file":"./library.js", "minify":true},
+			{"file":"./targets/cpu/8080/library.js", "minify":true},
+			{"file":"./targets/omenalpha/cfg.js", "minify":true},
 			{"file":"./lex.js", "minify":true},
 			{"file":"./parsing.js", "minify":true},
 			{"file":"./generator.js", "minify":true},
