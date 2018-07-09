@@ -60,6 +60,16 @@ Call subroutine at given label.
 
 Return from subroutine. Expression value is, if used, returned as from function
 
+### ON expr GOTO l0[,l1...]
+
+Evaluate an expression and GOTO to n-th label. Indexed from 0, so if expr=0, then goto to l0, if expr=1 then goto to l1 etc. You can use up to 128 labels at once. If expr > num of labels, then no goto is performed.
+
+_ON takes only the lower part of expression value. So expr=256 is the same as expr=0._
+
+### ON expr GOSUB l0[,l1...]
+
+The same as ON expr GOTO, but this time it is calling a subroutine instead the jump.
+
 ### REM
 
 Remark. Compiler ignores everything after this keyword until the end of line.

@@ -329,6 +329,13 @@ var generator = function(basic, CFG) {
         tokens.shift()
         return true;
     }
+    var isKw = function(kw) {
+        if (!tokens.length) return false
+        if (tokens[0].type!="kw") return false
+        if (tokens[0].value!=kw) return false
+        tokens.shift()
+        return true;
+    }
     var isVar = function() {
         if (!tokens.length) return false
         if (tokens[0].type!="var") return false
@@ -525,6 +532,66 @@ var generator = function(basic, CFG) {
                     out+=CFG.asm.storeInt(ex2.value)
 
                     continue
+
+                case "on":
+                    var ex = isVar()
+                    if (!ex) croak ("ON needs a variable name",line)
+                    out+=CFG.xp.var(ex,line)
+                    ENV.addVar(ex.value,"int")
+                    if (!tokens.length) croak ("ON needs a GOTO/GOSUB",line)
+
+                    if (isKw("goto")) {
+                        //get a list of command line numbers
+                        var list = [];
+                        while (tokens.length) {
+                            var target = findLabel(tokens[0].value,labels);
+                            if (target===null) croak("Target line "+tokens[0].value+" not found",line)
+                            list.push(target)
+                            tokens.shift();
+                            if (tokens.length) {
+                                if (!isPunc(",")) croak ("Syntax error", line)
+                            }
+                        }
+                        if (list.length>127) croak ("Too much targets", line)
+                        //do it the simple way
+                        //out += "\tmvi a,0\n"
+                        out += "\tinr l\n"
+                        while(list.length) {
+                            out += "\tdcr l\n"
+                            out += "\tjz CMD_"+list[0]+"\n"
+                            list.shift();
+                        }
+                        continue;
+                    }
+                    if (isKw("gosub")) {
+                        //get a list of command line numbers
+                        var list = [];
+                        while (tokens.length) {
+                            var target = findLabel(tokens[0].value,labels);
+                            if (target===null) croak("Target line "+tokens[0].value+" not found",line)
+                            list.push(target)
+                            tokens.shift();
+                            if (tokens.length) {
+                                if (!isPunc(",")) croak ("Syntax error", line)
+                            }
+                        }
+                        if (list.length>127) croak ("Too much targets", line)
+                        //do it the simple way
+                        //out += "\tmvi a,0\n"
+                        out += "\tlxi h,onsub_"+i+"\n"
+                        out += "\tpush h\n"
+                        out += "\tinr l\n"
+                        while(list.length) {
+                            out += "\tdcr l\n"
+                            out += "\tjz CMD_"+list[0]+"\n"
+                            list.shift();
+                        }
+                        out += "\tpop h\n"
+                        out += "onsub_"+i+":\n"
+                        continue;
+                    }
+
+                    croak("Syntax error: ON without GOTO/GOSUB",line)
 
                 case "push":
                     while(tokens.length) {
