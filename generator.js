@@ -553,14 +553,7 @@ var generator = function(basic, CFG) {
                             }
                         }
                         if (list.length>127) croak ("Too much targets", line)
-                        //do it the simple way
-                        //out += "\tmvi a,0\n"
-                        out += "\tinr l\n"
-                        while(list.length) {
-                            out += "\tdcr l\n"
-                            out += "\tjz CMD_"+list[0]+"\n"
-                            list.shift();
-                        }
+                        out += CFG.asm.ongoto(list)
                         continue;
                     }
                     if (isKw("gosub")) {
@@ -576,18 +569,9 @@ var generator = function(basic, CFG) {
                             }
                         }
                         if (list.length>127) croak ("Too much targets", line)
-                        //do it the simple way
-                        //out += "\tmvi a,0\n"
-                        out += "\tlxi h,onsub_"+i+"\n"
-                        out += "\tpush h\n"
-                        out += "\tinr l\n"
-                        while(list.length) {
-                            out += "\tdcr l\n"
-                            out += "\tjz CMD_"+list[0]+"\n"
-                            list.shift();
-                        }
-                        out += "\tpop h\n"
-                        out += "onsub_"+i+":\n"
+                        out += CFG.asm.ongosub(list,i)
+
+
                         continue;
                     }
 
