@@ -461,6 +461,31 @@ var CONFIG = {
                 return out    
             },
 
+            ongoto: function(list) {
+                var out = ""
+                out += "\tinr l\n"
+                while(list.length) {
+                    out += "\tdcr l\n"
+                    out += "\tjz CMD_"+list[0]+"\n"
+                    list.shift();
+                }
+                return out
+            },
+            ongosub: function(list,i) {
+                var out = ""
+                out += "\tlxi h,onsub_"+i+"\n"
+                out += "\tpush h\n"
+                out += "\tinr l\n"
+                while(list.length) {
+                    out += "\tdcr l\n"
+                    out += "\tjz CMD_"+list[0]+"\n"
+                    list.shift();
+                }
+                out += "\tpop h\n"
+                out += "onsub_"+i+":\n"
+                return out
+            },
+
 
             strUnassign: function(name) {
                 return "\tLHLD vs_"+name+"\n\tCALL hp_unass\n"
