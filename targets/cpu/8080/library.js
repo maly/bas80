@@ -308,6 +308,18 @@ var LIB = {
         "\tCALL SEROUT\n"+
         "\tRET\n"
     },
+    "printcomma": {
+        uses:["serout"],
+        code: "\tMVI A,2ch ;comma\n"+
+        "\tCALL SEROUT\n"+
+        "\tRET\n"
+    },
+    "printquot": {
+        uses:["serout"],
+        code: "\tMVI A,22h ;quot\n"+
+        "\tCALL SEROUT\n"+
+        "\tRET\n"
+    },
 
     "input": {
         uses:["serin"],

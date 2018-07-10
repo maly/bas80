@@ -1004,7 +1004,47 @@ var generator = function(basic, CFG, PROC) {
                     }
                     if (hasstr) out+=CFG.asm.docall("hp_gc");
                     continue
-    
+
+                case "write":
+                    var hasstr = false;
+                    while(tokens.length) {
+                        if (isPunc("#")) {
+                            //channel swap
+                            var chan = expr(tokens,line,true);
+                            out+=exprAsm(chan,line,"int");
+                            ENV.addUse("prtchan")
+                            out+=CFG.asm.docall("prtchan")
+                            out+="\tCALL prtchan\n"
+                            if (!isPunc(",")) croak("Syntax error",line)
+                            continue
+                        }
+                        var ex = expr(tokens,line);
+                        var et = exprType(ex,line);
+                        //console.log(ex,et)
+                        out+=exprAsm(ex,line,et);
+                        ENV.addUse("print"+et)
+                        if (et=="str") {
+                            ENV.addUse("printquot")
+                            out+=CFG.asm.docall("printquot")
+                        }
+                        out+=CFG.asm.docall("print"+et)
+                        if (et=="str") {
+                            out+=CFG.asm.docall("printquot")
+                            hasstr=true
+                        }
+                        println = true;
+                        if (isPunc(",")) {
+                            ENV.addUse("printcomma")
+                            out+=CFG.asm.docall("printcomma")
+                            continue;
+                        }
+
+                    }
+                    ENV.addUse("println")
+                    out+=CFG.asm.docall("println")
+                    if (hasstr) out+=CFG.asm.docall("hp_gc");
+
+                    continue
 
                 case "print":
                     var println = true;
