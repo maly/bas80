@@ -19,6 +19,7 @@ end
 <button onclick="compile()">Compile</button>
 <p><a href="https://github.com/maly/bas80/blob/master/README.md">README</a></p>
 <script src="./targets/cpu/8080/library.js"></script>
+<script src="./targets/cpu/8080/basic.js"></script>
 <script src="./targets/omenalpha/cfg.js"></script>
 
 <script src="lex.js"></script>
@@ -39,7 +40,7 @@ var compile = function(){
 
     console.log(basic)
 
-    var asm = generator(basic,CONFIG.OMENALPHA)
+    var asm = generator(basic,CONFIG.OMENALPHA,BASIC.I8080)
 
     document.getElementById("out").value = (asm)
 }

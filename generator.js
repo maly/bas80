@@ -197,7 +197,7 @@ var ENV= {
     }
 };
 
-var generator = function(basic, CFG) {
+var generator = function(basic, CFG, PROC) {
 
     ENV.vars={}
     ENV.strs=[]
@@ -212,6 +212,19 @@ var generator = function(basic, CFG) {
     for (var k in CFG.system) {
         LIB[k]=CFG.system[k]
     }
+
+    //Copy BASIC snippets, if needed
+    for (var k in PROC.xp) {
+        if (!CFG.xp[k]) {
+            CFG.xp[k] = PROC.xp[k]
+        }
+    }
+    for (var k in PROC.asm) {
+        if (!CFG.asm[k]) {
+            CFG.asm[k] = PROC.asm[k]
+        }
+    }
+
 
     //CFG.ENV = ENV
     var exprAsm = function(expr,line,etype,left) {
