@@ -280,6 +280,8 @@ var LIB = {
     "\tinx d\n"+
     "\tdad d\n"+
     "\tMOV A,C\n"+  
+    "\tORA A\n"+  
+    "\tRZ\n"+  
     "\tADI 30h\n"+  
     "\tJMP serout\n"
 },   

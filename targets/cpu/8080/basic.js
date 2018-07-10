@@ -440,7 +440,7 @@ var BASIC = {
                 out += "\tinr l\n"
                 while(list.length) {
                     out += "\tdcr l\n"
-                    out += "\tjz CMD_"+list[0]+"\n"
+                    out += "\tjz CMD"+list[0]+"\n"
                     list.shift();
                 }
                 return out
@@ -452,7 +452,7 @@ var BASIC = {
                 out += "\tinr l\n"
                 while(list.length) {
                     out += "\tdcr l\n"
-                    out += "\tjz CMD_"+list[0]+"\n"
+                    out += "\tjz CMD"+list[0]+"\n"
                     list.shift();
                 }
                 out += "\tpop h\n"
