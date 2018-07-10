@@ -221,6 +221,7 @@ var LIB = {
         "\tINX H\n"+
         "\tJMP printstr\n"
     },
+    /*
     "printint": {
         uses:["s_div10","serout","f_abs"],
         code: ""+
@@ -241,6 +242,47 @@ var LIB = {
         "\tCALL serout\n"+  
         "\tRET\n"
     },
+    */
+   "printint": {
+    uses:["serout","f_abs"],
+    code: ""+
+    "\tMOV     a,h \n"+
+    "\tORA     a \n"+
+    "\tJP      pipos \n"+
+    "\tMVI     a,2Dh ;- \n"+
+    "\tCALL serout\n"+
+    "\tCALL    f_abs \n"+
+    "pipos:\tLXI D,-10000\n"+
+    "\tCALL  prt10 \n"+
+    "\tLXI D,-1000\n"+
+    "\tCALL  prt10 \n"+
+    "\tLXI D,-100\n"+
+    "\tCALL  prt10 \n"+
+    "\tLXI D,-10\n"+
+    "\tCALL  prt10 \n"+
+    "\tMOV A,L\n"+  
+    "\tADI 30h\n"+  
+    "\tJMP serout\n"+  
+    "prt10:\n"+
+    "\tmvi c,0\n"+
+    "prt10l:\n"+
+    "\tdad d\n"+
+    "\tjnc prt10o\n"+
+    "\tinr c\n"+
+    "\tjmp prt10l\n"+
+    "prt10o:\n"+
+    "\tmov a,d\n"+
+    "\tcma\n"+
+    "\tmov d,a\n"+
+    "\tmov a,e\n"+
+    "\tcma\n"+
+    "\tmov e,a\n"+
+    "\tinx d\n"+
+    "\tdad d\n"+
+    "\tMOV A,C\n"+  
+    "\tADI 30h\n"+  
+    "\tJMP serout\n"
+},   
     "prtchan": {
         uses:null,
         sysdb:["prtchan"],
