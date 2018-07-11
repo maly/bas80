@@ -1,14 +1,7 @@
 <textarea id="source" cols=60 rows=40>
-let a=3
+a=4
 
-on a goto 10,20,30,40
-
-end
-10 print 10
-20 print 20
-30 print 30
-40 print 40
-end
+if a>b then print "A" else print "B"
 
         
 
@@ -34,6 +27,8 @@ var compile = function(){
 
     source=source.replace(/\&gt\;/gs,">")
     source=source.replace(/\&lt\;/gs,"<")
+
+    //source +="\nEND\n"
 
     var basic = parse(source)
 

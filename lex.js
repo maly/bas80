@@ -188,6 +188,7 @@ function parse(source) {
     var lines = source.split("\n");
 
     var basic = []
+    var hasEnd = false;
 
     for (var i=0;i<lines.length;i++) {
         var line = lines[i];
@@ -216,7 +217,8 @@ function parse(source) {
         var nout = [];
         while (out.tokens.length) {
             var t = out.tokens.shift()
-            if (t.type=="colon" || (t.type=="kw" && t.value=="then")) {
+            if (t.type=="kw" && t.value=="end") hasEnd = true;
+            if (t.type=="colon" || (t.type=="kw" && t.value=="then") || (t.type=="kw" && t.value=="else")) {
                 if (nout[0].type=="var") {
                     nout.unshift({type:"kw",value:"let"})
                 }
@@ -231,14 +233,22 @@ function parse(source) {
                         }
                     }
                 }
-
+                if (t.type=="kw" && t.value=="else") {
+                    //nout.push(t)
+                    if (out.tokens.length) {
+                        if (out.tokens[0].type=="num") {
+                            nout.push({type:"kw",value:"goto"})
+                        }
+                    }
+                }
                 basic.push({
                     source:line,
                     rawTokens:out.rawTokens,
                     label:out.label,
                     _numline:out._numline,
                     _cmd:out._cmd,
-                    tokens:nout
+                    tokens:nout,
+                    hasElse:(t.type=="kw" && t.value=="else")
                 });
                 nout=[];
                 out.label=null;
@@ -268,6 +278,16 @@ function parse(source) {
         }
         out.tokens = nout
         basic.push(out);
+    }
+    if (!hasEnd) {
+        basic.push({
+            source:"END",
+            rawTokens:[{type:"kw",value:"end"}],
+            label:out.label,
+            _numline:out._numline,
+            _cmd:out._cmd,
+            tokens:[{type:"kw",value:"end"}]
+        });
     }
     return basic
 }
