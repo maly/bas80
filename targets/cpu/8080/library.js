@@ -1,6 +1,21 @@
 // a big library
 
 var LIB = {
+    /***
+     * Methods:
+     * hp_init initialize the heap
+     * 
+     * hp_a allocate at least bc bytes on heap, 
+     * returns address of the first free byte in hl
+     * 
+     * hp_free frees the allocated space (hl)
+     * 
+     * hp_assign sets hl space as assigned to variable
+     * hp_unass sets hl space as unassigned
+     * 
+     * hp_gc marks all unallocated spaces as free and join them
+     * 
+     */
     "__heap": {
         uses:["erroom"],
         code:
@@ -209,9 +224,13 @@ var LIB = {
         "HP_gcf:    CALL    hp_join \n"+
         "\tJNZ     hp_gcf\n"+
         "\tret        \n"+
-        "HP_DONE:\n"
+        "HP_DONE:\n",
+
 
     },
+    /**
+     * Prints ASCIIZ string from hl to serial port (chan #0)
+     */
     "printstr": {
         uses:["serout"],
         code: "\tMOV A,M\n"+
@@ -221,6 +240,7 @@ var LIB = {
         "\tINX H\n"+
         "\tJMP printstr\n"
     },
+
     /*
     "printint": {
         uses:["s_div10","serout","f_abs"],
@@ -243,15 +263,18 @@ var LIB = {
         "\tRET\n"
     },
     */
+   /**
+    * Print signed int from hl to serial #0
+    */
    "printint": {
     uses:["serout","f_abs"],
     code: ""+
-    "\tMOV     a,h \n"+
-    "\tORA     a \n"+
-    "\tJP      pipos \n"+
-    "\tMVI     a,2Dh ;- \n"+
+    "\tMOV a,h \n"+
+    "\tORA a \n"+
+    "\tJP  pipos \n"+
+    "\tMVI a,2Dh ;- \n"+
     "\tCALL serout\n"+
-    "\tCALL    f_abs \n"+
+    "\tCALL f_abs \n"+
     "pipos:\tLXI D,-10000\n"+
     "\tCALL  prt10 \n"+
     "\tLXI D,-1000\n"+
@@ -284,7 +307,10 @@ var LIB = {
     "\tRZ\n"+  
     "\tADI 30h\n"+  
     "\tJMP serout\n"
-},   
+    },
+    /**
+     * set print channel
+     */   
     "prtchan": {
         uses:null,
         sysdb:["prtchan"],
@@ -292,6 +318,9 @@ var LIB = {
         "\tSTA sv_prtchan\n"+
         "\tRET\n"
     },
+    /**
+     * Print newline to serial port
+     */
     "println": {
         uses:["serout"],
         code: "\tMVI A,0Dh\n"+
@@ -613,6 +642,10 @@ var LIB = {
         "    ret\n"
     },  
 
+    /**
+     * BASIC operators
+     * HL, DE are operands
+     */
 
     //operators
     "o_logic": {
@@ -718,33 +751,33 @@ var LIB = {
     "o_mul": {
         uses:["mul16","errovfl","f_abs"],
         code: 
-            "    mov a,h\n"+
-            "    xra d\n"+
-            "    ani 80h\n"+
-            "    jm o_mul_minus\n"+
-            "    call o_mulabs\n"+
-            "    mov a,d\n"+
-            "    ora e\n"+
-            "    jnz errovfl\n"+
-            "    RET\n"+
+            "\tmov a,h\n"+
+            "\txra d\n"+
+            "\tani 80h\n"+
+            "\tjm o_mul_minus\n"+
+            "\tcall o_mulabs\n"+
+            "\tmov a,d\n"+
+            "\tora e\n"+
+            "\tjnz errovfl\n"+
+            "\tRET\n"+
             "o_mul_minus:\n"+
-            "    call o_mulabs\n"+
-            "    mov a,d\n"+
-            "    ora e\n"+
-            "    jnz errovfl\n"+
-            "    mov a,h\n"+
-            "    cma\n"+
-            "    mov h,a\n"+
-            "    mov a,l\n"+
-            "    cma\n"+
-            "    mov l,a\n"+
-            "    inx h\n"+
-            "    RET\n"+
+            "\tcall o_mulabs\n"+
+            "\tmov a,d\n"+
+            "\tora e\n"+
+            "\tjnz errovfl\n"+
+            "\tmov a,h\n"+
+            "\tcma\n"+
+            "\tmov h,a\n"+
+            "\tmov a,l\n"+
+            "\tcma\n"+
+            "\tmov l,a\n"+
+            "\tinx h\n"+
+            "\tRET\n"+
             "o_mulabs:\n"+
-            "    call f_abs\n"+
-            "    xchg \n"+
-            "    call f_abs\n"+
-            "    jmp mul16\n"
+            "\tcall f_abs\n"+
+            "\txchg \n"+
+            "\tcall f_abs\n"+
+            "\tjmp mul16\n"
         },
     "o_sub": {
         uses:null,
@@ -761,108 +794,112 @@ var LIB = {
     "o_div": {
         uses:["div16","errdiv","f_abs"],
         code: 
-            "    mov a,h\n"+
-            "    ora l\n"+
-            "    jz errdiv\n"+
-            "    mov a,h\n"+
-            "    xra d\n"+
-            "    ani 80h\n"+
-            "    jm o_div_minus\n"+
-            "    call o_divabs\n"+
-            "    xchg\n"+
-            "    RET\n"+
+            "\tmov a,h\n"+
+            "\tora l\n"+
+            "\tjz errdiv\n"+
+            "\tmov a,h\n"+
+            "\txra d\n"+
+            "\tani 80h\n"+
+            "\tjm o_div_minus\n"+
+            "\tcall o_divabs\n"+
+            "\txchg\n"+
+            "\tRET\n"+
             "o_div_minus:\n"+
-            "    call o_divabs\n"+
-            "    xchg\n"+
-            "    mov a,h\n"+
-            "    cma\n"+
-            "    mov h,a\n"+
-            "    mov a,l\n"+
-            "    cma\n"+
-            "    mov l,a\n"+
-            "    inx h\n"+
-            "    RET\n"+
+            "\tcall o_divabs\n"+
+            "\txchg\n"+
+            "\tmov a,h\n"+
+            "\tcma\n"+
+            "\tmov h,a\n"+
+            "\tmov a,l\n"+
+            "\tcma\n"+
+            "\tmov l,a\n"+
+            "\tinx h\n"+
+            "\tRET\n"+
             "o_divabs:\n"+
-            "    call f_abs\n"+
-            "    xchg \n"+
-            "    call f_abs\n"+
-            "    jmp div16\n"
+            "\tcall f_abs\n"+
+            "\txchg \n"+
+            "\tcall f_abs\n"+
+            "\tjmp div16\n"
+    },
+    "o_mod": {
+        uses:["div16","errdiv","f_abs"],
+        code: 
+            "\tmov a,h\n"+
+            "\tora l\n"+
+            "\tjz errdiv\n"+
+            "\tmov a,h\n"+
+            "\txra d\n"+
+            "\tani 80h\n"+
+            "\tjm o_mod_minus\n"+
+            "\tcall o_modabs\n"+
+            "\tRET\n"+
+            "o_mod_minus:\n"+
+            "\tcall o_modabs\n"+
+            "\tmov a,h\n"+
+            "\tcma\n"+
+            "\tmov h,a\n"+
+            "\tmov a,l\n"+
+            "\tcma\n"+
+            "\tmov l,a\n"+
+            "\tinx h\n"+
+            "\tRET\n"+
+            "o_modabs:\n"+
+            "\tcall f_abs\n"+
+            "\txchg \n"+
+            "\tcall f_abs\n"+
+            "\tjmp div16\n"
         },
-        "o_mod": {
-            uses:["div16","errdiv","f_abs"],
-            code: 
-                "    mov a,h\n"+
-                "    ora l\n"+
-                "    jz errdiv\n"+
-                "    mov a,h\n"+
-                "    xra d\n"+
-                "    ani 80h\n"+
-                "    jm o_mod_minus\n"+
-                "    call o_modabs\n"+
-                "    RET\n"+
-                "o_mod_minus:\n"+
-                "    call o_modabs\n"+
-                "    mov a,h\n"+
-                "    cma\n"+
-                "    mov h,a\n"+
-                "    mov a,l\n"+
-                "    cma\n"+
-                "    mov l,a\n"+
-                "    inx h\n"+
-                "    RET\n"+
-                "o_modabs:\n"+
-                "    call f_abs\n"+
-                "    xchg \n"+
-                "    call f_abs\n"+
-                "    jmp div16\n"
-            },
-        "o_concat": {
-        uses:["__heap"],
-        code: ""+
-            "        push h\n"+
-            "        push d\n"+
-            "        lxi b,0\n"+
-            "    o_cc_cnt:\n"+
-            "        mov a,m\n"+
-            "        inx h\n"+
-            "        ora a\n"+
-            "        jz o_cc_cnt1\n"+
-            "        inx b\n"+
-            "        jmp o_cc_cnt\n"+
-            "    o_cc_cnt1:\n"+
-            "        ldax d\n"+
-            "        inx d\n"+
-            "        ora a\n"+
-            "        jz o_cc_a\n"+
-            "        inx b\n"+
-            "        jmp o_cc_cnt1\n"+
-            "    o_cc_a:\n"+
-            "        inx b\n"+
-            "        call hp_a\n"+
-            "        push h\n"+
-            "        pop b\n"+
-            "        pop d\n"+
-            "    o_cc_l1:\n"+
-            "        ldax d\n"+
-            "        ora a\n"+
-            "        jz o_cc_l2\n"+
-            "        mov m,a\n"+
-            "        inx d\n"+
-            "        inx h\n"+
-            "        jmp o_cc_l1\n"+
-            "    o_cc_l2:\n"+
-            "        pop d\n"+
-            "    o_cc_l3:\n"+
-            "        ldax d\n"+
-            "        ora a\n"+
-            "        mov m,a\n"+
-            "        jz o_cc_l4\n"+
-            "        inx d\n"+
-            "        inx h\n"+
-            "        jmp o_cc_l3\n"+
-            "    o_cc_l4:\n"+
-            "        push b\n"+
-            "        pop h\n"+
+
+    /**
+     * Concatenate two strings DE, HL to one new at heap
+     */    
+    "o_concat": {
+    uses:["__heap"],
+    code: ""+
+        "\tpush h\n"+
+        "\tpush d\n"+
+        "\tlxi b,0\n"+
+        "o_cc_cnt:\n"+
+        "\tmov a,m\n"+
+        "\tinx h\n"+
+        "\tora a\n"+
+        "\tjz o_cc_cnt1\n"+
+        "\tinx b\n"+
+        "\tjmp o_cc_cnt\n"+
+        "o_cc_cnt1:\n"+
+        "\tldax d\n"+
+        "\tinx d\n"+
+        "\tora a\n"+
+        "\tjz o_cc_a\n"+
+        "\tinx b\n"+
+        "\tjmp o_cc_cnt1\n"+
+        "o_cc_a:\n"+
+        "\tinx b\n"+
+        "\tcall hp_a\n"+
+        "\tpush h\n"+
+        "\tpop b\n"+
+        "\tpop d\n"+
+        "o_cc_l1:\n"+
+        "\tldax d\n"+
+        "\tora a\n"+
+        "\tjz o_cc_l2\n"+
+        "\tmov m,a\n"+
+        "\tinx d\n"+
+        "\tinx h\n"+
+        "\tjmp o_cc_l1\n"+
+        "o_cc_l2:\n"+
+        "\tpop d\n"+
+        "o_cc_l3:\n"+
+        "\tldax d\n"+
+        "\tora a\n"+
+        "\tmov m,a\n"+
+        "\tjz o_cc_l4\n"+
+        "\tinx d\n"+
+        "\tinx h\n"+
+        "\tjmp o_cc_l3\n"+
+        "o_cc_l4:\n"+
+        "\tpush b\n"+
+        "\tpop h\n"+
         "\tRET\n"
     },
 
@@ -947,7 +984,9 @@ var LIB = {
         "\tpop h\n"+
         "\tRET\n"
     },
-
+    /**
+     * Raw string copy from HL to DE
+     */
     "stcpy": {
         uses:["__heap"],
         code: 
@@ -968,9 +1007,11 @@ var LIB = {
 
     },
 
-    //clone string to the heap
-    //input h:origin
-    //output h:clone
+    /**
+     * clone string to the heap
+     * input h:origin
+     * output h:clone
+     */
     "strclone": {
         uses:["__heap"],
         code: 
@@ -1002,6 +1043,10 @@ var LIB = {
 
 
     //functions
+    /**
+     * BASIC functions
+     * String functions has suffix S
+     */
     "f_max": {
         uses:null,
         code: ""+
@@ -1049,6 +1094,7 @@ var LIB = {
         ""+
         "\tRET\n"
     },    
+    /*
     "s_getaddr":{
         uses:null,
         code: "\tDAD D\t;o_add\n"+
@@ -1058,6 +1104,7 @@ var LIB = {
         "\tXCHG\n"+
         "\tRET\n"
     },
+    */
     "f_peek":{
         uses:null,
         code: "\tMOV A,M\n"+
@@ -1103,39 +1150,39 @@ var LIB = {
     "f_val": {
         uses:["s_mul10add","f_neg"],
         code: "\tpush d\n"+
-        "    mvi c,0 ;sign\n"+
-        "    lxi d,0\n"+
-        "    mov a,m\n"+
-        "    cpi 2Dh ;-\n"+
-        "    jnz f_v_c1\n"+
-        "    inx h\n"+
-        "    mvi c,1 ;sign\n"+
-        "f_v_c:    \n"+
-        "    mov a,m\n"+
-        "f_v_c1:    \n"+
-        "    ora a\n"+
-        "    jz f_v_ret\n"+
-        "    cpi 30h ;0\n"+
-        "    jc f_v_ret\n"+
-        "    cpi 3ah\n"+
-        "    jnc f_v_ret\n"+
-        "    push h\n"+
-        "    xchg\n"+
-        "    sui 30h\n"+
-        "    mov e,a\n"+
-        "    mvi d,0\n"+
-        "    call s_mul10add\n"+
-        "    xchg\n"+
-        "    pop h\n"+
-        "    inx h\n"+
-        "    jmp f_v_c\n"+
+        "\nmvi c,0 ;sign\n"+
+        "\nlxi d,0\n"+
+        "\nmov a,m\n"+
+        "\ncpi 2Dh ;-\n"+
+        "\njnz f_v_c1\n"+
+        "\ninx h\n"+
+        "\nmvi c,1 ;sign\n"+
+        "f_v_c:\n"+
+        "\nmov a,m\n"+
+        "f_v_c1:\n"+
+        "\nora a\n"+
+        "\njz f_v_ret\n"+
+        "\ncpi 30h ;0\n"+
+        "\njc f_v_ret\n"+
+        "\ncpi 3ah\n"+
+        "\njnc f_v_ret\n"+
+        "\npush h\n"+
+        "\nxchg\n"+
+        "\nsui 30h\n"+
+        "\nmov e,a\n"+
+        "\nmvi d,0\n"+
+        "\ncall s_mul10add\n"+
+        "\nxchg\n"+
+        "\npop h\n"+
+        "\ninx h\n"+
+        "\njmp f_v_c\n"+
         "f_v_ret:\n"+
-        "    xchg\n"+
+        "\nxchg\n"+
         "\tpop d\n"+
-        "    mov a,c\n"+
-        "    ora a\n"+
-        "    rz\n"+
-        "    jmp f_neg\n"
+        "\nmov a,c\n"+
+        "\nora a\n"+
+        "\nrz\n"+
+        "\njmp f_neg\n"
     },  
     "f_low": {
         uses:null,
