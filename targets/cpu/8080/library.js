@@ -1089,9 +1089,24 @@ var LIB = {
     },
     "f_rnd": {
         uses:null,
-        sysdw:["rndseed"],
+        //sysdw:["seed1","seed2"],
         code: ""+
-        ""+
+        "\tLHLD sv_seed1\n"+
+        "\tMOV b,h\n"+
+        "\tMOV c,l\n"+
+        "\tdad h\n"+
+        "\tdad h\n"+
+        "\tinr l\n"+
+        "\tdad b\n"+
+        "\tshld sv_seed1\n"+
+        "\tlhld sv_seed2\n"+
+        "\tdad h\n"+
+        "\tsbb a\n"+
+        "\tani 00101101b\n"+
+        "\txra l\n"+
+        "\tmov l,a\n"+
+        "\tshld sv_seed2\n"+
+        "\tdad b\n"+
         "\tRET\n"
     },    
     /*

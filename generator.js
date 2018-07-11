@@ -1097,8 +1097,10 @@ var generator = function(basic, CFG, PROC) {
     if (loops.length) croak ("Non-closed loops", line)
 
     var appendInput = false
+    var appendSeed = false
     if(ENV.uses.indexOf("inputint")>=0) appendInput=true;
     if(ENV.uses.indexOf("inputstr")>=0) appendInput=true;
+    if (ENV.uses.indexOf("f_rnd")>=0) appendSeed=true;
 
 
     //prepend
@@ -1133,6 +1135,13 @@ var generator = function(basic, CFG, PROC) {
         }
         out+="\tdw 0\n"
     }
+
+    if (appendSeed) {
+        out+="sv_seed1: dw "+Math.floor(Math.random()*65535+1)+"\n"
+        out+="sv_seed2: dw "+Math.floor(Math.random()*65535+1)+"\n"
+
+    }
+
     //vardump
     out+=";----BSS SEGMENT\n"
     out+=varAsm();
