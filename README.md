@@ -270,7 +270,7 @@ Returns the negative value (*-1)
 
 ### int RND ()
 
-Returns a pseudorandom number
+Returns a pseudorandom number (-32768 .. 32767)
 
 ### int SGN (int)
 
