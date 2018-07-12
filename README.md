@@ -329,6 +329,11 @@ Returns the byte value from given port number
 
 Returns the decimal value of string.
 
+### int ASC (string)
+
+Returns the ASCII code of the first character in a string.
+
+
 ### int HIGH (int)
 ### int LOW (int)
 
