@@ -205,6 +205,7 @@ var BASIC = {
                     out = out.replace(";[*DD*]\n",""); //Maybe?
                 }
                 var opfn = "o_"+opAsm(expr.operator,line,etype);
+                if (!LIB[opfn]) croak("Not implemented operator "+opfn,line)
                 if (LIB[opfn].inline) {
                     out+=LIB[opfn].code
                     return out;

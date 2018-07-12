@@ -68,6 +68,11 @@
             case ">": return "gt"
             case "<=": return "le"
             case ">=": return "ge"
+
+            case "&": return "bitand"
+            case "|": return "bitor"
+            case "^": return "bitxor"
+
         }
     }
 

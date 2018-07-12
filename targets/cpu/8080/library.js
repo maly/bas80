@@ -740,6 +740,41 @@ var LIB = {
         "\tJMP o_streq\n"
     },
 
+    "o_bitand": {
+        uses:null,
+        code:
+        "\tMOV A,H\n"+
+        "\tANA D\n"+
+        "\tMOV H,A\n"+
+        "\tMOV A,L\n"+
+        "\tANA E\n"+
+        "\tMOV L,A\n"+
+        "\tRET\n"
+    },
+
+    "o_bitor": {
+        uses:null,
+        code:
+        "\tMOV A,H\n"+
+        "\tORA D\n"+
+        "\tMOV H,A\n"+
+        "\tMOV A,L\n"+
+        "\tORA E\n"+
+        "\tMOV L,A\n"+
+        "\tRET\n"
+    },
+
+    "o_bitxor": {
+        uses:null,
+        code:
+        "\tMOV A,H\n"+
+        "\tXRA D\n"+
+        "\tMOV H,A\n"+
+        "\tMOV A,L\n"+
+        "\tXRA E\n"+
+        "\tMOV L,A\n"+
+        "\tRET\n"
+    },
 
     "o_add": {
         uses:null,

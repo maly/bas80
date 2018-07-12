@@ -356,6 +356,10 @@ A$ -> "Help, world"
 
 =, <>, <, >, <=, >= as usual
 
+& - bitwise AND
+| - bitwise OR
+^ - bitwise XOR
+
 ### Shorthands
 
 - var++ increment

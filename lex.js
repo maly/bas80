@@ -55,7 +55,7 @@ function InputStream(input) {
         return is_id_start(ch) || "?!0123456789".indexOf(ch) >= 0;
     }
     function is_op_char(ch) {
-        return "+-*/%=&|<>!".indexOf(ch) >= 0;
+        return "+-*/%=&|^<>!".indexOf(ch) >= 0;
     }
     function is_colon(ch) {
         return ":".indexOf(ch) >= 0;
