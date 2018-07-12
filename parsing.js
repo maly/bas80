@@ -24,6 +24,7 @@ var ARITY = {
     "sgn":["int"],
     "rnd":[],
     "len":["str"],
+    "asc":["str"],
     "val":["str"],
     "chrS":["int"]
 }

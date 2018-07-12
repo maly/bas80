@@ -29,7 +29,7 @@ function InputStream(input) {
             "gosub return end stop data read restore repeat until continue break "+
             "poke dpoke dim ramtop push pop take def call swap out on write wait "+
             "while endwhile wend ";
-    var functions = " abs neg rnd max chr$ sgn len val peek dpeek low high fn in ";
+    var functions = " abs neg rnd max chr$ sgn len val peek dpeek low high fn in asc ";
     return {
         next  : next,
         peek  : peek,

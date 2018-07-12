@@ -1217,6 +1217,12 @@ var LIB = {
         "\tPOP D\n"+
         "\tRET\n"
     },        
+    "f_asc": {
+        uses:[],
+        code: "\tMOV L,M\n"+
+        "\tMVI H,0\n"+
+        "\tRET\n"
+    },        
     "f_val": {
         uses:["s_mul10add","f_neg"],
         code: "\tpush d\n"+
