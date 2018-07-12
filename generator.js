@@ -433,6 +433,7 @@ var generator = function(basic, CFG, PROC) {
                     loops.unshift(["CMD"+i,"R"]);
                     break;
                 case "endwhile":
+                case "wend":
                     if (!loops.length) croak("ENDWHILE without WHILE",line)
                     if (loops[0][1]!="W") croak("WHILE / ENDWHILE mismatched",line)
                     out+=CFG.asm.jmp(loops[0][0]);
