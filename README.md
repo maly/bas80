@@ -60,6 +60,39 @@ Call subroutine at given label.
 
 Return from subroutine. Expression value is, if used, returned as from function
 
+### IF expr THEN command[s]
+
+Evaluate expression. If its value is zero, then skip to the next line. If nonzero, continues.
+
+### IF expr THEN label
+
+Shortcut for `IF expr THEN GOTO label`
+
+### IF expr THEN command[s] ELSE command[s]
+
+Evaluate expression. If its value is zero, then skip to the ELSE part. If nonzero, continues until the ELSE part, then skip to the next line.
+
+`THEN label` and `ELSE label` are the shortcuts for `THEN GOTO label` or `ELSE GOTO label`
+
+### IF expr THEN ... [ELSE ...] ENDIF
+
+A multiline variant of IF-THEN[-ELSE]. E.g.
+
+```
+IF a=10 THEN
+ ... do something for a=10
+ENDIF
+```
+or
+```
+IF a=10 THEN
+ ... do something for a=10
+ELSE
+ ... do something for a is not 10
+ENDIF
+``` 
+
+
 ### ON expr GOTO l0[,l1...]
 
 Evaluate an expression and GOTO to n-th label. Indexed from 0, so if expr=0, then goto to l0, if expr=1 then goto to l1 etc. You can use up to 128 labels at once. If expr > num of labels, then no goto is performed.

@@ -25,7 +25,7 @@ function InputStream(input) {
 
  function TokenStream(input) {
     var current = null;
-    var keywords = " if then else rem print input goto let for to next step "+
+    var keywords = " if then else endif rem print input goto let for to next step "+
             "gosub return end stop data read restore repeat until continue break "+
             "poke dpoke dim ramtop push pop take def call swap out on write "+
             "while endwhile ";
@@ -218,6 +218,10 @@ function parse(source) {
         while (out.tokens.length) {
             var t = out.tokens.shift()
             if (t.type=="kw" && t.value=="end") hasEnd = true;
+            if ((t.type=="kw" && t.value=="else")&&nout.length==0) {
+                basic[basic.length-1].hasElse=true
+                continue;
+            }
             if (t.type=="colon" || (t.type=="kw" && t.value=="then") || (t.type=="kw" && t.value=="else")) {
                 if (nout[0].type=="var") {
                     nout.unshift({type:"kw",value:"let"})
@@ -270,6 +274,7 @@ function parse(source) {
 
             
         }
+        if (!nout.length) continue
         if (nout[0].type=="var") {
             nout.unshift({type:"kw",value:"let"})
         }

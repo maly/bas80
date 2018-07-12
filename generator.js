@@ -368,6 +368,7 @@ var generator = function(basic, CFG, PROC) {
     ENV.labels = labels;
     var loops=[];
     var ifskip = [];
+    var ifMultiline = [];
     for(var i=0;i<basic.length;i++) {
     	var par,next;
     	var line = basic[i];
@@ -911,11 +912,27 @@ var generator = function(basic, CFG, PROC) {
                     var ex = expr(tokens,line,true);
                     var et = exprType(ex,line);
                     if (!isKw("then")) croak ("IF without THEN", line)
-    				skipMark(i,basic)
+                    //console.log(basic[i]._numline,basic[i+1]._numline)
+                    if (basic[i]._numline == basic[i+1]._numline) { //continue on the same line
+                        skipMark(i,basic)
+                    } else {
+                        ifMultiline.unshift(i)
+                    }
 					out+=exprAsm(ex,line,et);
                     out+=CFG.asm.jmpEx0("ELSKIP"+i);
                     ifskip.unshift(i)
-    				break;
+                    break;
+                    
+                case "endif":
+                    if (!ifMultiline.length) croak ("ENDIF without IF", line)
+                    if (ifskip.length) {
+                        out+="ELSKIP"+ifskip[0]+":\n"
+                        ifskip.shift();
+                    }
+                    out+="SKIP"+ifMultiline[0]+":\n"
+                    
+                    ifMultiline.shift()
+                    break;
 
                 case "until":
                     if (!loops.length) croak("UNTIL without REPEAT",line)
@@ -1098,6 +1115,9 @@ var generator = function(basic, CFG, PROC) {
 
                     break;
 
+                    default: 
+                        croak ("Keyword not implemented", line)
+
             }
 
             //console.log("E",line)
@@ -1114,6 +1134,8 @@ var generator = function(basic, CFG, PROC) {
 
 
     }
+
+    if (ifMultiline.length) croak("Non-closed multiline IF", basic[ifMultiline[0]])
 
     if (loops.length) croak ("Non-closed loops", line)
 
