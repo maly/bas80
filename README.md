@@ -360,6 +360,8 @@ A$ -> "Help, world"
 | - bitwise OR
 ^ - bitwise XOR
 
+AND, OR - logic AND, OR 
+
 ### Shorthands
 
 - var++ increment

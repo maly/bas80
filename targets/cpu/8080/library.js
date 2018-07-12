@@ -776,6 +776,26 @@ var LIB = {
         "\tRET\n"
     },
 
+    "o_and":{
+        uses:null,
+        code:
+        "\tMOV A,H\n"+
+        "\tORA L\n"+
+        "\tRZ\n"+
+        "\tXCHG\n"+
+        "\tRET\n"
+    },
+
+    "o_or":{
+        uses:null,
+        code:
+        "\tMOV A,H\n"+
+        "\tORA L\n"+
+        "\tRNZ\n"+
+        "\tXCHG\n"+
+        "\tRET\n"
+    },
+
     "o_add": {
         uses:null,
         inline:true,

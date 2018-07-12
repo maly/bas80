@@ -205,6 +205,8 @@ function parse(source) {
             out.label = out.tokens.shift().value;
             if (!out.tokens.length) continue
         }
+
+
         if (out.tokens[0].type=="var") { //line label?
             if (out.tokens.length>1 && out.tokens[1].type=="colon" && out.tokens[1].value==":") {
                 out.label = out.tokens.shift().value;
@@ -218,6 +220,8 @@ function parse(source) {
         while (out.tokens.length) {
             var t = out.tokens.shift()
             if (t.type=="kw" && t.value=="end") hasEnd = true;
+            if (t.type=="var" && t.value=="and") t.type="op"
+            if (t.type=="var" && t.value=="or") t.type="op"
             if ((t.type=="kw" && t.value=="else")&&nout.length==0) {
                 basic[basic.length-1].hasElse=true
                 continue;

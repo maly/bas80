@@ -73,6 +73,8 @@
             case "|": return "bitor"
             case "^": return "bitxor"
 
+            case "and": return "and"
+
         }
     }
 
