@@ -360,6 +360,53 @@ var BASIC = {
                 return out;
             },
 
+            wait: function(addr,addrT,andVal,andValT,xorVal,xorValT,i,exprAsm,line, ENV) {
+                var out=""
+                var label = "s_wa"+i
+                out+=label+":\n"
+                if (addr.type=="num") {
+                    //constant out
+                    out+="\tIN "+addr.value+"\n"
+                } else {
+                    ENV.addVar("iofix","sysdq")
+
+                    out+="\tLXI H,00dbh\n"
+                    out+="\tSHLD sv_iofix\n"
+                    out+="\tMVI L,c9h\n"
+                    out+="\tSHLD sv_iofix+2\n"
+
+                    out+=exprAsm(addr,line,addrT);  
+                    out+="\tSTA sv_iofix+1\n"
+                    out+="\tCALL sv_iofix\n"
+
+                }
+                if (xorVal.type=="num") {
+                    //constant out
+                    if (xorVal.value!==0) out+="\tXRI "+xorVal.value+"\n"
+                } else {
+                    out+="\tPUSH PSW\n"
+
+                    out+=exprAsm(xorVal,line,xorValT);  
+                    out+="\tPOP PSW\n"
+                    out+="\tXRA L\n"
+                } 
+                if (andVal.type=="num") {
+                    //constant out
+                    out+="\tANI "+andVal.value+"\n"
+                } else {
+                    out+="\tPUSH PSW\n"
+
+                    out+=exprAsm(andVal,line,andValT);  
+                    out+="\tPOP PSW\n"
+                    out+="\tAND L\n"
+                }                                
+                out+="\tJZ "+label+"\n"
+
+
+                return out;
+            },
+
+
             poke: function(addr,addrT,value,valueT,exprAsm,line) {
                 var out=""
                 if (value.type!="num") {

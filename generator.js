@@ -844,6 +844,21 @@ var generator = function(basic, CFG, PROC) {
                     out+=CFG.asm.ioOut(ex,et,ex2,et2,exprAsm,line,ENV)
                     break
 
+                case "wait":
+                    //addr
+                    var ex = expr(tokens,line);
+                    var et = exprType(ex,line);
+                    if (!isPunc(",")) croak("Syntax error",line)
+                    //value
+                    var ex2 = expr(tokens,line);
+                    var et2 = exprType(ex2,line);
+                    var ex3 = {type:"num",value:0}
+                    if (isPunc(",")) {
+                        ex3 = expr(tokens,line);                        
+                    }
+                    var et3 = exprType(ex2,line);
+                    out+=CFG.asm.wait(ex,et,ex2,et2,ex3,et3,i,exprAsm,line,ENV)
+                    break
                 
                 case "for":
     				par = tokens.shift();
