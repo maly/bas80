@@ -263,6 +263,23 @@ var generator = function(basic, CFG, PROC) {
             ENV.addVar(expr.value,"int")
             return CFG.xp.varL(expr,line)
         }
+        if (type=="ptr" && !left) {
+            if (expr.exType=="str") {
+                var cs=ENV.addStr(expr.value);
+                return CFG.xp.str(expr,line,cs);
+            }
+            ENV.addVar(expr.value,expr.varType)
+            return CFG.xp.varIndirect(expr,line)
+        }
+        if (type=="ptr" && left) {
+            if (expr.exType=="str") {
+                var cs=ENV.addStr(expr.value);
+                return CFG.xp.strL(expr,line,cs);
+            }
+            ENV.addVar(expr.value,expr.varType)
+            return CFG.xp.varIndirectL(expr,line)
+        }
+
         if (type=="var$" && !left) {
             ENV.addVar(expr.value,"str")
             return CFG.xp.varS(expr,line)

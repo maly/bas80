@@ -343,6 +343,10 @@ Returns the ASCII code of the first character in a string.
 
 Returns upper / lower byte of int
 
+## Pointers
+
+You can getg a pointer (an unsigned int) to variable, string variable or a string constant. Use angle braces around the element, e.g. `LET a = [b]` to get an address to a memory place where the B variable resides.
+
 ## String slices
 
 String variable can be "sliced" (like with LEFT$, MID$, RIGHT$), but in a more flexible way. Just use the string slice syntax as described below.

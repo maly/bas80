@@ -32,6 +32,14 @@ var BASIC = {
             varL: function(expr,line) {
                 return ";[*DD*]\n\tXCHG\n\tLHLD v_"+expr.value+"\n\tXCHG\n"
             },
+            varIndirect: function(expr,line) {
+                if (expr.varType=="str") return "\tLHLD H,vs_"+expr.value+"\n" //pointer to the string itself
+                return "\tLXI H,v_"+expr.value+"\n"
+            },
+            varIndirectL: function(expr,line) {
+                if (expr.varType=="str") return ";[*DD*]\n\tXCHG\n\tLHLD vs_"+expr.value+"\n\tXCHG\n" //pointer to the string itself
+                return ";[*DD*]\n\tLXI D,v_"+expr.value+"\n"
+            },
             varS: function(expr,line) {
                 return "\tLHLD vs_"+expr.value+"\n"
             },
