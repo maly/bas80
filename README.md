@@ -345,7 +345,7 @@ Returns upper / lower byte of int
 
 ## Pointers
 
-You can getg a pointer (an unsigned int) to variable, string variable or a string constant. Use angle braces around the element, e.g. `LET a = [b]` to get an address to a memory place where the B variable resides.
+You can getg a pointer (an unsigned int) to a variable, an array, a string variable or a string constant. Use angle braces around the element, e.g. `LET a = [b]` to get an address to a memory place where the B variable resides.
 
 ## String slices
 

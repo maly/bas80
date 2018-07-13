@@ -58,12 +58,28 @@ var BASIC = {
                 return out
             },
 
+            varAIndirect: function(expr,line, ENV, exprAsm) {
+                ENV.addUse("s_check");
+                var out = ";[*DD*]\n"+exprAsm(expr.ex.index,line,"int")
+                out += "\tLXI D,vai_"+expr.value+"\n"
+                out += "\tLXI B,"+ENV.intarr[expr.value]+"\n";
+                out += "\tCALL s_check\n";
+                return out
+            },
+
             //get value for array element, indexed by constant
             varAI: function(expr,line) {
                 if (expr.index.value) {
                     return "\tLHLD vai_"+expr.value+"+"+(expr.index.value*2)+"\n";
                 } else {
                     return "\tLHLD vai_"+expr.value+"\n";
+                }
+            },
+            varAIIndirect: function(expr,line) {
+                if (expr.ex.index.value) {
+                    return "\tLXI H,vai_"+expr.value+"+"+(expr.ex.index.value*2)+"\n";
+                } else {
+                    return "\tLXI H,vai_"+expr.value+"\n";
                 }
             },
 
@@ -77,7 +93,15 @@ var BASIC = {
                 out += "\tMOV E,M\n\tINX H\n\tMOV D,M\n\tPOP H\n"
                 return out
             },
-
+            varAIndirectL: function(expr,line, ENV, exprAsm) {
+                ENV.addUse("s_check");
+                var out = "\tPUSH H\n"+exprAsm(expr.ex.index,line,"int")
+                out += "\tLXI D,vai_"+expr.value+"\n"
+                out += "\tLXI B,"+ENV.intarr[expr.value]+"\n";
+                out += "\tCALL s_check\n";
+                out += "\tXCHG\n\tPOP H\n"
+                return out
+            },
             //get value for array element, indexed by constant
             varAIL: function(expr,line) {
                 if (expr.index.value) {
@@ -86,7 +110,13 @@ var BASIC = {
                     return ";[*DD*]\n\tXCHG\n\tLHLD vai_"+expr.value+"\n\tXCHG\n";
                 }
             },
-
+            varAIIndirectL: function(expr,line) {
+                if (expr.ex.index.value) {
+                    return ";[*DD*]\n\tLXI D,vai_"+expr.value+"+"+(expr.ex.index.value*2)+"\n";
+                } else {
+                    return ";[*DD*]\n\tLXI D,vai_"+expr.value+"\n";
+                }
+            },
             sliceS: function(expr,line, ENV, exprAsm) {
                 //console.log(expr)
                 ENV.addUse("mkslice")

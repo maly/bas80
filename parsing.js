@@ -34,7 +34,7 @@ var ARITY = {
 
 
 var exprType = function(expr,ln) {
-    var type = "undefined";
+    //var type = "undefined";
     var type = expr.type;
     if (type=="num") {
         return "int"
@@ -104,11 +104,12 @@ var expr = function(tokens, ln, bool) {
         if (n.type=="punc" && n.value=="[") {
             //expectPunctuation("[");
             var ex = expr(tokens,ln,bool)
-            if (ex.type!="var" && ex.type!="var$" && ex.type!="str") croak("You cannot get pointer to this!",ln)
+            //console.log(ex)
+            if (ex.type!="var" && ex.type!="var[]" && ex.type!="var$" && ex.type!="str") croak("You cannot get pointer to this!",ln)
             var et = exprType(ex,ln);
             //console.log(ex,et)
             expectPunctuation("]");
-            return {type:"ptr",value:ex.value,varType:et,exType:ex.type}
+            return {type:"ptr",value:ex.value,varType:et,ex:ex}
         }
 
         if (n.type=="var" && tokens.length && tokens[0].type=="punc" && tokens[0].value=="(") {

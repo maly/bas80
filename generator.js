@@ -264,18 +264,37 @@ var generator = function(basic, CFG, PROC) {
             return CFG.xp.varL(expr,line)
         }
         if (type=="ptr" && !left) {
-            if (expr.exType=="str") {
+            if (expr.ex.type=="str") {
                 var cs=ENV.addStr(expr.value);
                 return CFG.xp.str(expr,line,cs);
+            }
+            if (expr.ex.type=="var[]") {
+                if (!ENV.intarr[expr.value])  croak("You have to DIM array first",line)
+                if (expr.ex.index.type=="num" && expr.ex.index.value>=ENV.intarr[expr.value]) croak("Index out of bound",line)
+                if (expr.ex.index.type=="num") {
+                    //precompute
+                    return CFG.xp.varAIIndirect(expr,line)                
+                }
+                return CFG.xp.varAIndirect(expr,line,ENV, exprAsm);
             }
             ENV.addVar(expr.value,expr.varType)
             return CFG.xp.varIndirect(expr,line)
         }
         if (type=="ptr" && left) {
-            if (expr.exType=="str") {
+            if (expr.ex.type=="str") {
                 var cs=ENV.addStr(expr.value);
                 return CFG.xp.strL(expr,line,cs);
             }
+            if (expr.ex.type=="var[]") {
+                if (!ENV.intarr[expr.value])  croak("You have to DIM array first",line)
+                if (expr.ex.index.type=="num" && expr.ex.index.value>=ENV.intarr[expr.value]) croak("Index out of bound",line)
+                if (expr.ex.index.type=="num") {
+                    //precompute
+                    return CFG.xp.varAIIndirectL(expr,line)                
+                }
+                return CFG.xp.varAIndirectL(expr,line,ENV, exprAsm);
+            }
+
             ENV.addVar(expr.value,expr.varType)
             return CFG.xp.varIndirectL(expr,line)
         }
