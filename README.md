@@ -159,6 +159,10 @@ Store two bytes to given address
 
 Send one byte to the given I/O port
 
+### WAIT port,value[,xorvalue]
+
+The WAIT statement stops execution until a specific port matches a specific bit pattern. The data read at the port is XORed with the value xorVAL, and then ANDed with the desired value. If result is zero, read is repeated until value is nonzero.
+
 ### SWAP var1,var2
 
 Swaps values for two scalar variables
