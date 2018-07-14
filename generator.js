@@ -558,20 +558,21 @@ var generator = function(basic, CFG, PROC) {
                     if (par.type=="fn" && par.value=="fn") {
                         //def fn
                         tokens.shift()
-                        par = tokens[0];
+                        par = tokens.shift();
                         var target = findLabel(par.value,labels);
                         if (target===null) croak("Target line not found",line)
+                        
                         ENV.addFn(par.value)
-                        break;;
+                        break;
                     }
                     if (par.type=="var" && par.value=="proc") {
                         //def proc
                         tokens.shift()
-                        par = tokens[0];
+                        par = tokens.shift();
                         var target = findLabel(par.value,labels);
                         if (target===null) croak("Target line not found",line)
                         ENV.addProc(par.value)
-                        break;;
+                        break;
                     }
                     croak("DEF without FN",line)
                     break;
