@@ -31,3 +31,4 @@ var CONFIG = {
         asm:{}
     }
 }
+module.exports=CONFIG

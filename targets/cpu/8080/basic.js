@@ -6,7 +6,7 @@ var BASIC = {
             _dirty:function(asm) {
                 return asm.indexOf("[*DD*]">=0)
             },
-            _exprAsm:function(that,exprAsm,expr,line,etype,left){
+            _exprAsm:function(exprAsm,expr,line,etype,left){
                 var out = exprAsm(expr,line,etype,left)
                 if (out.indexOf("[*DD*]")<0) {return out;}
                 //dirty, so push/pop is needed
@@ -14,6 +14,7 @@ var BASIC = {
                 out = "\tPUSH D\n"+out+"\tPOP D\n";
                 return out;
             },
+            /*eslint no-unused-vars: "off"*/
             num: function(expr,line) {
                 return "\tLXI H,"+expr.value+"\n"
             },
@@ -227,11 +228,11 @@ var BASIC = {
                 if (expr.right.type=="num" && expr.right.value==4 && expr.operator=="*") {
                     out = exprAsm(expr.left,line,etype)+"\tDAD H\n\tDAD H\n"
                     return out
-                }   
-                return false;             
+                }
+                return false;
             },
 
-            binary: function(expr,line,etype,ENV,exprAsm,LIB) {
+            binary: function(expr,line,etype,ENV,exprAsm,opAsm,croak,LIB) {
                 var out=""
                 if (expr.left.type=="num" && expr.right.type=="binary") {
                     out = exprAsm(expr.right,line,etype)+exprAsm(expr.left,line,etype,true)
@@ -239,7 +240,7 @@ var BASIC = {
                     out = exprAsm(expr.right,line,etype)+exprAsm(expr.left,line,etype,true)
                 } else {
                     //console.log(expr.operator,expr.left,expr.right)
-                    out = exprAsm(expr.left,line,etype,true)+this._exprAsm(this,exprAsm,expr.right,line,etype)
+                    out = exprAsm(expr.left,line,etype,true)+this._exprAsm(exprAsm,expr.right,line,etype)
                     out = out.replace(";[*DD*]\n",""); //Maybe?
                 }
                 var opfn = "o_"+opAsm(expr.operator,line,etype);
@@ -252,9 +253,9 @@ var BASIC = {
                 out += "\tCALL "+opfn+"\n"
                 return out;
             },
-            binaryL:function(expr,line,etype,ENV,exprAsm,LIB) {
+            binaryL:function(expr,line,etype,ENV,exprAsm,opAsm,croak,LIB) {
                 //console.log(this)
-                return this.binary(expr,line,etype,ENV,exprAsm,LIB) + "\tXCHG\n"
+                return this.binary(expr,line,etype,ENV,exprAsm,opAsm,croak,LIB) + "\tXCHG\n"
             }
 
         },
@@ -336,7 +337,7 @@ var BASIC = {
                 out+="\tCALL stcpy\n" //max BC
 
                 return out
-            },   
+            },
 
             storeStrNoGC: function(name) {
                 return "\tSHLD vs_"+name+"\n\tCALL hp_assign\n"
@@ -385,7 +386,7 @@ var BASIC = {
                 out+="\tMVI L,c9h\n"
                 out+="\tSHLD sv_iofix+2\n"
 
-                out+=exprAsm(addr,line,addrT);  
+                out+=exprAsm(addr,line,addrT);
                 out+="\tMOV A,L\n"
                 out+="\tSTA sv_iofix+1\n"
 
@@ -413,7 +414,7 @@ var BASIC = {
                     out+="\tMVI L,c9h\n"
                     out+="\tSHLD sv_iofix+2\n"
 
-                    out+=exprAsm(addr,line,addrT);  
+                    out+=exprAsm(addr,line,addrT);
                     out+="\tSTA sv_iofix+1\n"
                     out+="\tCALL sv_iofix\n"
 
@@ -424,20 +425,20 @@ var BASIC = {
                 } else {
                     out+="\tPUSH PSW\n"
 
-                    out+=exprAsm(xorVal,line,xorValT);  
+                    out+=exprAsm(xorVal,line,xorValT);
                     out+="\tPOP PSW\n"
                     out+="\tXRA L\n"
-                } 
+                }
                 if (andVal.type=="num") {
                     //constant out
                     out+="\tANI "+andVal.value+"\n"
                 } else {
                     out+="\tPUSH PSW\n"
 
-                    out+=exprAsm(andVal,line,andValT);  
+                    out+=exprAsm(andVal,line,andValT);
                     out+="\tPOP PSW\n"
                     out+="\tAND L\n"
-                }                                
+                }
                 out+="\tJZ "+label+"\n"
 
 
@@ -451,7 +452,7 @@ var BASIC = {
                     out+=exprAsm(value,line,valueT);  //value is not a constant
                     out+="\tpush h\n"
                 }
-                out+=exprAsm(addr,line,addrT);  
+                out+=exprAsm(addr,line,addrT);
                 if (value.type!="num") {
                     out+="\tpop d\n"
                     out+="\tmov m,e\n"
@@ -473,7 +474,7 @@ var BASIC = {
                     out+=exprAsm(value,line,valueT);  //value is not a constant
                     out+="\tpush h\n"
                 }
-                out+=exprAsm(addr,line,addrT);  
+                out+=exprAsm(addr,line,addrT);
                 if (value.type!="num") {
                     out+="\tpop d\n"
                     out+="\tmov m,e\n"
@@ -499,8 +500,8 @@ var BASIC = {
                 } else {
                     out+="\tLXI D,"+step+"\n"
                     out+="\tDAD D\n"
-                }            
-                return out    
+                }
+                return out
             },
             _fortest: function(loops) {
                 var out = "";
@@ -517,8 +518,8 @@ var BASIC = {
                 out+="\tMOV A,H\n"
                 out+="\tCMP D\n"
                 out+="\tJNZ FLCMD"+loops[0][2]+"\n"
-      
-                return out    
+
+                return out
             },
 
             ongoto: function(list) {
@@ -549,8 +550,10 @@ var BASIC = {
 
             strUnassign: function(name) {
                 return "\tLHLD vs_"+name+"\n\tCALL hp_unass\n"
-            },
+            }
 
         }
     }
 }
+
+module.exports = BASIC

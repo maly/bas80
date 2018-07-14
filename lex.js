@@ -4,7 +4,7 @@ function InputStream(input) {
         next  : next,
         peek  : peek,
         eof   : eof,
-        croak : croak,
+        croak : croak
     };
     function next() {
         var ch = input.charAt(pos++);
@@ -36,67 +36,67 @@ function InputStream(input) {
         eof   : eof,
         croak : input.croak
     };
-    function is_keyword(x) {
+    function isKeyword(x) {
         return keywords.indexOf(" " + x.toLowerCase() + " ") >= 0;
     }
-    function is_function(x) {
+    function isFunction(x) {
         return functions.indexOf(" " + x.toLowerCase() + " ") >= 0;
     }
-    function is_digit(ch) {
-        return /[0-9]/i.test(ch);
+    function isDigit(ch) {
+        return (/[0-9]/i).test(ch);
     }
-    function is_hexdigit(ch) {
-        return /[0-9a-fA-F]/i.test(ch);
+    function isHexDigit(ch) {
+        return (/[0-9a-fA-F]/i).test(ch);
     }
-    function is_id_start(ch) {
-        return /[a-z_]/i.test(ch);
+    function isIdStart(ch) {
+        return (/[a-z_]/i).test(ch);
     }
-    function is_id(ch) {
-        return is_id_start(ch) || "?!0123456789".indexOf(ch) >= 0;
+    function isId(ch) {
+        return isIdStart(ch) || "?!0123456789".indexOf(ch) >= 0;
     }
-    function is_op_char(ch) {
+    function isOpChar(ch) {
         return "+-*/%=&|^<>!".indexOf(ch) >= 0;
     }
-    function is_colon(ch) {
+    function isColon(ch) {
         return ":".indexOf(ch) >= 0;
     }
-    function is_punc(ch) {
+    function isPunc(ch) {
         return ",;#(){}[]".indexOf(ch) >= 0;
     }
-    function is_whitespace(ch) {
+    function isWhitespace(ch) {
         return " \t\n\r".indexOf(ch) >= 0;
     }
-    function read_while(predicate) {
+    function readWhile(predicate) {
         var str = "";
         while (!input.eof() && predicate(input.peek()))
             str += input.next();
         return str;
     }
-    function read_number() {
-        var has_dot = false;
-        var number = read_while(function(ch){
+    function readNumber() {
+        var hasDot = false;
+        var number = readWhile(function(ch){
             if (ch == ".") {
-                if (has_dot) return false;
-                has_dot = true;
+                if (hasDot) return false;
+                hasDot = true;
                 return true;
             }
-            return is_digit(ch);
+            return isDigit(ch);
         });
-        return { type: "num", value: parseFloat(number) };
+        return {type: "num", value: parseFloat(number)};
     }
-    function read_hexnumber() {
+    function readHexNumber() {
         input.next()
-        var number = read_while(function(ch){
-            return is_hexdigit(ch);
+        var number = readWhile(function(ch){
+            return isHexDigit(ch);
         });
-        return { type: "num", value: parseInt(number,16) };
+        return {type: "num", value: parseInt(number,16)};
     }
-    function read_ident() {
-        var id = read_while(is_id);
+    function readIdent() {
+        var id = readWhile(isId);
         var s = input.peek();
         if (s=="$") {
             input.next();
-            if (is_function(id+"$")) {
+            if (isFunction(id+"$")) {
                 return {
                     type  : "fn",
                     value : id.toLowerCase()+"S"
@@ -109,11 +109,11 @@ function InputStream(input) {
 
         }
         return {
-            type  : is_keyword(id) ? "kw" : is_function(id) ? "fn" : "var",
+            type  : isKeyword(id) ? "kw" : isFunction(id) ? "fn" : "var",
             value : id.toLowerCase()
         };
     }
-    function read_escaped(end) {
+    function readEscaped(end) {
         var escaped = false, str = "";
         input.next();
         while (!input.eof()) {
@@ -131,53 +131,49 @@ function InputStream(input) {
         }
         return str;
     }
-    function read_string() {
-        return { type: "str", value: read_escaped('"') };
+    function readString() {
+        return {type: "str", value: readEscaped('"')};
     }
-    function skip_comment() {
-        read_while(function(ch){ return ch != "\n" });
-        input.next();
-    }
-    function read_next() {
-        read_while(is_whitespace);
+    function readNext() {
+        readWhile(isWhitespace);
         if (input.eof()) return null;
         var ch = input.peek();
 
-        if (ch == '"') return read_string();
-        if (ch == '$') return read_hexnumber();
-        if (is_digit(ch)) return read_number();
-        if (is_id_start(ch)) {
-            var ident = read_ident();
+        if (ch == '"') return readString();
+        if (ch == '$') return readHexNumber();
+        if (isDigit(ch)) return readNumber();
+        if (isIdStart(ch)) {
+            var ident = readIdent();
             if (ident.type == "kw" && ident.value=="rem") {
-                ;
-                return {type:"remark",value:read_while(function(ch){ return ch != "\n" })}
+              return {type:"remark",value:readWhile(function(ch){ return ch != "\n" })}
             }
             return ident
         }
-        if (is_colon(ch)) return {
+        if (isColon(ch)) return {
             type  : "colon",
             value : input.next()
         };
-        if (is_punc(ch)) return {
+        if (isPunc(ch)) return {
             type  : "punc",
             value : input.next()
         };
-        if (is_op_char(ch)) return {
+        if (isOpChar(ch)) return {
             type  : "op",
-            value : read_while(is_op_char)
+            value : readWhile(isOpChar)
         };
         input.croak("Can't handle character: " + ch);
+        return null
     }
     function peek() {
-        return current || (current = read_next());
+        return current || (current = readNext());
     }
     function next() {
         var tok = current;
         current = null;
-        return tok || read_next();
+        return tok || readNext();
     }
     function eof() {
-        return peek() == null;
+        return peek() === null;
     }
 }
 
@@ -190,13 +186,15 @@ function parse(source) {
     var basic = []
     var hasEnd = false;
 
+    var t;
+
     for (var i=0;i<lines.length;i++) {
         var line = lines[i];
         var out = {source:line,rawTokens:[],label:null,_numline:i,_cmd:1}
         var input = InputStream(line);
         var tok = TokenStream(input);
         while(!tok.eof()) {
-            var t = tok.next()
+            t = tok.next()
             out.rawTokens.push(t)
         }
         if (!out.rawTokens.length) continue; //neni co ukladat
@@ -218,7 +216,7 @@ function parse(source) {
         //decolonization
         var nout = [];
         while (out.tokens.length) {
-            var t = out.tokens.shift()
+            t = out.tokens.shift()
             if (t.type=="kw" && t.value=="end") hasEnd = true;
             if (t.type=="var" && t.value=="and") t.type="op"
             if (t.type=="var" && t.value=="or") t.type="op"
@@ -300,3 +298,5 @@ function parse(source) {
     }
     return basic
 }
+
+module.exports = parse

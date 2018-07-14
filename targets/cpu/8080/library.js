@@ -4,17 +4,17 @@ var LIB = {
     /***
      * Methods:
      * hp_init initialize the heap
-     * 
-     * hp_a allocate at least bc bytes on heap, 
+     *
+     * hp_a allocate at least bc bytes on heap,
      * returns address of the first free byte in hl
-     * 
+     *
      * hp_free frees the allocated space (hl)
-     * 
+     *
      * hp_assign sets hl space as assigned to variable
      * hp_unass sets hl space as unassigned
-     * 
+     *
      * hp_gc marks all unallocated spaces as free and join them
-     * 
+     *
      */
     "__heap": {
         uses:["erroom"],
@@ -224,7 +224,7 @@ var LIB = {
         "HP_gcf:    CALL    hp_join \n"+
         "\tJNZ     hp_gcf\n"+
         "\tret        \n"+
-        "HP_DONE:\n",
+        "HP_DONE:\n"
 
 
     },
@@ -258,8 +258,8 @@ var LIB = {
         "\tJZ      pilast \n"+
         "\tCALL    pipos \n"+
         "pilast:\tPOP     psw \n"+
-        "\tADI 30h\n"+  
-        "\tCALL serout\n"+  
+        "\tADI 30h\n"+
+        "\tCALL serout\n"+
         "\tRET\n"
     },
     */
@@ -283,9 +283,9 @@ var LIB = {
     "\tCALL  prt10 \n"+
     "\tLXI D,-10\n"+
     "\tCALL  prt10 \n"+
-    "\tMOV A,L\n"+  
-    "\tADI 30h\n"+  
-    "\tJMP serout\n"+  
+    "\tMOV A,L\n"+
+    "\tADI 30h\n"+
+    "\tJMP serout\n"+
     "prt10:\n"+
     "\tmvi c,0\n"+
     "prt10l:\n"+
@@ -302,15 +302,15 @@ var LIB = {
     "\tmov e,a\n"+
     "\tinx d\n"+
     "\tdad d\n"+
-    "\tMOV A,C\n"+  
-    "\tORA A\n"+  
-    "\tRZ\n"+  
-    "\tADI 30h\n"+  
+    "\tMOV A,C\n"+
+    "\tORA A\n"+
+    "\tRZ\n"+
+    "\tADI 30h\n"+
     "\tJMP serout\n"
     },
     /**
      * set print channel
-     */   
+     */
     "prtchan": {
         uses:null,
         sysdb:["prtchan"],
@@ -455,7 +455,7 @@ var LIB = {
     //SYSTEM
     "mul16": {
         uses:null,
-        code: 
+        code:
             "    push h\n"+
             "    pop b\n"+
             "    lxi h,0\n"+
@@ -480,7 +480,7 @@ var LIB = {
             "    ret\n"
     },
 
-    "div16": {  
+    "div16": {
         uses:null,
         code:
             "    push d\n"+
@@ -595,9 +595,9 @@ var LIB = {
         "\tsub c\n"+
         "s_d10_2: dcr b\n"+
 
-        "\tjnz s_d10_1\n"+     
+        "\tjnz s_d10_1\n"+
         "\tRET\n"
-    },  
+    },
 
     "s_mul10": {
         uses:null,
@@ -611,7 +611,7 @@ var LIB = {
         "    dad d\n"+
         "    pop d\n"+
         "    ret\n"
-    },  
+    },
     "s_mul10add": {
         uses:null,
         code: ""+
@@ -625,7 +625,7 @@ var LIB = {
         "    pop d\n"+
         "    dad d\n"+
         "    ret\n"
-    },  
+    },
 
     "s_check": {
         uses:["erridx"],
@@ -640,7 +640,7 @@ var LIB = {
         "    dad h\n"+
         "    dad d\n"+
         "    ret\n"
-    },  
+    },
 
     /**
      * BASIC operators
@@ -654,7 +654,7 @@ var LIB = {
         "dofalse: LXI H,0\n\tRET\n"+
         "dotrue: LXI H,1\n"+
         "\tRET\n"
-    },    
+    },
     "o_lt": {
         uses:["o_logic"],
         code: "\tCALL olofix\n"+
@@ -805,7 +805,7 @@ var LIB = {
     },
     "o_mul": {
         uses:["mul16","errovfl","f_abs"],
-        code: 
+        code:
             "\tmov a,h\n"+
             "\txra d\n"+
             "\tani 80h\n"+
@@ -848,7 +848,7 @@ var LIB = {
 
     "o_div": {
         uses:["div16","errdiv","f_abs"],
-        code: 
+        code:
             "\tmov a,h\n"+
             "\tora l\n"+
             "\tjz errdiv\n"+
@@ -878,7 +878,7 @@ var LIB = {
     },
     "o_mod": {
         uses:["div16","errdiv","f_abs"],
-        code: 
+        code:
             "\tmov a,h\n"+
             "\tora l\n"+
             "\tjz errdiv\n"+
@@ -907,7 +907,7 @@ var LIB = {
 
     /**
      * Concatenate two strings DE, HL to one new at heap
-     */    
+     */
     "o_concat": {
     uses:["__heap"],
     code: ""+
@@ -1044,7 +1044,7 @@ var LIB = {
      */
     "stcpy": {
         uses:["__heap"],
-        code: 
+        code:
             "\tMOV A,M\n"+
             "\tORA A\n"+
             "\tJZ stcp_d\n"+
@@ -1069,7 +1069,7 @@ var LIB = {
      */
     "strclone": {
         uses:["__heap"],
-        code: 
+        code:
         "\tLXI B,0\n"+
         "\tPUSH H\n"+
         "strc_len: MOV A,M\n"+
@@ -1131,7 +1131,7 @@ var LIB = {
         "\tMOV L,A\n"+
         "\tINX H\n"+
         "\tRET\n"
-    },    
+    },
     "f_sgn": {
         uses:null,
         code: "\tMOV A,H\n"+
@@ -1163,7 +1163,7 @@ var LIB = {
         "\tshld sv_seed2\n"+
         "\tdad b\n"+
         "\tRET\n"
-    },    
+    },
     /*
     "s_getaddr":{
         uses:null,
@@ -1216,13 +1216,13 @@ var LIB = {
         "f_le:\tXCHG\n"+
         "\tPOP D\n"+
         "\tRET\n"
-    },        
+    },
     "f_asc": {
         uses:[],
         code: "\tMOV L,M\n"+
         "\tMVI H,0\n"+
         "\tRET\n"
-    },        
+    },
     "f_val": {
         uses:["s_mul10add","f_neg"],
         code: "\tpush d\n"+
@@ -1259,17 +1259,17 @@ var LIB = {
         "\nora a\n"+
         "\nrz\n"+
         "\njmp f_neg\n"
-    },  
+    },
     "f_low": {
         uses:null,
         inline:true,
         code: "\tMVI H,0\n"
-    },            
+    },
     "f_high": {
         uses:null,
         inline:true,
         code: "\tMOV L,H\n\tMVI H,0\n"
-    },            
+    },
     "f_chrS": {
         uses:["__heap"],
         code: "\tMOV A,L\n"+
@@ -1282,5 +1282,7 @@ var LIB = {
         "\tmvi m,0\n"+
         "\tdcx h\n"+
         "\tRET\n"
-    },      
+    }
 }
+
+module.exports = LIB

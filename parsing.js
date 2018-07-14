@@ -30,7 +30,7 @@ var ARITY = {
 }
 
 
-
+/* global croak */
 
 
 var exprType = function(expr,ln) {
@@ -70,6 +70,7 @@ var exprType = function(expr,ln) {
         return fn[fn.length-1]=="S"?"str":"int";
     }
     croak("Invalid expression type",ln);
+    return false
 }
 
 
@@ -81,8 +82,10 @@ var compute = function (l,r,op) {
         case "*": return l*r;
         case "/": return l/r;
     }
+    return null
 }
 
+/* global ENV */
 var expr = function(tokens, ln, bool) {
     var expectPunctuation = function(punc) {
         var n = tokens.shift();
@@ -91,8 +94,9 @@ var expr = function(tokens, ln, bool) {
         if (n.value!=punc) croak(punc+" is missing, "+n.value+" instead",ln)
     }
 
-    var parse_atom = function() {
+    var parseAtom = function() {
         var n = tokens.shift();
+        var ex,et,ex2,op;
         //if (!n) return n
         if (n.type=="op" && n.value=="-") {
             //negative number
@@ -103,10 +107,10 @@ var expr = function(tokens, ln, bool) {
 
         if (n.type=="punc" && n.value=="[") {
             //expectPunctuation("[");
-            var ex = expr(tokens,ln,bool)
+            ex = expr(tokens,ln,bool)
             //console.log(ex)
             if (ex.type!="var" && ex.type!="var[]" && ex.type!="var$" && ex.type!="str") croak("You cannot get pointer to this!",ln)
-            var et = exprType(ex,ln);
+            et = exprType(ex,ln);
             //console.log(ex,et)
             expectPunctuation("]");
             return {type:"ptr",value:ex.value,varType:et,ex:ex}
@@ -117,10 +121,10 @@ var expr = function(tokens, ln, bool) {
 
             if (ENV.fns[n.value]==n.value) {
                 //it's a function, dude!
-                var op=[{type:"var",value:n.value}];
+                op=[{type:"var",value:n.value}];
                 expectPunctuation("(")
-                var ex = expr(tokens,ln,bool)
-                //var et = exprType(ex,ln);
+                ex = expr(tokens,ln,bool)
+                //et = exprType(ex,ln);
                 op.push(ex)
                 if (tokens[0].type=="punc"&&tokens[0].value==",") {
                     expectPunctuation(",")
@@ -132,8 +136,8 @@ var expr = function(tokens, ln, bool) {
             }
             expectPunctuation("(")
 //            console.log(JSON.parse(JSON.stringify(tokens)))
-            var ex = expr(tokens,ln,bool)
-            var et = exprType(ex,ln);
+            ex = expr(tokens,ln,bool)
+            et = exprType(ex,ln);
 //            console.log(ex,et)
 //            console.log(JSON.parse(JSON.stringify(tokens)))
             expectPunctuation(")")
@@ -147,25 +151,25 @@ var expr = function(tokens, ln, bool) {
 //            console.log(JSON.parse(JSON.stringify(tokens)))
             if (tokens[0].type=="kw" && tokens[0].value=="to") {
                 tokens.shift();
-                var ex = {type:"num",value:0}
+                ex = {type:"num",value:0}
                 if (tokens[0].type=="punc" && tokens[0].value==")") {
-                    var ex2 = {type:"num",value:32767}
+                    ex2 = {type:"num",value:32767}
                 } else {
-                    var ex2 = expr(tokens,ln,bool)
+                    ex2 = expr(tokens,ln,bool)
                     //var et2 = exprType(ex2,ln);
                 }
                 //var et2 = exprType(ex2,ln);
             } else {
-                var ex = expr(tokens,ln,bool)
+                ex = expr(tokens,ln,bool)
                 //var et = exprType(ex,ln);
                 if (tokens.length) {
                     if (tokens[0].type=="kw" && tokens[0].value=="to") {
                         tokens.shift();
 
                         if (tokens[0].type=="punc" && tokens[0].value==")") {
-                            var ex2 = {type:"num",value:32767}
+                            ex2 = {type:"num",value:32767}
                         } else {
-                            var ex2 = expr(tokens,ln,bool)
+                            ex2 = expr(tokens,ln,bool)
                             //var et2 = exprType(ex2,ln);
                         }
                     }
@@ -180,12 +184,12 @@ var expr = function(tokens, ln, bool) {
 
         if (n.type=="fn") {
             var nn = ARITY[n.value].length;
-            var op=[];
+            op=[];
             expectPunctuation("(")
             var argNum=0;
             while(nn>0) {
-                var ex = expr(tokens,ln,bool)
-                var et = exprType(ex,ln);
+                ex = expr(tokens,ln,bool)
+                et = exprType(ex,ln);
                 if (ARITY[n.value][argNum]!=et) croak("Argument type mismatch, given:"+et+", expected: "+ARITY[n.value][argNum],ln)
                 op.push(ex)
                 if (n.value=="fn") {
@@ -210,15 +214,15 @@ var expr = function(tokens, ln, bool) {
 
         return n;
     }
-    var maybe_binary = function(left,my_prec) {
+    var maybeBinary = function(left,myPrec) {
         if (!tokens.length) return left;
         var tok = tokens[0];
         if (tok.type!="op") return left;
 
-        var his_prec = PRECEDENCE[tok.value];
-        if (his_prec>my_prec) {
+        var hisPrec = PRECEDENCE[tok.value];
+        if (hisPrec>myPrec) {
                tokens.shift();
-            var right = maybe_binary(parse_atom(), his_prec);
+            var right = maybeBinary(parseAtom(), hisPrec);
 
             var binary = {
                 type     : (tok.value == "=" && !bool) ? "assign" : "binary",
@@ -246,16 +250,13 @@ var expr = function(tokens, ln, bool) {
             }
 
 
-            return maybe_binary(binary,my_prec)
-        } else {
-
-
+            return maybeBinary(binary,myPrec)
         }
         return left;
     }
     //var n = tokens.shift();
 
-    var ex = maybe_binary(parse_atom(),0);
+    var ex = maybeBinary(parseAtom(),0);
 
     return ex;
 }

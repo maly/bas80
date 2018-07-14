@@ -107,6 +107,7 @@ var nmake = function(target) {
     var js = make[jsf].work;
     out = processOnepage(fs.readFileSync("./onepage/devel/asm-core.html")+"", cpu, jscpu, js, fs.readFileSync("./onepage/devel/style.css")+"");
       //console.log(result)
+      /* global UglifyHTML */
       out = UglifyHTML(out, {
         removeAttributeQuotes: true,
         collapseWhitespace: true,
@@ -177,6 +178,7 @@ var readMinFile = function(fn, opt) {
     }
     if (fn.indexOf(".css")>=0) {
       //CSS
+      /* global UglifyCSS */
       result = UglifyCSS.processFiles([fn]);
       fs.writeFileSync(minfile,result);
       return result;
@@ -205,7 +207,7 @@ var readMinFile = function(fn, opt) {
 
 
 
-for (k in make) {
+for (var k in make) {
   if (k=="includes") continue;
   nmake(k);
 }
