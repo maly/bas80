@@ -63,7 +63,7 @@ var exprType = function(expr,ln) {
         if (left == right) return left
         croak("Mismatched types in expression",ln);
     }
-    
+
     if (type=="fn") {
         var fn =expr.value;
 
@@ -161,7 +161,7 @@ var expr = function(tokens, ln, bool) {
                 if (tokens.length) {
                     if (tokens[0].type=="kw" && tokens[0].value=="to") {
                         tokens.shift();
-                        
+
                         if (tokens[0].type=="punc" && tokens[0].value==")") {
                             var ex2 = {type:"num",value:32767}
                         } else {
@@ -214,12 +214,12 @@ var expr = function(tokens, ln, bool) {
         if (!tokens.length) return left;
         var tok = tokens[0];
         if (tok.type!="op") return left;
-        
+
         var his_prec = PRECEDENCE[tok.value];
         if (his_prec>my_prec) {
                tokens.shift();
             var right = maybe_binary(parse_atom(), his_prec);
-            
+
             var binary = {
                 type     : (tok.value == "=" && !bool) ? "assign" : "binary",
                 operator : tok.value,
@@ -233,7 +233,7 @@ var expr = function(tokens, ln, bool) {
                 binary = {
                     type     : "num",
                     value: compute(left.value, right.value, tok.value)
-                };	
+                };
             }
 
             //can evaluate strings?
@@ -242,20 +242,20 @@ var expr = function(tokens, ln, bool) {
                 binary = {
                     type     : "str",
                     value: left.value + right.value
-                };	
+                };
             }
 
-           
+
             return maybe_binary(binary,my_prec)
         } else {
-            
-           
+
+
         }
         return left;
     }
     //var n = tokens.shift();
 
     var ex = maybe_binary(parse_atom(),0);
-    
+
     return ex;
 }

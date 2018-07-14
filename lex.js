@@ -272,11 +272,11 @@ function parse(source) {
 
 
                 continue;
-            }   
+            }
 
             nout.push(t)
 
-            
+
         }
         if (!nout.length) continue
         if (nout[0].type=="var") {

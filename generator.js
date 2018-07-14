@@ -1,48 +1,48 @@
 
     var labelIndex = function(basic) {
-    	var out={};
-    	for (var i=0;i<basic.length;i++) {
-    		if (basic[i].label) {
-    			var label = basic[i].label;
-    			out[label] = i;
-    		}
-    	}
-    	return out
+      var out={};
+      for (var i=0;i<basic.length;i++) {
+        if (basic[i].label) {
+          var label = basic[i].label;
+          out[label] = i;
+        }
+      }
+      return out
     }
 
     var findNewLine = function(i,basic) {
         if (!basic[i]) return null
-    	var thisLine = basic[i]._numline;
-    	while(i<basic.length) {
+      var thisLine = basic[i]._numline;
+      while(i<basic.length) {
             i++;
             if (!basic[i]) return null
-    		if (basic[i]._numline>thisLine) return i;
-    	}
-    	return null;
+        if (basic[i]._numline>thisLine) return i;
+      }
+      return null;
     }
 
     var skipMark = function(i,basic) {
-    	var idx = findNewLine(i,basic);
-    	if (idx) {
-    		if (!basic[idx]._skip) basic[idx]._skip=[];
-    		basic[idx]._skip.push(i)
-    	}
+      var idx = findNewLine(i,basic);
+      if (idx) {
+        if (!basic[idx]._skip) basic[idx]._skip=[];
+        basic[idx]._skip.push(i)
+      }
     }
 
     var findLabel = function(label,labels) {
         if(labels[label]!==undefined) return labels[label];
-        //find 
+        //find
         return null
     }
 
     var croak = function(msg,ln) {
-    	throw new Error(msg + " ("+ln._numline+":"+ln._cmd+")");
+      throw new Error(msg + " ("+ln._numline+":"+ln._cmd+")");
     }
 
 
 
 
-    
+
 
 
 
@@ -55,7 +55,7 @@
             croak ("Invalid string operator",line)
         }
 
-        
+
         switch(op) {
             case "+": return "add"
             case "-": return "sub"
@@ -123,7 +123,7 @@
         while(fname = ENV.uses.shift()) {
             var fn = LIB[fname]
             if (!fn) throw new Error("Cannot link "+fname)
-    
+
             if (fn.sysdb) {
                 var sv;
                 for(var i=0;i<fn.sysdb.length;i++){
@@ -148,8 +148,8 @@
             out+=";---"+fname+"-end---\n\n"
         }
         return out;
-    
-    }    
+
+    }
 
 
 
@@ -273,7 +273,7 @@ var generator = function(basic, CFG, PROC) {
                 if (expr.ex.index.type=="num" && expr.ex.index.value>=ENV.intarr[expr.value]) croak("Index out of bound",line)
                 if (expr.ex.index.type=="num") {
                     //precompute
-                    return CFG.xp.varAIIndirect(expr,line)                
+                    return CFG.xp.varAIIndirect(expr,line)
                 }
                 return CFG.xp.varAIndirect(expr,line,ENV, exprAsm);
             }
@@ -290,7 +290,7 @@ var generator = function(basic, CFG, PROC) {
                 if (expr.ex.index.type=="num" && expr.ex.index.value>=ENV.intarr[expr.value]) croak("Index out of bound",line)
                 if (expr.ex.index.type=="num") {
                     //precompute
-                    return CFG.xp.varAIIndirectL(expr,line)                
+                    return CFG.xp.varAIIndirectL(expr,line)
                 }
                 return CFG.xp.varAIndirectL(expr,line,ENV, exprAsm);
             }
@@ -318,19 +318,19 @@ var generator = function(basic, CFG, PROC) {
         if (type=="var[]") {
             if (!ENV.intarr[expr.value])  croak("You have to DIM array first",line)
             if (expr.index.type=="num" && expr.index.value>=ENV.intarr[expr.value]) croak("Index out of bound",line)
-            
+
         }
         if (type=="var[]" && !left) {
             if (expr.index.type=="num") {
                 //precompute
-                return CFG.xp.varAI(expr,line)                
+                return CFG.xp.varAI(expr,line)
             }
             return CFG.xp.varA(expr,line,ENV, exprAsm);
         }
         if (type=="var[]" && left) {
             if (expr.index.type=="num") {
                 //precompute
-                return CFG.xp.varAIL(expr,line)                
+                return CFG.xp.varAIL(expr,line)
             }
             return CFG.xp.varAL(expr,line,ENV, exprAsm);
         }
@@ -343,7 +343,7 @@ var generator = function(basic, CFG, PROC) {
             return CFG.xp.binary(expr,line,etype,ENV,exprAsm,LIB)
 
         }
-        
+
         if (type=="fn" && !left) {
             //console.log("E",LIB)
             //special call
@@ -368,7 +368,7 @@ var generator = function(basic, CFG, PROC) {
             return CFG.xp.fnL(expr,line,ENV,exprAsm, LIB);
         }
         croak("Cannot evaluate "+JSON.stringify(expr),line)
-    
+
     }
 
 //----------------------------------------------------
@@ -413,35 +413,35 @@ var generator = function(basic, CFG, PROC) {
     var ifskip = [];
     var ifMultiline = [];
     for(var i=0;i<basic.length;i++) {
-    	var par,next;
-    	var line = basic[i];
-    	out+="CMD"+i+":\n"
-    	if (line._skip) {
+      var par,next;
+      var line = basic[i];
+      out+="CMD"+i+":\n"
+      if (line._skip) {
             while (ifskip.length) {
                 out+="ELSKIP"+ifskip[0]+":\n"
                 ifskip.shift()
             }
-    		out+="SKIP"+line._skip[0]+":\n"
+        out+="SKIP"+line._skip[0]+":\n"
         }
 
-    	var tokens = [].concat(line.tokens);
-    	if (tokens[0].type=="kw") {
-    		var cmd = tokens[0].value;
-    		tokens.shift();
-    		out+="; "+cmd+"\n"
-    		switch(cmd) {
-    			case "goto":
+      var tokens = [].concat(line.tokens);
+      if (tokens[0].type=="kw") {
+        var cmd = tokens[0].value;
+        tokens.shift();
+        out+="; "+cmd+"\n"
+        switch(cmd) {
+          case "goto":
                     par = tokens[0];
                     var target = findLabel(par.value,labels);
                     if (target===null) croak("Target line not found",line)
                     out+=CFG.asm.jmp("CMD"+target);
-    				break;
+            break;
                 case "gosub":
-    				par = tokens[0];
+            par = tokens[0];
                     var target = findLabel(par.value,labels);
                     if (target===null) croak("Target line not found",line)
                     out+=CFG.asm.docall("CMD"+target);
-    				break;
+            break;
                 case "return":
                     if (tokens.length) {
                         //return expr.
@@ -455,23 +455,23 @@ var generator = function(basic, CFG, PROC) {
                                 var ex = isVar()
                                 if (!ex) croak ("POP needs a variable name",line)
                                 ENV.addVar(ex.value,"int")
-                                out+=CFG.asm.dopop();                      
+                                out+=CFG.asm.dopop();
                                 out+=CFG.asm.storeInt(ex.value,line)
                                 if (!tokens.length) continue;
                                 if (!isPunc(",")) croak ("Separate names with a comma",line)
-                            }              
-                            out+=CFG.asm.swap()          
+                            }
+                            out+=CFG.asm.swap()
                         }
                     }
-    				out+=CFG.asm.ret();
-    				break;
+            out+=CFG.asm.ret();
+            break;
                 case "end":
                     out+=CFG.asm.end();
                     break;
                 case "stop":
                     ENV.addUse("errstop");
                     out+=CFG.asm.jmp("ERRSTOP");
-    				break;
+            break;
                 case "repeat":
                     loops.unshift(["CMD"+i,"R"]);
                     break;
@@ -481,16 +481,16 @@ var generator = function(basic, CFG, PROC) {
                     if (loops[0][1]!="W") croak("WHILE / ENDWHILE mismatched",line)
                     out+=CFG.asm.jmp(loops[0][0]);
                     out+="WB"+loops[0][0]+":\n"
-                    loops.shift()                    
+                    loops.shift()
                     break;
                 case "break":
                     if (!loops.length) croak("BREAK outside the loop",line);
                     out+=CFG.asm.jmp(loops[0][1]+"B"+loops[0][0]);
-                    break;                    
+                    break;
                 case "continue":
                     if (!loops.length) croak("CONTINUE outside the loop",line);
                     out+=CFG.asm.jmp(loops[0][1]+"C"+loops[0][0]);
-                    break;      
+                    break;
                 case "dim":
                     var epar = expr(tokens,line)
                     //console.log(epar)
@@ -512,7 +512,7 @@ var generator = function(basic, CFG, PROC) {
                         } else {
                             croak("Invalid data",line)
                         }
-                        label = null;                        
+                        label = null;
                     }
                     break;
                 case "restore":
@@ -539,20 +539,20 @@ var generator = function(basic, CFG, PROC) {
                         if (!ex) croak ("READ needs a variable name",line)
                         if (ex.type=="var") {
                             ENV.addVar(ex.value,"int")
-                            out+=CFG.asm.docall("s_read");                      
+                            out+=CFG.asm.docall("s_read");
                             out+=CFG.asm.storeInt(ex.value,line)
                         } else {
                             //read string
                             ENV.addUse("__heap")
                             ENV.addVar(ex.value,"int")
                             out+=CFG.asm.strUnassign(ex.value)
-                            out+=CFG.asm.docall("s_read");                      
+                            out+=CFG.asm.docall("s_read");
                             out+=CFG.asm.storeStr(ex.value,line)
                         }
                         if (!tokens.length) continue;
                         if (!isPunc(",")) croak ("Separate names with a comma",line)
                     }
-                    break;                    
+                    break;
                 case "def":
                     par = tokens[0];
                     if (par.type=="fn" && par.value=="fn") {
@@ -561,7 +561,7 @@ var generator = function(basic, CFG, PROC) {
                         par = tokens.shift();
                         var target = findLabel(par.value,labels);
                         if (target===null) croak("Target line not found",line)
-                        
+
                         ENV.addFn(par.value)
                         break;
                     }
@@ -660,7 +660,7 @@ var generator = function(basic, CFG, PROC) {
                         var ex = isVar()
                         if (!ex) croak ("POP needs a variable name",line)
                         ENV.addVar(ex.value,"int")
-                        out+=CFG.asm.dopop();                      
+                        out+=CFG.asm.dopop();
                         out+=CFG.asm.storeInt(ex.value,line)
                         if (!tokens.length) continue;
                         if (!isPunc(",")) croak ("Separate names with a comma",line)
@@ -686,10 +686,10 @@ var generator = function(basic, CFG, PROC) {
                             out+=CFG.asm.stackSwap()
                             if (!tokens.length) continue;
                             if (!isPunc(",")) croak ("Separate names with a comma",line)
-                        }              
-                            
+                        }
+
                         out+=CFG.asm.storeInt(ex.value,line)
-                        break      
+                        break
                     }
                     var firstPar = CFG.asm.storeInt(ex.value,line)+CFG.asm.swap()
                     if (!isPunc(",")) croak ("Separate names with a comma",line)
@@ -713,10 +713,10 @@ var generator = function(basic, CFG, PROC) {
                             out+=CFG.asm.stackSwap()
                             if (!tokens.length) continue;
                             if (!isPunc(",")) croak ("Separate names with a comma",line)
-                        }              
-                            
+                        }
+
                         out+=firstPar+CFG.asm.storeInt(ex.value,line)
-                        break      
+                        break
                     }
                     out+=firstPar+CFG.asm.storeInt(ex.value,line)
                     if (!tokens.length) break;
@@ -728,13 +728,13 @@ var generator = function(basic, CFG, PROC) {
                     var target = findLabel(par.value,labels);
                     if (target===null) croak("Target line not found",line)
                     tokens.shift()
-                    if (!isPunc(",")) croak("Syntax error",line)  
+                    if (!isPunc(",")) croak("Syntax error",line)
                     var ex = expr(tokens,line);
                     var et = exprType(ex,line);
                     out+=exprAsm(ex,line,et)
                     if (isPunc(",")) {
                         var ex2 = expr(tokens,line);
-                        var et = exprType(ex2,line);    
+                        var et = exprType(ex2,line);
                         out+=exprAsm(ex2,line,et2,true)
                     }
                     //console.log(ex,ex2)
@@ -753,11 +753,11 @@ var generator = function(basic, CFG, PROC) {
                         out+=exprAsm(ex,line,et)
                         if (isPunc(",")) {
                             var ex2 = expr(tokens,line);
-                            var et = exprType(ex2,line);    
+                            var et = exprType(ex2,line);
                             out+=exprAsm(ex2,line,et2,true)
                         }
                         out+=CFG.asm.docall("CMD"+target)
-    
+
                         break
                     }
                     var multiassign = [];
@@ -810,7 +810,7 @@ var generator = function(basic, CFG, PROC) {
                     }
                     if (epar.type!=="assign") croak("LET should assign",line)
                     par = epar.left
-    				if (par.type!="var" && par.type!="var[]" && par.type!="var$" && par.type!="slice$") croak("No variable name",line)
+            if (par.type!="var" && par.type!="var[]" && par.type!="var$" && par.type!="slice$") croak("No variable name",line)
                     if (par.type=="var$") {
                         ENV.addVar(par.value,"str")
                         ENV.addUse("__heap")
@@ -823,8 +823,8 @@ var generator = function(basic, CFG, PROC) {
                     }
                     var ex = epar.right
                     var et = exprType(ex,line);
-    				out+=exprAsm(ex,line,et);
-    				if (par.type=="var") {
+            out+=exprAsm(ex,line,et);
+            if (par.type=="var") {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         ENV.addVar(par.value,"int")
                         out+=CFG.asm.storeInt(par.value);
@@ -832,24 +832,24 @@ var generator = function(basic, CFG, PROC) {
                             par = multiassign.pop()
                             out+=CFG.asm.storeInt(par.value);
                         }
-    				} else if (par.type=="var[]") {
+            } else if (par.type=="var[]") {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         if (!ENV.intarr[par.value])  croak("You have to DIM array first",line)
                         if (par.index.type=="num" && par.index.value>=ENV.intarr[par.value]) croak("Index out of bound",line)
-                        
+
                         if (par.index.type=="num") {
                             //precompute
                             out+=CFG.asm.storeAI(par.value,par.index.value)
                         } else {
                             out += CFG.asm.storeA(par,line,et,ENV,exprAsm);
                         }
-    				} else if (par.type=="var$") {
+            } else if (par.type=="var$") {
                         if (et!="str") croak("Cannot assign this to string variable",line)
                         out+=CFG.asm.storeStr(par.value)
-    				} else if (par.type=="slice$") {
+            } else if (par.type=="slice$") {
                         if (et!="str") croak("Cannot assign this to string slice",line)
                         out+=CFG.asm.storeSlice(par.value,par,line,ENV,exprAsm)
-    				}
+            }
                     break;
                 case "poke":
                     //addr
@@ -891,21 +891,21 @@ var generator = function(basic, CFG, PROC) {
                     var et2 = exprType(ex2,line);
                     var ex3 = {type:"num",value:0}
                     if (isPunc(",")) {
-                        ex3 = expr(tokens,line);                        
+                        ex3 = expr(tokens,line);
                     }
                     var et3 = exprType(ex2,line);
                     out+=CFG.asm.wait(ex,et,ex2,et2,ex3,et3,i,exprAsm,line,ENV)
                     break
-                
+
                 case "for":
-    				par = tokens.shift();
-    				if (par.type!="var") croak("No usable variable name",line)
-    				next = tokens.shift();
-    				if (next.type!="op" || next.value!="=") croak("FOR without an initial assignment",line)
+            par = tokens.shift();
+            if (par.type!="var") croak("No usable variable name",line)
+            next = tokens.shift();
+            if (next.type!="op" || next.value!="=") croak("FOR without an initial assignment",line)
                     var exi = expr(tokens,line);
                     var eti = exprType(exi,line);
                     next = tokens.shift();
-    				if (next.type!="kw" || next.value!="to") croak("FOR without TO",line)
+            if (next.type!="kw" || next.value!="to") croak("FOR without TO",line)
 
                     var limit = "ex"
                     var ex = expr(tokens,line);
@@ -915,7 +915,7 @@ var generator = function(basic, CFG, PROC) {
                         limit = ex.value;
                     } else {
                         //step counted
-                        out+=exprAsm(ex,line,et);  
+                        out+=exprAsm(ex,line,et);
                         out+=CFG.asm.storeAnyInt("sv_forL"+i)
                         ENV.addVar("forL"+i,"sysdw")
                     }
@@ -933,7 +933,7 @@ var generator = function(basic, CFG, PROC) {
                             step = ex.value;
                         } else {
                             //step counted
-                            out+=exprAsm(ex,line,et);  
+                            out+=exprAsm(ex,line,et);
                             out+=CFG.asm.storeAnyInt("sv_forS"+i)
                             ENV.addVar("forS"+i,"sysdw")
                             step="ex"
@@ -941,13 +941,13 @@ var generator = function(basic, CFG, PROC) {
                     }
 
                     //Initial value defined here
-                    out+=exprAsm(exi,line,eti);  
+                    out+=exprAsm(exi,line,eti);
                     ENV.addVar(par.value,"int")
                     out+=CFG.asm.storeInt(par.value)
 
                     out+=CFG.asm.jmp("FTCMD"+i);
-                    out+="FLCMD"+i+":\n"; 
-                                                      
+                    out+="FLCMD"+i+":\n";
+
                     loops.unshift(["CMD"+i,"F",i,par.value,step,limit]);
                     break;
                 case "next":
@@ -960,7 +960,7 @@ var generator = function(basic, CFG, PROC) {
                     out+=CFG.xp.var(par.value)
                     out+=CFG.asm._forstep(loops);
                     out+=CFG.asm.storeInt(par.value)
-                    
+
                     out+="FT"+loops[0][0]+":\n" //test
                     out+=CFG.asm._fortest(loops);
 
@@ -968,7 +968,7 @@ var generator = function(basic, CFG, PROC) {
 
                     loops.shift()
                     break
-    			case "if":
+          case "if":
                     var ex = expr(tokens,line,true);
                     var et = exprType(ex,line);
                     if (!isKw("then")) croak ("IF without THEN", line)
@@ -978,11 +978,11 @@ var generator = function(basic, CFG, PROC) {
                     } else {
                         ifMultiline.unshift(i)
                     }
-					out+=exprAsm(ex,line,et);
+          out+=exprAsm(ex,line,et);
                     out+=CFG.asm.jmpEx0("ELSKIP"+i);
                     ifskip.unshift(i)
                     break;
-                    
+
                 case "endif":
                     if (!ifMultiline.length) croak ("ENDIF without IF", line)
                     if (ifskip.length) {
@@ -990,7 +990,7 @@ var generator = function(basic, CFG, PROC) {
                         ifskip.shift();
                     }
                     out+="SKIP"+ifMultiline[0]+":\n"
-                    
+
                     ifMultiline.shift()
                     break;
 
@@ -1003,7 +1003,7 @@ var generator = function(basic, CFG, PROC) {
                     out+=CFG.asm.jmpEx0(loops[0][0]);
                     out+="RB"+loops[0][0]+":\n"
                     loops.shift()
-    				break;
+            break;
 
                 case "while":
                     loops.unshift(["CMD"+i,"W"])
@@ -1011,8 +1011,8 @@ var generator = function(basic, CFG, PROC) {
                     out+="WC"+loops[0][0]+":\n"
                     out+=exprAsm(ex,line);
                     out+=CFG.asm.jmpEx0("WB"+loops[0][0]);
-    				break;;
-                    
+            break;;
+
 
                 case "input":
                     var hasstr = false;
@@ -1059,7 +1059,7 @@ var generator = function(basic, CFG, PROC) {
                             //good, lets input a string
                             ENV.addVar(par.value,"str")
                             out+=CFG.asm.strUnassign(par.value)
-        
+
                             ENV.addUse("inputstr")
                             out+=CFG.asm.docall("inputstr")
                             ENV.addUse("__heap")
@@ -1068,7 +1068,7 @@ var generator = function(basic, CFG, PROC) {
                             out+=CFG.asm.storeStrNoGC(par.value)
                             if (!tokens.length) break; //the last one
                             if (!isPunc(",")) croak("Syntax error",line)
-                            tokens.shift();                            
+                            tokens.shift();
                             continue;
                         }
 
@@ -1175,7 +1175,7 @@ var generator = function(basic, CFG, PROC) {
 
                     break;
 
-                    default: 
+                    default:
                         croak ("Keyword not implemented", line)
 
             }
