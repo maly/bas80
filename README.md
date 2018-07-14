@@ -1,5 +1,7 @@
 # BASIC80
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/83676d919c364c1fbabb32bc33c0d30d)](https://www.codacy.com/app/maly/bas80?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=maly/bas80&amp;utm_campaign=Badge_Grade)
+
 The BASIC compiler for 8bit CPUs
 
 Version 0 - early alpha. Use on your own risk.
@@ -54,7 +56,7 @@ Needs a constant target: GOTO 100. No "computed GOTOs"
 
 ### GOSUB
 
-Call subroutine at given label. 
+Call subroutine at given label.
 
 ### RETURN [expr]
 
@@ -90,7 +92,7 @@ IF a=10 THEN
 ELSE
  ... do something for a is not 10
 ENDIF
-``` 
+```
 
 
 ### ON expr GOTO l0[,l1...]
@@ -172,7 +174,7 @@ Swaps values for two scalar variables
 Prepare an array of int. Arrays are indexed from 0, so DIM A(10) prepares an array with 10 items, denotes as A(0) .. A(9)
 
 DIM should appears in the source code prior to the first using of array! Not in program flow, so this won't work:
-``` 
+```
 10 GOTO 50
 20 A(5) = 5
 ...
@@ -231,7 +233,7 @@ factorial: take fact
     if fact=1 then return 1
     push fact
     return fact*fn(factorial,fact-1);fact
-```    
+```
 
 ### TAKE p[,p2];var[,var...]
 
@@ -373,7 +375,7 @@ A$ -> "Help, world"
 | - bitwise OR
 ^ - bitwise XOR
 
-AND, OR - logic AND, OR 
+AND, OR - logic AND, OR
 
 ### Shorthands
 
