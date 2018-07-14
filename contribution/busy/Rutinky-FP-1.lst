@@ -1,0 +1,2128 @@
+0001   0000             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0002   0000             ;; Busy soft ;; FP rutinky pre ZX ROM port pre PMD85 ;;
+0003   0000             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0004   0000             ;; 06.07.2018 verzia 2 ;; Pre Adent ;; Licencia: MIT ;;
+0005   0000             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0006   0000             ;; Pouzity kompiler:  SjASMPlus v1.10.1 (15.05.2018) ;;
+0007   0000             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0008   0000             
+0009   0000             ;; Riadok s komentarom v tvare ";; #XXXX ..."
+0010   0000             ;; je povodny nezmeneny kod zo ZX ROMky.
+0011   0000             
+0012   0000             
+0013   0000             ;; Spracovavane cisla su vzdy 5-bajtove a mozu
+0014   0000             ;; byt vo formate integer alebo floating point.
+0015   0000             ;; Kedze hodnotu 0 nie je mozne vyjadrit
+0016   0000             ;; ako FP cislo, je vzdy ulozena ako integer.
+0017   0000             
+0018   0000             
+0019   0000             ;; Format cisla floating point
+0020   0000             ;;
+0021   0000             ;;   Byte 0 ... Exponent v "predpetom" kode - zvecseny o hodnotu 128
+0022   0000             ;;   Byte 1 ... Prvy (najvyssi) bajt 32bit mantisy + bit.7 je znamienko: 0=kladne, 1=zaporne
+0023   0000             ;;   Byte 2 ... Druhy bajt mantisy
+0024   0000             ;;   Byte 3 ... Treti bajt mantisy
+0025   0000             ;;   Byte 4 ... Stvrty (najnizsi) bajt mantisy
+0026   0000             ;;
+0027   0000             ;; Exponent je cislo od 1 do 255. Hodnota 0 je vyhradena pre integer cisla.
+0028   0000             ;;
+0029   0000             ;; Mantisa je vzdy v normovanom tvare a predstavuje hodnotu od 0.5 do 0.999999999..
+0030   0000             ;; Kedze najvyssi bit mantisy (bit 7 prveho bajtu) by tym padom vzdy bol 1,
+0031   0000             ;; tak je v nom ulozene znamienko cisla.
+0032   0000             ;;
+0033   0000             ;; Hodnota cisla = 2^(exponent-128) * mantisa
+0034   0000             ;;
+0035   0000             ;; Priklady:
+0036   0000             ;;   81 00 00 00 00 ... +1.0
+0037   0000             ;;   81 80 00 00 00 ... -1.0
+0038   0000             ;;   90 7F FF 00 00 ... +65535.0
+0039   0000             
+0040   0000             
+0041   0000             ;; Format cisla integer
+0042   0000             ;;
+0043   0000             ;;   Byte 0 ... Vzdy 00  (podla nuloveho exponentu sa pozna ze je to integer cislo)
+0044   0000             ;;   Byte 1 ... Znamienko cisla: 00=kladne, FF=zaporne
+0045   0000             ;;   Byte 2 ... Nizsi bajt hodnoty cisla
+0046   0000             ;;   Byte 3 ... Vyssi bajt hodnoty cisla
+0047   0000             ;;   Byte 4 ... Vzdy 00  (inak bez vyznamu) 
+0048   0000             ;;
+0049   0000             ;; Dvojbajtova hodnota je v dvojkovom doplnku,
+0050   0000             ;;   t.j. pre zaporne cisla plati ze   hodnota = 65536-cislo
+0051   0000             ;;
+0052   0000             ;; Priklady:
+0053   0000             ;;   00 00 00 00 00 = nula .... same nulove bajty, lahko sa testuje
+0054   0000             ;;   00 00 02 01 00 = +258
+0055   0000             ;;   00 FF FF FF 00 = -1 ... pozor, dvojkovy doplnok
+0056   0000             ;;   00 FF 01 00 00 = -65535
+0057   0000             ;;   00 FF 00 00 00 = -65536
+0058   0000             
+0059   0000             
+0060   0000             ;; Poznamka k bajtu "seting"
+0061   0000             ;;
+0062   0000             ;; Bit 4 v tomto bajte nastaveny na jednotku povoluje
+0063   0000             ;; simulaciu chyb povodnych matematickych rutiniek v ZX romke.
+0064   0000             ;;
+0065   0000             ;; Simulovane chyby su tieto dve:
+0066   0000             ;;
+0067   0000             ;;  - Chyba zaokruhlenia mantisy po deleni (zakruhli vzdy dole)
+0068   0000             ;;  - Chyba -65536, napriklad INT -65536 alebo -1-65535 davaju zle vysledky
+0069   0000             ;;
+0070   0000             ;; Ak bude tento bit nulovy, rutinky budu pocitat spravne bez tychto chyb.
+0071   0000             
+0072   0000             
+0073   0000                     OUTPUT  "Rutinky-FP-1.cod"
+0074   0000             
+0075   0000             
+0076   0000             ;; Nasleduju rutinky pre zakladne matematicke operacie a porovnanie
+0077   0000             ;; Vsetky rutinky ocakavaju dve 5-bajtove cisla (na calc stacku)
+0078   0000             ;; Rutinky si obe cisla precitaju a namiesto prveho zapisu vysledok
+0079   0000             ;;
+0080   0000             ;;   ADDIER = scitanie
+0081   0000             ;;   SUBTRA = odcitanie
+0082   0000             ;;    MULTI = nasobenie
+0083   0000             ;;   DIVIDE = delenie
+0084   0000             ;;   SPDCMP = porovnanie
+0085   0000             ;;
+0086   0000             ;; Vstup: HL=adresa prveho cisla, DE=adresa druheho cisla
+0087   0000             
+0088   0000             
+0089   0000             ;; rozdil dvou cisel v plovouci tecce
+0090   0000             
+0091   0000 EB          SUBTRA  ex      DE,HL                   ;; #300F  zamena ukazatelu
+0092   0001 CD 69 07            call    NEGIER                  ;; #3010  znamenko druheho cisla invertovano
+0093   0004 EB                  ex      DE,HL                   ;; #3013  ukazatele zpet a scitani
+0094   0005             
+0095   0005             ;; podpgm pro secteni dvou cisel
+0096   0005             
+0097   0005 1A          ADDIER  ld      A,(DE)                  ;; #3014  test zda prvni bajt obou
+0098   0006 B6                  or      (HL)                    ;; #3015  cisel je 0
+0099   0007 C2 6F 00            jp      NZ,addflt               ;; #3016  Ak nie tak skok na FP scitanie
+0100   000A             
+0101   000A             ;; scitani celych cisel <=65535
+0102   000A             
+0103   000A D5                  push    DE                      ;; #3018  ukazatel na 2.cislo uschovan
+0104   000B 23                  inc     HL                      ;; #3019  ukazuje na 2.bajt 1.cisla
+0105   000C E5                  push    HL                      ;; #301A  a uschova
+0106   000D 23                  inc     HL                      ;; #301B  3.bajt 1.cisla
+0107   000E 5E                  ld      E,(HL)                  ;; #301C  LSB do _E
+0108   000F 23                  inc     HL                      ;; #301D  4.bajt 1.cisla
+0109   0010 56                  ld      D,(HL)                  ;; #301E  MSB do _D
+0110   0011 23                  inc     HL                      ;; #301F  posunuti na 2.bajt 2.cisla
+0111   0012 23                  inc     HL                      ;; #3020  (tj. na znamenko)
+0112   0013 23                  inc     HL                      ;; #3021
+0113   0014 7E                  ld      A,(HL)                  ;; #3022  prevzat do _A
+0114   0015 23                  inc     HL                      ;; #3023  3.bajt 2.cisla
+0115   0016 4E                  ld      C,(HL)                  ;; #3024  LSB do _C
+0116   0017 23                  inc     HL                      ;; #3025  4.bajt 2.cisla
+0117   0018 46                  ld      B,(HL)                  ;; #3026  MSB do _B
+0118   0019 E1                  pop     HL                      ;; #3027  ukazatel na znamenko 1.cisla
+0119   001A EB                  ex      DE,HL                   ;; #3028  do _DE, 1.cislo do _HL
+0120   001B 09                  add     HL,BC                   ;; #3029  obe cisla sectena
+0121   001C EB                  ex      DE,HL                   ;; #302A  vysledek do _DE (_HL ukazuje na
+0122   001D                                                     ;; #302B  znamenko 1.cisla
+0123   001D 8E                  adc     (HL)                    ;; #302B  secteni obou znamenek a CARRY
+0124   001E 0F                  rrca                            ;; #302C  _A musi byt 0
+0125   001F CE 00               adc     0                       ;; #302D  jinak je vysledek >65536
+0126   0021 C2 43 00            jp      NZ,addmoc               ;; #302F  coz je preteceni:skok
+0127   0024 9F                  sbc     A                       ;; #3031  spocteno znamenko vysledku
+0128   0025             
+0129   0025 CA 39 00            jp      z,addoki        ;; Kladny vysledok je vzdy OK
+0130   0028 7A                  ld      a,d             ;; Inak test ci vysledok bol -65536
+0131   0029 B3                  or      e
+0132   002A 3E FF               ld      a,#FF           ;; Ak vysledok nie je -65536 tak
+0133   002C C2 39 00            jp      nz,addoki       ;; skok na jeho normalne ulozenie
+0134   002F             
+0135   002F 3A 13 08            ld      a,(seting)      ;; Simulacia chyby scitania -65536
+0136   0032 E6 10               and     #10             ;; Ak chybu netreba simulovat
+0137   0034 CA 4B 00            jp      z,addowe        ;; tak ulozime -65536 ako floating point
+0138   0037 3E FF               ld      a,#FF           ;; Inak ulozime chybny vysledok #FF #00 #00
+0139   0039             
+0140   0039 77          addoki  ld      (HL),A                  ;; #3032  a zapsano
+0141   003A 23                  inc     HL                      ;; #3033
+0142   003B 73                  ld      (HL),E                  ;; #3034  LSB
+0143   003C 23                  inc     HL                      ;; #3035
+0144   003D 72                  ld      (HL),D                  ;; #3036  a MSB zapsan
+0145   003E 2B                  dec     HL                      ;; #3037  ukazatel na 1.bajt vysledku
+0146   003F 2B                  dec     HL                      ;; #3038
+0147   0040 2B                  dec     HL                      ;; #3039
+0148   0041 D1                  pop     DE                      ;; #303A  >STKEND< do _DE
+0149   0042 C9                  ret                             ;; #303B
+0150   0043             
+0151   0043             ;; Scitanie integerov pretieklo => vysledok ulozime ako floaing point
+0152   0043             
+0153   0043 3A 13 08    addmoc  ld      a,(seting)      ;; Simulacia chyby scitania -65536
+0154   0046 E6 10               and     #10             ;; Ak sa ma chyba simulovat
+0155   0048 C2 6D 00            jp      nz,H303C        ;; tak rovno skok na floating point scitanie
+0156   004B             
+0157   004B 7E          addowe  ld      a,(hl)          ;; Znamienko
+0158   004C 0E 00               ld      c,#00           ;; Casto potrebna nula
+0159   004E 87                  add     a,a
+0160   004F D2 59 00            jp      nc,addpos
+0161   0052 79                  ld      a,c             ;; Dvojkovy doplnok vysledku
+0162   0053 93                  sub     e               ;; pre zaporne hodnoty
+0163   0054 5F                  ld      e,a
+0164   0055 79                  ld      a,c
+0165   0056 9A                  sbc     a,d
+0166   0057 57                  ld      d,a
+0167   0058 37                  scf                     ;; Zaporne znamienko
+0168   0059 7A          addpos  ld      a,d             ;; Vyssi bajt suctu
+0169   005A 1F                  rra
+0170   005B 77                  ld      (hl),a          ;; Mantisa bajt 1 so znamienkom v bite 7
+0171   005C E5                  push    hl
+0172   005D 23                  inc     hl
+0173   005E 7B                  ld      a,e             ;; Nizsi bajt suctu
+0174   005F 1F                  rra
+0175   0060 77                  ld      (hl),a          ;; Mantisa bajt 2
+0176   0061 23                  inc     hl
+0177   0062 79                  ld      a,c
+0178   0063 1F                  rra
+0179   0064 77                  ld      (hl),a          ;; Mantisa bajt 3 = #80/#00
+0180   0065 23                  inc     hl
+0181   0066 71                  ld      (hl),c          ;; Mantisa bajt 4 = #00 vzdy
+0182   0067 E1                  pop     hl
+0183   0068 2B                  dec     hl
+0184   0069 36 91               ld      (hl),#91        ;; Exponent
+0185   006B D1                  pop     de
+0186   006C C9                  ret
+0187   006D             
+0188   006D 2B          H303C   dec     HL                      ;; #303C  ukazatel na 1.bajt 1.cisla
+0189   006E D1                  pop     DE                      ;; #303D  ukazatel na 1.bajt 2.cisla obnoveny
+0190   006F             
+0191   006F             ;; Scitanie floating point + floating point     ;; #303E
+0192   006F             
+0193   006F CD F3 06    addflt  call    int2fp          ;; Prevod prveho scitanca na FP (ak uz nie je)
+0194   0072 C2 81 00            jp      nz,add1nz       ;; Ak nie je nulovy, tak skok
+0195   0075             
+0196   0075 E5          addcpy  push    hl              ;; Ak je nulovy,
+0197   0076 D5                  push    de              ;; vysledok bude druhy scitanec
+0198   0077 EB                  ex      de,hl           ;; a potom hned navrat
+0199   0078 01 05 00            ld      bc,#05          ;; a potom hned navrat
+0200   007B CD 06 08            call    ldir
+0201   007E D1                  pop     de
+0202   007F E1                  pop     hl
+0203   0080 C9                  ret
+0204   0081             
+0205   0081 EB          add1nz  ex      de,hl           ;; HL ukazuje na druheho scitanca
+0206   0082 CD F3 06            call    int2fp          ;; Prevod prveho cinitena na FP (ak uz nie je)
+0207   0085 EB                  ex      de,hl           ;; Ak je nulovy, tak rovno navrat
+0208   0086 C8                  ret     z               ;; a prvy scitanec bude vysledok
+0209   0087             
+0210   0087 D5                  push    de              ;; Adresa STKEND
+0211   0088 E5                  push    hl              ;; Adresa vysledku
+0212   0089             
+0213   0089 1A                  ld      a,(de)          ;; Porovnanie exponentov
+0214   008A 96                  sub     (hl)            ;; Ak je prvy scitanec mensi
+0215   008B D2 91 00            jp      nc,addce1       ;; tak skok
+0216   008E 2F                  cpl
+0217   008F 3C                  inc     a               ;; Inak zaporny rozdiel exponentov
+0218   0090 EB                  ex      de,hl           ;; a vymena scitancov
+0219   0091             
+0220   0091 FE 21       addce1  cp      #21
+0221   0093 DA 9E 00            jp      c,addm33        ;; Ak je rozdiel mensi ako 33 tak skok
+0222   0096             
+0223   0096 E1                  pop     hl              ;; Ak je rozdiel vecsi, mensi scitanec mozeme zanedbat
+0224   0097 D1                  pop     de              ;; a vysledkom scitania bude vecsi scitanec
+0225   0098 1A                  ld      a,(de)
+0226   0099 BE                  cp      (hl)            ;; Este raz porovnanie exponentov
+0227   009A D8                  ret     c               ;; Ak je prvy scitanec vecsi tak to bude vysledok
+0228   009B C3 75 00            jp      addcpy          ;; Inak bude vysledok druhy scitanec
+0229   009E             
+0230   009E 32 C7 00    addm33  ld      (addrze+1),a    ;; Ulozime si rozdiel exponentov
+0231   00A1 B7                  or      a
+0232   00A2 C2 B0 00            jp      nz,addce2       ;; Ak su exponenty rozne tak skok
+0233   00A5 E5                  push    hl
+0234   00A6 D5                  push    de
+0235   00A7 CD 9D 06            call    mnscmp          ;; Inak porovname aj mantisy
+0236   00AA D1                  pop     de
+0237   00AB E1                  pop     hl
+0238   00AC D2 B0 00            jp      nc,addce2
+0239   00AF EB                  ex      de,hl           ;; DE = cislo s urcite nie mensou absolutnou hodnotou
+0240   00B0             
+0241   00B0 C1          addce2  pop     bc              ;; BC = adresa vysledku
+0242   00B1 23                  inc     hl              ;; HL = aresa mantisy mensieho scitanca
+0243   00B2 13                  inc     de              ;; DE = adresa mantisy vecsieho scitanca
+0244   00B3 1A                  ld      a,(de)
+0245   00B4 E6 80               and     #80
+0246   00B6 F5                  push    af              ;; Znamienko vecsieho ulozime na zasobnik
+0247   00B7 1B                  dec     de
+0248   00B8 1A                  ld      a,(de)
+0249   00B9 13                  inc     de
+0250   00BA F5                  push    af              ;; Exponent vecsieho ulozime na zasobnik
+0251   00BB C5                  push    bc              ;; Adresa vysledku
+0252   00BC D5                  push    de              ;; Adresu mantisy vecsieho tiez ulozime
+0253   00BD 1A                  ld      a,(de)
+0254   00BE AE                  xor     (hl)
+0255   00BF E6 80               and     #80             ;; Porovnanie znamienok scitancov
+0256   00C1 F5                  push    af              ;; Na zasobnik odlozime info ci su zhodne
+0257   00C2 1A                  ld      a,(de)
+0258   00C3 F6 80               or      #80
+0259   00C5 12                  ld      (de),a          ;; Uprava mantisy vecsieho scitanca
+0260   00C6 3E 55       addrze  ld      a,#55           ;; Uprava mantisy mensieho scitanca
+0261   00C8 CD EE 01            call    mnsrot
+0262   00CB F1                  pop     af              ;; BCDE = zarotovana zaokruhlena mantisa
+0263   00CC E1                  pop     hl              ;; HL = adresa mantisy vecsieho scitanca
+0264   00CD 23                  inc     hl
+0265   00CE 23                  inc     hl
+0266   00CF 23                  inc     hl
+0267   00D0 C2 0F 01            jp      nz,addsub       ;; Skok ak maju scitance rozne znamienka
+0268   00D3             
+0269   00D3 7E          addadd  ld      a,(hl)          ;; Scitance mali rovnake znamienka
+0270   00D4 83                  add     e               ;; budeme robit klasicky sucet mantis
+0271   00D5 5F                  ld      e,a
+0272   00D6 2B                  dec     hl              ;; Z toho ta z vecsieho cisla je normalizovana
+0273   00D7 7E                  ld      a,(hl)          ;; takze vysledok nebude treba normalizovat
+0274   00D8 8A                  adc     d               ;; (maximalne iba 1x rotnut vpravo ak pretecie)
+0275   00D9 57                  ld      d,a
+0276   00DA 2B                  dec     hl
+0277   00DB 7E                  ld      a,(hl)
+0278   00DC 89                  adc     c
+0279   00DD 4F                  ld      c,a
+0280   00DE 2B                  dec     hl
+0281   00DF 7E                  ld      a,(hl)
+0282   00E0 88                  adc     b
+0283   00E1 47                  ld      b,a             ;; Carry.BCDE = sucet mantis scitancov
+0284   00E2             
+0285   00E2 E1                  pop     hl              ;; HL = adresa vysledku
+0286   00E3 D2 FB 00            jp      nc,addsto       ;; Ak sucet nepretiekol, skok
+0287   00E6             
+0288   00E6 78                  ld      a,b             ;; Ak sucet pretiekol
+0289   00E7 1F                  rra                     ;; musime mantisu zarotovat vpravo
+0290   00E8 47                  ld      b,a
+0291   00E9 79                  ld      a,c
+0292   00EA 1F                  rra
+0293   00EB 4F                  ld      c,a
+0294   00EC 7A                  ld      a,d
+0295   00ED 1F                  rra
+0296   00EE 57                  ld      d,a
+0297   00EF 7B                  ld      a,e
+0298   00F0 1F                  rra
+0299   00F1 5F                  ld      e,a
+0300   00F2 CD 47 02            call    mnszao          ;; Zaokruhlenie mantisy
+0301   00F5 F1                  pop     af
+0302   00F6 3C                  inc     a               ;; A tiez musime zvysit exponent vysledku
+0303   00F7 CA 38 05            jp      z,chyba         ;; Ak pretiekol tak bude chyba  Number too big
+0304   00FA F5                  push    af
+0305   00FB             
+0306   00FB 78          addsto  ld      a,b             ;; Vymaskovanie najvyssieho bitu mantisy
+0307   00FC E6 7F               and     #7F             ;; lebo sem pride znamienko mantisy
+0308   00FE 47                  ld      b,a
+0309   00FF F1                  pop     af              ;; A = exponent vysledku
+0310   0100 77                  ld      (hl),a          ;; Ulozenie exponentu do vysledku
+0311   0101 F1                  pop     af              ;; A = znamienko mantisy #80/#00
+0312   0102 B0                  or      b
+0313   0103 E5                  push    hl              ;; Adresa vysledku
+0314   0104 23                  inc     hl
+0315   0105 77                  ld      (hl),a          ;; Mantisa bajt 1 so znamienkom
+0316   0106 23                  inc     hl
+0317   0107 71                  ld      (hl),c          ;; Mantisa bajt 2
+0318   0108 23                  inc     hl
+0319   0109 72                  ld      (hl),d          ;; Mantisa bajt 3
+0320   010A 23                  inc     hl
+0321   010B 73                  ld      (hl),e          ;; Mantisa bajt 4
+0322   010C E1                  pop     hl              ;; HL = adresa vysledku
+0323   010D D1                  pop     de              ;; DE = adresa STKEND
+0324   010E C9                  ret
+0325   010F             
+0326   010F 7E          addsub  ld      a,(hl)          ;; Scitance mali rozne znamienka
+0327   0110 93                  sub     e               ;; budeme robit rozdiel mantis
+0328   0111 5F                  ld      e,a
+0329   0112 2B                  dec     hl
+0330   0113 7E                  ld      a,(hl)          ;; Kedze vzdy odcitavame mensie cislo
+0331   0114 9A                  sbc     d               ;; od vecsieho a mantisy su zrovnane
+0332   0115 57                  ld      d,a             ;; tak rozdiel nikdy nebude zaporny
+0333   0116 2B                  dec     hl              ;; a netreba ho negovat
+0334   0117 7E                  ld      a,(hl)
+0335   0118 99                  sbc     c
+0336   0119 4F                  ld      c,a
+0337   011A 2B                  dec     hl
+0338   011B 7E                  ld      a,(hl)
+0339   011C 98                  sbc     b
+0340   011D 47                  ld      b,a             ;; BCDE = rozdiel mantis scitancov
+0341   011E             
+0342   011E E1                  pop     hl              ;; HL = adresa vysledku
+0343   011F F1                  pop     af              ;; A = exponent vysledku
+0344   0120 77                  ld      (hl),a          ;; Ulozenie exponentu do vysledku
+0345   0121 F1                  pop     af              ;; A = znamienko mantisy #80/#00
+0346   0122 23                  inc     hl
+0347   0123 77                  ld      (hl),a          ;; Ulozenie znamienka mantisy
+0348   0124 2B                  dec     hl
+0349   0125 CD 2A 01            call    norma           ;; BCDE = mantisa pripravena na normalizaciu a zapis
+0350   0128 D1                  pop     de
+0351   0129 C9                  ret
+0352   012A             
+0353   012A             ;; Normalizacia mantisy, jej ulozenie do pameti a uprava exponentu
+0354   012A             ;; Vstup: HL=pamet s exponentom a znamienkom, BCDE=mantisa
+0355   012A             
+0356   012A E5          norma   push    hl
+0357   012B AF                  xor     a
+0358   012C A8                  xor     b
+0359   012D C2 49 01            jp      nz,no1xxx
+0360   0130 06 08               ld      b,#08
+0361   0132 A9                  xor     c
+0362   0133 C2 5E 01            jp      nz,no01xx
+0363   0136 06 10               ld      b,#10
+0364   0138 AA                  xor     d
+0365   0139 C2 6B 01            jp      nz,no001x
+0366   013C 06 18               ld      b,#18
+0367   013E AB                  xor     e
+0368   013F C2 71 01            jp      nz,no0001
+0369   0142 EB                  ex      de,hl
+0370   0143 EB          nornux  ex      de,hl
+0371   0144 77          nornul  ld      (hl),a          ;; Ak je cela mantisa nulova, vysledok bude nula
+0372   0145 23                  inc     hl
+0373   0146 C3 E5 01            jp      norst2
+0374   0149             
+0375   0149 AF          no1xxx  xor     a
+0376   014A AB                  xor     e
+0377   014B C2 CD 01            jp      nz,nor32s
+0378   014E 5A          no1xx0  ld      e,d
+0379   014F 51                  ld      d,c
+0380   0150 48                  ld      c,b
+0381   0151 06 00               ld      b,#00
+0382   0153 AB                  xor     e
+0383   0154 C2 AA 01            jp      nz,nor24s
+0384   0157 AA          no1x00  xor     d
+0385   0158 C2 89 01            jp      nz,nor16x
+0386   015B C3 67 01    no1000  jp      no0100
+0387   015E             
+0388   015E AF          no01xx  xor     a
+0389   015F AB                  xor     e
+0390   0160 C2 AA 01            jp      nz,nor24s
+0391   0163 AA          no01x0  xor     d
+0392   0164 C2 89 01            jp      nz,nor16x
+0393   0167 59          no0100  ld      e,c
+0394   0168 C3 71 01            jp      nor08s
+0395   016B             
+0396   016B AF          no001x  xor     a
+0397   016C AB                  xor     e
+0398   016D C2 8B 01            jp      nz,nor16s
+0399   0170 5A          no0010  ld      e,d
+0400   0171             
+0401   0171             no0001
+0402   0171 7E          nor08s  ld      a,(hl)          ;; Vstup: B=korekcia, E=mantisa
+0403   0172 90                  sub     b
+0404   0173 DA 44 01            jp      c,nornul
+0405   0176 47                  ld      b,a
+0406   0177 7B                  ld      a,e
+0407   0178 0E                  db      #0E             ;; ld c,...
+0408   0179 05          nor08r  dec     b
+0409   017A CA 44 01            jp      z,nornul
+0410   017D 87                  add     a,a
+0411   017E D2 79 01            jp      nc,nor08r
+0412   0181 70                  ld      (hl),b
+0413   0182 0E 00               ld      c,#00
+0414   0184 51                  ld      d,c
+0415   0185 59                  ld      e,c
+0416   0186 C3 E2 01            jp      norst0
+0417   0189             
+0418   0189 5A          nor16x  ld      e,d
+0419   018A 51                  ld      d,c
+0420   018B             
+0421   018B 7E          nor16s  ld      a,(hl)          ;; Vstup: B=korekcia, DE=mantisa
+0422   018C 90                  sub     b
+0423   018D DA 44 01            jp      c,nornul
+0424   0190 47                  ld      b,a
+0425   0191 EB                  ex      de,hl
+0426   0192 0E                  db      #0E             ;; ld c,...
+0427   0193 05          nor16r  dec     b
+0428   0194 CA 43 01            jp      z,nornux
+0429   0197 29                  add     hl,hl
+0430   0198 D2 93 01            jp      nc,nor16r
+0431   019B EB                  ex      de,hl
+0432   019C 70                  ld      (hl),b
+0433   019D 7A                  ld      a,d
+0434   019E 0F                  rrca
+0435   019F 7B                  ld      a,e
+0436   01A0 1F                  rra
+0437   01A1 4F                  ld      c,a
+0438   01A2 7A                  ld      a,d
+0439   01A3 1F                  rra
+0440   01A4 11 00 00    norzde  ld      de,#00
+0441   01A7 C3 E3 01            jp      norst1
+0442   01AA             
+0443   01AA 7E          nor24s  ld      a,(hl)          ;; Vstup: B=korekcia, CDE=mantisa
+0444   01AB 90                  sub     b
+0445   01AC DA 44 01            jp      c,nornul
+0446   01AF CA 44 01            jp      z,nornul
+0447   01B2 47                  ld      b,a
+0448   01B3 79                  ld      a,c
+0449   01B4 EB                  ex      de,hl
+0450   01B5 C3 C0 01            jp      nor24t
+0451   01B8 05          nor24r  dec     b
+0452   01B9 CA 43 01            jp      z,nornux
+0453   01BC 29                  add     hl,hl
+0454   01BD 79                  ld      a,c
+0455   01BE 8F                  adc     a,a
+0456   01BF 4F                  ld      c,a
+0457   01C0 87          nor24t  add     a,a
+0458   01C1 D2 B8 01            jp      nc,nor24r
+0459   01C4 EB                  ex      de,hl
+0460   01C5 70                  ld      (hl),b
+0461   01C6 4A                  ld      c,d
+0462   01C7 53                  ld      d,e
+0463   01C8 1E 00               ld      e,#00
+0464   01CA C3 E2 01            jp      norst0
+0465   01CD             
+0466   01CD 78          nor32s  ld      a,b             ;; Vstup: BCDE = mantisa
+0467   01CE C3 DE 01            jp      nor32t
+0468   01D1             
+0469   01D1 35          nor32r  dec     (hl)            ;; Dekrement exponentu
+0470   01D2 CA 44 01            jp      z,nornul
+0471   01D5 EB                  ex      de,hl           ;; Vynasobenie mantisy 2x
+0472   01D6 29                  add     hl,hl
+0473   01D7 EB                  ex      de,hl
+0474   01D8 79                  ld      a,c
+0475   01D9 8F                  adc     a,a
+0476   01DA 4F                  ld      c,a
+0477   01DB 78                  ld      a,b
+0478   01DC 8F                  adc     a,a
+0479   01DD 47                  ld      b,a
+0480   01DE 87          nor32t  add     a,a
+0481   01DF D2 D1 01            jp      nc,nor32r
+0482   01E2 0F          norst0  rrca
+0483   01E3 23          norst1  inc     hl              ;; Prvy bajt mantisy
+0484   01E4 B6                  or      (hl)            ;; aj so znamienkom
+0485   01E5 77          norst2  ld      (hl),a
+0486   01E6 23                  inc     hl
+0487   01E7 71                  ld      (hl),c
+0488   01E8 23                  inc     hl
+0489   01E9 72                  ld      (hl),d
+0490   01EA 23                  inc     hl
+0491   01EB 73                  ld      (hl),e
+0492   01EC E1                  pop     hl
+0493   01ED C9                  ret
+0494   01EE             
+0495   01EE             ;; Nacitanie mantisy z pameti a jej rotacia o dany pocet bitov doprava
+0496   01EE             ;; Vstup: HL = adresa mantisy v pameti, A = pocet bitov rotacie 0..32
+0497   01EE             ;; Vystup: BCDE = zarotovana a zaokruhlena mantisa
+0498   01EE             
+0499   01EE F5          mnsrot  push    af
+0500   01EF 3E 80               ld      a,#80           ;; Uprava mantisy mensieho scitanca
+0501   01F1 B6                  or      (hl)
+0502   01F2 47                  ld      b,a             ;; Mantisa bajt 1 bit 7 = 1
+0503   01F3 23                  inc     hl
+0504   01F4 4E                  ld      c,(hl)
+0505   01F5 23                  inc     hl
+0506   01F6 56                  ld      d,(hl)
+0507   01F7 23                  inc     hl
+0508   01F8 5E                  ld      e,(hl)          ;; BCDE = mantisa mensieho scitanca
+0509   01F9 26 00               ld      h,#00           ;; H = pomocny bajt pre rozsirenie mantisy
+0510   01FB F1                  pop     af              ;; A = rozdiel exponentov
+0511   01FC C3 05 02            jp      addbtx
+0512   01FF             
+0513   01FF 63          addbts  ld      h,e
+0514   0200 5A                  ld      e,d             ;; Rotacia mantisy BCDE.H
+0515   0201 51                  ld      d,c             ;; po celych bajtoch
+0516   0202 48                  ld      c,b             ;; vpravo
+0517   0203 06 00               ld      b,#00
+0518   0205 D6 08       addbtx  sub     #08
+0519   0207 D2 FF 01            jp      nc,addbts
+0520   020A             
+0521   020A FE FD               cp      #FD             ;; Ak treba rotovat viac ako 4x vpravo
+0522   020C D2 2E 02            jp      nc,addlll       ;; tak skok na max. 3 rotacie vlavo
+0523   020F C6 08               add     a,#08           ;; Ak treba vobec rotovat
+0524   0211 C2 19 02            jp      nz,addrrr       ;; tak skok na rotacie vpravo
+0525   0214 7C                  ld      a,h
+0526   0215 87                  add     a,a             ;; Ak nic netreba rotovat
+0527   0216 C3 47 02            jp      mnszao          ;; rovno skok na zaokruhlenie
+0528   0219             
+0529   0219 6F          addrrr  ld      l,a             ;; Rotacia mantisy
+0530   021A 78          addrrx  ld      a,b             ;; po bitoch vpravo
+0531   021B B7                  or      a
+0532   021C 1F                  rra
+0533   021D 47                  ld      b,a
+0534   021E 79                  ld      a,c
+0535   021F 1F                  rra
+0536   0220 4F                  ld      c,a
+0537   0221 7A                  ld      a,d
+0538   0222 1F                  rra
+0539   0223 57                  ld      d,a
+0540   0224 7B                  ld      a,e
+0541   0225 1F                  rra
+0542   0226 5F                  ld      e,a
+0543   0227 2D                  dec     l
+0544   0228 C2 1A 02            jp      nz,addrrx
+0545   022B C3 47 02            jp      mnszao          ;; Po rotacii skok na zaokruhlenie
+0546   022E             
+0547   022E 26 00       addlll  ld      h,#00
+0548   0230 6F                  ld      l,a             ;; Rotacia mantisy H.BCDE
+0549   0231 EB                  ex      de,hl           ;; po bitoch vlavo
+0550   0232 29          addllx  add     hl,hl
+0551   0233 79                  ld      a,c
+0552   0234 89                  adc     a,c             ;; X vlavo = 8-X vpravo
+0553   0235 4F                  ld      c,a
+0554   0236 78                  ld      a,b
+0555   0237 88                  adc     a,b
+0556   0238 47                  ld      b,a
+0557   0239 7A                  ld      a,d
+0558   023A 8A                  adc     a,d
+0559   023B 57                  ld      d,a
+0560   023C 1C                  inc     e
+0561   023D C2 32 02            jp      nz,addllx
+0562   0240 EB                  ex      de,hl
+0563   0241 7B                  ld      a,e             ;; HBCD.E => BCDE.carry
+0564   0242 5A                  ld      e,d
+0565   0243 51                  ld      d,c
+0566   0244 48                  ld      c,b
+0567   0245 44                  ld      b,h
+0568   0246 87                  add     a,a
+0569   0247             
+0570   0247             ;; Zaokruhlenie mantisy BCDE podla carry
+0571   0247             ;; BCDE = BCDE + Carry
+0572   0247             
+0573   0247 D0          mnszao  ret     nc
+0574   0248 1C                  inc     e
+0575   0249 C0                  ret     nz
+0576   024A 14                  inc     d
+0577   024B C0                  ret     nz
+0578   024C 0C                  inc     c
+0579   024D C0                  ret     nz
+0580   024E 04                  inc     b
+0581   024F C9                  ret
+0582   0250             
+0583   0250             ;; Rutinky pre rychle nasobenie
+0584   0250             
+0585   0250 1A          MULTIP  ld      a,(de)          ;; #30CA
+0586   0251 B6                  or      (hl)            ;; Test ci su obe cisla integer
+0587   0252 C2 0B 03            jp      nz,mulflt       ;; Ak nie, skok na floating point nasobenie
+0588   0255             
+0589   0255             ;; Nasobenie integer * integer ... +/-65535
+0590   0255             
+0591   0255 D5          mulint  push    de              ;; Adresa druheho cisla a buduca hodnota STKEND
+0592   0256 E5                  push    hl              ;; Adresa  prveho cisla a sem sa ulozi vysledok nasobenia
+0593   0257             
+0594   0257 D5                  push    de              ;; DE = adresa druheho cisla
+0595   0258 CD 38 07            call    H2D7F           ;; Nacitaj prve cislo do DE
+0596   025B DA 08 03            jp      c,m65536        ;; Ak je -65536 tak skok na FP nasobenie
+0597   025E EB                  ex      de,hl           ;; HL = hodnota prveho cisla
+0598   025F E3                  ex      (sp),hl         ;; Prve cislo na stack
+0599   0260 41                  ld      b,c             ;; Znamienko cisla do B
+0600   0261 CD 38 07            call    H2D7F           ;; Nacitaj druhe cislo do DE
+0601   0264 DA 08 03            jp      c,m65536        ;; Ak je -65536 tak skok na FP nasobenie
+0602   0267 78                  ld      a,b             ;; B=znamienko  prveho cisla
+0603   0268 A9                  xor     c               ;; C=znamienko druheho cisla
+0604   0269 E6 80               and     #80             ;; Urcenie vysledneho znamienka
+0605   026B 47                  ld      b,a             ;; B = znamienko vysledku #00 / #80
+0606   026C E1                  pop     hl              ;; HL = prve cislo
+0607   026D             
+0608   026D 7A                  ld      a,d
+0609   026E B3                  or      e
+0610   026F CA 78 02            jp      z,mulnul        ;; Ak je prve cislo nulove
+0611   0272 7C                  ld      a,h
+0612   0273 B5                  or      l               ;; alebo
+0613   0274 C2 7C 02            jp      nz,mixxxx       ;; Ak je druhe cislo nulove
+0614   0277 EB                  ex      de,hl
+0615   0278 E1          mulnul  pop     hl              ;; tak ho rovno zapiseme
+0616   0279 C3 DB 02            jp      mulsde          ;; ako vysledok nasobenia
+0617   027C             
+0618   027C             ;;HLDE
+0619   027C AF          mixxxx  xor     a               ;;   HL  *  DE
+0620   027D AC                  xor     h               ;; #XXXX * #XXXX
+0621   027E C2 97 02            jp      nz,mi1xxx
+0622   0281 AA          mi01xx  xor     d               ;; #00FF * #XXXX
+0623   0282 C2 8E 02            jp      nz,mi011x
+0624   0285 65          mi0101  ld      h,l             ;; #00FF * #00FF
+0625   0286 CD B6 04            call    m8x8            ;; Nasobenie HL=H*E
+0626   0289 EB                  ex      de,hl           ;; Vysledok do DE
+0627   028A E1                  pop     hl
+0628   028B C3 D8 02            jp      mul0de          ;; Vzdy bude integer
+0629   028E             
+0630   028E AF          mi011x  xor     a               ;; #00FF * #FFXX
+0631   028F AB                  xor     e
+0632   0290 C2 CE 02            jp      nz,mi0111
+0633   0293 EB          mi0110  ex      de,hl           ;; #00FF * #FF00
+0634   0294 C3 A0 02            jp      mi1001
+0635   0297             
+0636   0297 AF          mi1xxx  xor     a
+0637   0298 AD                  xor     l
+0638   0299 C2 BA 02            jp      nz,mi11xx
+0639   029C AA          mi10xx  xor     d
+0640   029D C2 AA 02            jp      nz,mi101x
+0641   02A0 CD B6 04    mi1001  call    m8x8            ;; Nasobenie HL=H*E
+0642   02A3 7C                  ld      a,h             ;; #00FF * #FF00 alebo #FF00 * #00FF
+0643   02A4 65                  ld      h,l
+0644   02A5 2E 00               ld      l,#00           ;; Vysledok HL0 => AHL
+0645   02A7 C3 D2 02            jp      mulahl          ;; Spracovanie vysledku v AHL
+0646   02AA             
+0647   02AA AF          mi101x  xor     a               ;; #FF00 * #FFXX
+0648   02AB AB                  xor     e
+0649   02AC C2 E1 02            jp      nz,mi1011
+0650   02AF 5A                  ld      e,d             ;; #FF00 * #FF00
+0651   02B0 C5                  push    bc              ;; Uschova znamienka
+0652   02B1 CD B6 04            call    m8x8            ;; Nasobenie HL=H*E
+0653   02B4 11 00 00            ld      de,#00          ;; Mantisa HLDE
+0654   02B7 C3 FA 02            jp      muliff          ;; Vzdy bude floating point
+0655   02BA             
+0656   02BA AF          mi11xx  xor     a               ;; #FFFF * #XXXX
+0657   02BB AA                  xor     d
+0658   02BC C2 C4 02            jp      nz,mi111x
+0659   02BF 7B          mi1101  ld      a,e             ;; #FFFF * #00FF
+0660   02C0 EB                  ex      de,hl
+0661   02C1 C3 CF 02            jp      muli8a
+0662   02C4             
+0663   02C4 AF          mi111x  xor     a               ;; #FFFF * #FFXX
+0664   02C5 AB                  xor     e
+0665   02C6 C2 F6 02            jp      nz,muli32
+0666   02C9 7A          mi1110  ld      a,d             ;; #FFFF * #FF00
+0667   02CA EB                  ex      de,hl
+0668   02CB C3 E2 02            jp      muli8b
+0669   02CE             
+0670   02CE 7D          mi0111  ld      a,l             ;; #00FF * #FFFF
+0671   02CF                                             ;; #FFFF * #00FF alebo #00FF * #FFFF
+0672   02CF CD 7C 04    muli8a  call    m8x16           ;; Nasobenie A:HL = A * DE
+0673   02D2 EB          mulahl  ex      de,hl           ;; A:DE = vysledok nasobenia
+0674   02D3 E1                  pop     hl              ;; HL = adresa kam treba dat vysledok
+0675   02D4 B7                  or      a
+0676   02D5 C2 EF 02            jp      nz,muli24       ;; Ak vyslo viac ako 65535 tak skok
+0677   02D8             
+0678   02D8 78          mul0de  ld      a,b             ;; B = znamienko #00/#80
+0679   02D9 87                  add     a,a
+0680   02DA 9F                  sbc     a,a
+0681   02DB 4F          mulsde  ld      c,a             ;; C = znamienko #00/#FF
+0682   02DC CD 50 07            call    H2D8E           ;; Ulozenie cisla DE na stack
+0683   02DF D1                  pop     de
+0684   02E0 C9                  ret                     ;; Koniec nasobenia s integer vysledkom
+0685   02E1             
+0686   02E1 7C          mi1011  ld      a,h             ;; #FF00 * #FFFF
+0687   02E2                                             ;; #FFFF * #FF00 alebo #FF00 * #FFFF
+0688   02E2 CD 7C 04    muli8b  call    m8x16           ;; Nasobenie A:HL = A * DE
+0689   02E5 58                  ld      e,b             ;; Znamienko do E
+0690   02E6 47                  ld      b,a             ;; Vysledok AHL do BCD
+0691   02E7 4C                  ld      c,h
+0692   02E8 55                  ld      d,l
+0693   02E9 7B                  ld      a,e             ;; Znamienko do A
+0694   02EA 1E 00               ld      e,#00           ;; Mantisa BCDE
+0695   02EC C3 FD 02            jp      muliss
+0696   02EF             
+0697   02EF 4F          muli24  ld      c,a             ;; Treti bajt mantisy
+0698   02F0 78                  ld      a,b             ;; Znamienko vysledku
+0699   02F1 06 00               ld      b,#00           ;; Najvyssi bajt mantisy bude 0
+0700   02F3 C3 FE 02            jp      mulist
+0701   02F6             
+0702   02F6 C5          muli32  push    bc              ;; Uschova znamienka
+0703   02F7 CD 52 04            call    m16x16          ;; Nasobenie HLDE = HL * DE
+0704   02FA 44          muliff  ld      b,h
+0705   02FB 4D                  ld      c,l             ;; BCDE = buduca mantisa
+0706   02FC F1                  pop     af              ;;    A = znamienko
+0707   02FD E1          muliss  pop     hl
+0708   02FE             
+0709   02FE 36 A0       mulist  ld      (hl),#A0        ;; Ulozenie predbezneho exponentu
+0710   0300 23                  inc     hl
+0711   0301 77                  ld      (hl),a          ;; Ulozenie znamienka mantisy
+0712   0302 2B                  dec     hl
+0713   0303 CD 2A 01            call    norma           ;; BCDE = mantisa pripravena na normalizaciu a zapis
+0714   0306 D1                  pop     de
+0715   0307 C9                  ret
+0716   0308             
+0717   0308 F1          m65536  pop     af              ;; Obnovenie adries cisel v pripade
+0718   0309 E1                  pop     hl              ;; ze niektore bolo integer -65536
+0719   030A D1                  pop     de
+0720   030B             
+0721   030B             ;; Nasobenie floating point * floating point
+0722   030B             
+0723   030B CD F3 06    mulflt  call    int2fp          ;; Prevod prveho cinitena na FP (ak uz nie je)
+0724   030E C8                  ret     z               ;; Ak je nulovy, tak hned navrat (bude to vysledok)
+0725   030F EB                  ex      de,hl           ;; HL ukazuje na druheho cinitela
+0726   0310 CD F3 06            call    int2fp          ;; Prevod druheho cinitena na FP (ak uz nie je)
+0727   0313 EB                  ex      de,hl
+0728   0314 CA E5 06            jp      z,nulset        ;; Ak je nulovy, tak rovno nastavime vysledok na nulu
+0729   0317             
+0730   0317 1A                  ld      a,(de)
+0731   0318 CD CD 06            call    chkund          ;; Predbezna kontrola podtecenia
+0732   031B             
+0733   031B D5                  push    de              ;; Adresa druheho cisla a buduca hodnota STKEND
+0734   031C E5                  push    hl              ;; Adresa  prveho cisla a sem sa ulozi vysledok nasobenia
+0735   031D 23                  inc     hl
+0736   031E 13                  inc     de              ;; HL,DE ukazuju na mantisu
+0737   031F 1A                  ld      a,(de)
+0738   0320 AE                  xor     (hl)
+0739   0321 E6 80               and     #80             ;; Znamienko vysledku
+0740   0323 CD 60 06            call    getmns          ;; Uloz znamienko a daj mantisu prveho cisla
+0741   0326 E5                  push    hl
+0742   0327 60                  ld      h,b
+0743   0328 69                  ld      l,c
+0744   0329 22 16 08            ld      (num1+2),hl     ;; Vyssie slovo cisla 1
+0745   032C EB                  ex      de,hl
+0746   032D 22 14 08            ld      (num1+0),hl     ;; Nizsie slovo cisla 1
+0747   0330 E3                  ex      (sp),hl         ;; Stack: nizsie slovo, HL = adresa druheho cinitela
+0748   0331 23                  inc     hl
+0749   0332 CD 60 06            call    getmns          ;; Daj mantisu druheho cisla
+0750   0335 60                  ld      h,b             ;;        (aj tu sa znamienko ulozi ale nepouzije)
+0751   0336 69                  ld      l,c
+0752   0337 22 1A 08            ld      (num2+2),hl
+0753   033A EB                  ex      de,hl           ;; DE = vyssie slovo cisla 2
+0754   033B 22 18 08            ld      (num2+0),hl     ;; HL = nizsie slovo cisla 2
+0755   033E EB                  ex      de,hl           ;; DE = nizsie slovo cisla 2
+0756   033F 44                  ld      b,h             ;; HL = vyssie slovo cisla 2
+0757   0340 4D                  ld      c,l             ;; BC = vyssie slovo cisla 2
+0758   0341 E1                  pop     hl              ;; HL = nizsie slovo cisla 1
+0759   0342             
+0760   0342             ;; Cislo1: ..HL
+0761   0342             ;; Cislo2: BCDE
+0762   0342             
+0763   0342             ;; muMNOP vyznam pismen v labeloch: x=nevieme, 0=nulove, 1=nenulove
+0764   0342             ;;
+0765   0342             ;;   M ...... druhy bajt prveho cisla (num1+1)
+0766   0342             ;;    N ..... nizsie slovo prveho cisla  BC
+0767   0342             ;;     O ..... druhy bajt druheho cisla   E
+0768   0342             ;;      P ... nizsie slovo druheho cisla HL
+0769   0342             ;;
+0770   0342             ;; Prve bajty normalizovanych mantis su vzdy nenulove a v rozsahu #80..#FF
+0771   0342             
+0772   0342 7A          muxxxx  ld      a,d             ;; Rozhodovanie ake bitovo siroke nasobenie treba pouzit
+0773   0343 B3                  or      e
+0774   0344 CA 56 03            jp      z,muxxx0
+0775   0347 7C          muxx11  ld      a,h
+0776   0348 B5                  or      l
+0777   0349 C2 A9 03            jp      nz,mu1111
+0778   034C 2A 16 08            ld      hl,(num1+2)     ;; HL = vyssie slovo cisla 1 (nizsie je nulove)
+0779   034F AD          mux011  xor     l
+0780   0350 C2 A3 03            jp      nz,mu1011
+0781   0353 C3 96 03            jp      mu0011
+0782   0356             
+0783   0356 7C          muxxx0  ld      a,h             ;; DE = 0
+0784   0357 B5                  or      l
+0785   0358 CA 6B 03            jp      z,mux0x0        
+0786   035B EB          mu11x0  ex      de,hl           ;; DE = nizsie slovo cisla 1
+0787   035C 2A 16 08            ld      hl,(num1+2)     ;; HL = vyssie slovo cisla 1
+0788   035F E5                  push    hl
+0789   0360 60                  ld      h,b
+0790   0361 69                  ld      l,c
+0791   0362 C1                  pop     bc              ;; Cislo1 = BCDE
+0792   0363 AF                  xor     a               ;; Cislo2 = HL00
+0793   0364 AD                  xor     l
+0794   0365 C2 A3 03            jp      nz,mu1110
+0795   0368 C3 96 03            jp      mu1100
+0796   036B             
+0797   036B 2A 16 08    mux0x0  ld      hl,(num1+2)     ;; HL = vyssie slovo cisla 1
+0798   036E 50                  ld      d,b             ;; DE = vyssie slovo cisla 2
+0799   036F 59                  ld      e,c
+0800   0370 AB                  xor     e
+0801   0371 C2 85 03            jp      nz,mux010
+0802   0374 EB          mux000  ex      de,hl           ;; HL = vyssie slovo cisla 2
+0803   0375 AB                  xor     e               ;; DE = vyssie slovo cisla 1
+0804   0376 C2 8A 03            jp      nz,mu1000
+0805   0379             
+0806   0379 5A          mu0000  ld      e,d
+0807   037A CD B6 04            call    m8x8            ;; Nasobenie HL=H*E
+0808   037D 44                  ld      b,h
+0809   037E 4D                  ld      c,l
+0810   037F AF                  xor     a
+0811   0380 57                  ld      d,a
+0812   0381 5F                  ld      e,a
+0813   0382 C3 B9 03            jp      mulset
+0814   0385             
+0815   0385 AF          mux010  xor     a
+0816   0386 AD                  xor     l
+0817   0387 C2 B3 03            jp      nz,mu1010
+0818   038A             mu0010
+0819   038A 7C          mu1000  ld      a,h
+0820   038B CD 7C 04    s8x16   call    m8x16           ;; Nasobenie A:HL = A * DE
+0821   038E 47                  ld      b,a
+0822   038F 4C                  ld      c,h
+0823   0390 55                  ld      d,l
+0824   0391 AF                  xor     a
+0825   0392 5F                  ld      e,a
+0826   0393 C3 B9 03            jp      mulset
+0827   0396             mu1100
+0828   0396 7C          mu0011  ld      a,h
+0829   0397 CD 66 04    s8x32   call    m8x32           ;; Nasobenie ABCDE = A * BCDE
+0830   039A 67                  ld      h,a             ;;        => BCDEA
+0831   039B 7B                  ld      a,e
+0832   039C 5A                  ld      e,d
+0833   039D 51                  ld      d,c
+0834   039E 48                  ld      c,b
+0835   039F 44                  ld      b,h
+0836   03A0 C3 B9 03            jp      mulset
+0837   03A3             mu1110
+0838   03A3             mu1011
+0839   03A3 CD 3A 04    s16x32  call    m16x32          ;; Nasobenie DEHLBC = HL * BCDE
+0840   03A6 C3 AC 03            jp      mulss1
+0841   03A9             mu1111
+0842   03A9 CD 04 04    s32x32  call    m32x32          ;; Nasobenie DEHLBCxx = num1 x num2
+0843   03AC EB          mulss1  ex      de,hl           ;; HLDEBxxx
+0844   03AD 78                  ld      a,b             ;; HLDEAxxx
+0845   03AE 44                  ld      b,h
+0846   03AF 4D                  ld      c,l             ;; BCDEA = vysledok 40 bitov
+0847   03B0 C3 B9 03            jp      mulset          ;; (posledny bajt v A je pre normalizaciu a zaokruhlenie)
+0848   03B3             mu1010
+0849   03B3 CD 52 04    s16x16  call    m16x16          ;; Nasobenie HLDE = HL * DE
+0850   03B6 44                  ld      b,h
+0851   03B7 4D                  ld      c,l
+0852   03B8 AF                  xor     a
+0853   03B9             
+0854   03B9 6F          mulset  ld      l,a             ;; Tu bude mantisa BCDEA (A=pomocne bity ak treba)
+0855   03BA 78                  ld      a,b
+0856   03BB 87                  add     a,a
+0857   03BC DA CE 03            jp      c,mulmok        ;; Je najvyssi bit mantisy jednotkovy ?
+0858   03BF 7D                  ld      a,l             ;; Ak nie, mantisu treba normalizovat
+0859   03C0 E1                  pop     hl
+0860   03C1 35                  dec     (hl)            ;; Dekrement exponentu - zatial dovolime aj nulovy
+0861   03C2 E5                  push    hl
+0862   03C3 87                  add     a,a
+0863   03C4 6F                  ld      l,a             ;; Rotacia celej mantisy
+0864   03C5 7B                  ld      a,e             ;; o jeden bit vlavo
+0865   03C6 8F                  adc     a,a
+0866   03C7 5F                  ld      e,a
+0867   03C8 7A                  ld      a,d
+0868   03C9 8F                  adc     a,a
+0869   03CA 57                  ld      d,a
+0870   03CB CD 71 06            call    bc2x1c          ;; BC = BC << 1 + carry
+0871   03CE             
+0872   03CE 7D          mulmok  ld      a,l
+0873   03CF E1                  pop     hl              ;; HL = adresa vysledku nasobenia
+0874   03D0 87                  add     a,a
+0875   03D1 D2 EF 03            jp      nc,mulsto       ;; Ak je 33-ty bit mantisy jednotkovy
+0876   03D4 1C                  inc     e               ;; potom 32 bitov mantisy zaokruhlime smerom hore
+0877   03D5 C2 EF 03            jp      nz,mulsto
+0878   03D8 14                  inc     d
+0879   03D9 C2 EF 03            jp      nz,mulsto
+0880   03DC 0C                  inc     c
+0881   03DD C2 EF 03            jp      nz,mulsto
+0882   03E0 04                  inc     b
+0883   03E1 C2 EF 03            jp      nz,mulsto       ;; Mantisa pri zaokruhlovani pretiekla
+0884   03E4 34                  inc     (hl)            ;; musime preto zvysit exponent
+0885   03E5 C2 EF 03            jp      nz,mulsto
+0886   03E8 35                  dec     (hl)            ;; Ak pretiekol, vratime ho nazad
+0887   03E9 E3                  ex      (sp),hl         ;; a skusime zvysit druhy exponent
+0888   03EA 34                  inc     (hl)
+0889   03EB E3                  ex      (sp),hl         ;; Ak aj ten pretiekol,
+0890   03EC CA 38 05            jp      z,chyba         ;; bude chyba  Number too big
+0891   03EF             
+0892   03EF E5          mulsto  push    hl
+0893   03F0 23                  inc     hl
+0894   03F1 78                  ld      a,b
+0895   03F2 E6 7F               and     #7F             ;; Namiesto najvyssieho bitu mantisy
+0896   03F4 B6                  or      (hl)            ;; bude znamienko cisla
+0897   03F5 77                  ld      (hl),a
+0898   03F6 23                  inc     hl
+0899   03F7 71                  ld      (hl),c          ;; Ulozenie ostatnych bajtov mantisy
+0900   03F8 23                  inc     hl
+0901   03F9 72                  ld      (hl),d
+0902   03FA 23                  inc     hl
+0903   03FB 73                  ld      (hl),e
+0904   03FC E1                  pop     hl
+0905   03FD D1                  pop     de
+0906   03FE             
+0907   03FE 1A                  ld      a,(de)
+0908   03FF CD D5 06            call    matexp          ;; Urcenie exponentu vysledku (osetri aj pod/pretecenie)
+0909   0402 77                  ld      (hl),a          ;; Ulozenie exponentu vysledku
+0910   0403 C9                  ret                     ;; Koniec nasobenia floating point * floating point
+0911   0404             
+0912   0404             ;; Sada rutiniek pre rychle bitove nasobenie
+0913   0404             ;; optimalizovanych pre rozne sirky cinitelov
+0914   0404             ;; (kvoli miestu sa tu nepouzivaju tabulky)
+0915   0404             
+0916   0404             ;; Nasobenie 64 bit = 32x32 bit
+0917   0404             ;;      DE-HL-BC-xx = num1 x num2
+0918   0404             ;;              (xx nepotrebujeme)
+0919   0404             ;;
+0920   0404             ;;     mn  = num1
+0921   0404             ;;   * op  = num2
+0922   0404             ;;   ----
+0923   0404             ;;   .rst  =  p * mn
+0924   0404             ;;   uvw.  =  o * mn
+0925   0404             ;;   ----
+0926   0404             ;;   xyzi  = op * mn
+0927   0404             ;;
+0928   0404             ;; Trva: 2880..3500 taktov aj s callom
+0929   0404             
+0930   0404             m32x32  ;;ld    bc,(num1+2)     ;; BC = m
+0931   0404 2A 16 08            ld      hl,(num1+2)     ;; BC = m
+0932   0407 44                  ld      b,h
+0933   0408 4D                  ld      c,l
+0934   0409                     ;;ld    de,(num1+0)     ;; DE = n
+0935   0409 2A 14 08            ld      hl,(num1+0)
+0936   040C EB                  ex      de,hl
+0937   040D 2A 18 08            ld      hl,(num2+0)     ;; HL = p
+0938   0410 D5                  push    de              ;; Stk = n,...
+0939   0411 C5                  push    bc              ;; Stk = m,n,...
+0940   0412 CD 3A 04            call    m16x32          ;; Nasobenie DEHLBC = HL * BCDE
+0941   0415 C1                  pop     bc              ;; BC = m, DE = r, HL = s  (BC = t sa tu strati)
+0942   0416 EB                  ex      de,hl           ;; HL = r, DE = s
+0943   0417 E3                  ex      (sp),hl         ;; Stk = r, HL = n
+0944   0418 EB                  ex      de,hl           ;; HL = s, DE = n
+0945   0419 E5                  push    hl              ;; Stk = s,r,...
+0946   041A 2A 1A 08            ld      hl,(num2+2)     ;; HL = o, BC = m, DE = n
+0947   041D CD 3A 04            call    m16x32          ;; Nasobenie DEHLBC = HL * BCDE
+0948   0420 22 29 04            ld      (m32sto+1),hl   ;; Store = v, DE = u, HL = v, BC = w
+0949   0423 60                  ld      h,b
+0950   0424 69                  ld      l,c             ;; HL = w
+0951   0425 C1                  pop     bc              ;; Stk = r,.. BC = s
+0952   0426 09                  add     hl,bc           ;; HL = s + w = z
+0953   0427 E3                  ex      (sp),hl         ;; Stk = z, HL = r
+0954   0428 01 55 55    m32sto  ld      bc,#5555        ;; BC = v
+0955   042B D2 35 04            jp      nc,m32mmm
+0956   042E 23                  inc     hl              ;; HL = r + pretecenie(z)
+0957   042F 7C                  ld      a,h
+0958   0430 B5                  or      l
+0959   0431 C2 35 04            jp      nz,m32mmm
+0960   0434 13                  inc     de              ;; DE = u + pretecenie(r)
+0961   0435 09          m32mmm  add     hl,bc           ;; HL = r + v + pretecenie(z), BC = v
+0962   0436 C1                  pop     bc
+0963   0437 D0                  ret     nc
+0964   0438 13                  inc     de              ;; DE = u + pretecenie(r)
+0965   0439 C9                  ret                     ;; DEHLBC = xyz
+0966   043A             
+0967   043A             ;; Nasobenie DEHLBC = HL * BCDE
+0968   043A             ;;
+0969   043A             ;;   BCDE
+0970   043A             ;;   * HL
+0971   043A             ;;   ----
+0972   043A             ;;   mnop
+0973   043A             ;; rstu
+0974   043A             ;; ------
+0975   043A             ;; vwxyzi
+0976   043A             ;;
+0977   043A             ;; Trva: 1300..1600 taktov aj s callom
+0978   043A             
+0979   043A E5          m16x32  push    hl              ;; Rezia: 156
+0980   043B C5                  push    bc
+0981   043C CD 52 04            call    m16x16          ;; HLDE = HL * DE
+0982   043F                     ;;ld    (m16sto+1),de   ;; HL = mn, DE = op
+0983   043F EB                  ex      de,hl
+0984   0440 22 4D 04            ld      (m16sto+1),hl
+0985   0443 EB                  ex      de,hl
+0986   0444 D1                  pop     de              ;; DE = byvale BC
+0987   0445 E3                  ex      (sp),hl         ;; Stk = mn
+0988   0446 CD 52 04            call    m16x16          ;; HLDE = HL * DE
+0989   0449 EB                  ex      de,hl           ;; DE = rs, HL = tu
+0990   044A C1                  pop     bc              ;; BC = mn
+0991   044B 09                  add     hl,bc           ;; HL = xy
+0992   044C 01 55 55    m16sto  ld      bc,#5555        ;; BC = zi
+0993   044F D0                  ret     nc
+0994   0450 13                  inc     de              ;; vw = rs + pretecenie (mn + tu)
+0995   0451 C9                  ret
+0996   0452             
+0997   0452             ;; Nasobenie HLDE = HL * DE
+0998   0452             ;;
+0999   0452             ;;   DE
+1000   0452             ;; * HL
+1001   0452             ;; ----
+1002   0452             ;;  rst
+1003   0452             ;; uvw
+1004   0452             ;; ----
+1005   0452             ;; zxyt
+1006   0452             ;;
+1007   0452             ;; Trva: 574..721 taktov aj s callom
+1008   0452             
+1009   0452 E5          m16x16  push    hl              ;; HL = mn, DE = op, Stk = mn
+1010   0453 7D                  ld      a,l             ;; A = N
+1011   0454 CD 7C 04            call    m8x16           ;; A:HL = rst = n * op
+1012   0457 47                  ld      b,a             ;; B = r
+1013   0458 F1                  pop     af              ;; A = m
+1014   0459 E5                  push    hl              ;; Stk = st
+1015   045A CD 7C 04            call    m8x16           ;; A:HL = uvw = m * op
+1016   045D D1                  pop     de              ;; DE = st
+1017   045E 4A                  ld      c,d             ;; C = s
+1018   045F 09                  add     hl,bc           ;; HL = xy = vw + rs
+1019   0460 55                  ld      d,l             ;; D = y
+1020   0461 6C                  ld      l,h             ;; L = x
+1021   0462 67                  ld      h,a             ;; H = z = u(+carry)
+1022   0463 D0                  ret     nc
+1023   0464 24                  inc     h
+1024   0465 C9                  ret
+1025   0466             
+1026   0466             ;; Nasobenie ABCDE = A * BCDE
+1027   0466             ;;           AHLDE = A * BCDE
+1028   0466             ;;      A
+1029   0466             ;; * BCDE
+1030   0466             ;; ------
+1031   0466             ;;    mno  =  A*DE
+1032   0466             ;;  prs    =  A*BC
+1033   0466             ;; ------
+1034   0466             ;;  vwxyz  =  A*BCDE
+1035   0466             ;;
+1036   0466             ;; Trva: 610..750 taktov aj s callom
+1037   0466             
+1038   0466 C5          m8x32   push    bc              ;; Rezia: 140
+1039   0467 F5                  push    af
+1040   0468 CD 7C 04            call    m8x16           ;; A = m, HL = no
+1041   046B 41                  ld      b,c             ;; BC = 0 (z m8x16)
+1042   046C 4F                  ld      c,a             ;; C = m
+1043   046D F1                  pop     af              ;; A = cinitel
+1044   046E D1                  pop     de              ;; DE = vyssie slovo
+1045   046F E5                  push    hl              ;; Stk = no,...
+1046   0470 C5                  push    bc              ;; Stk = 0m,no,...
+1047   0471 CD 7C 04            call    m8x16           ;; A = p, HL = rs
+1048   0474 C1                  pop     bc              ;; BC = 0m
+1049   0475 D1                  pop     de              ;; DE = no
+1050   0476 09                  add     hl,bc           ;; HL = rs + m
+1051   0477 44                  ld      b,h
+1052   0478 4D                  ld      c,l             ;; BC = rs + m
+1053   0479 D0                  ret     nc
+1054   047A 3C                  inc     a               ;; A = p + pretecenie (rs + m)
+1055   047B C9                  ret
+1056   047C             
+1057   047C             ;; Nasobenie A:HL = A * DE
+1058   047C             ;; Trva 235..304 T aj s call
+1059   047C             
+1060   047C 0E 00       m8x16   ld      c,#00           ;; A:HL = A * DE
+1061   047E 61                  ld      h,c             ;; Nemeni B a DE
+1062   047F 69                  ld      l,c
+1063   0480             
+1064   0480 87                  add     a,a             ;; Optimalizovana prva iteracia
+1065   0481 D2 86 04            jp      nc,$+5
+1066   0484 62                  ld      h,d
+1067   0485 6B                  ld      l,e
+1068   0486             
+1069   0486                     DUP 6
+1070   0486 29          >        add     hl,hl
+1071   0487 17          >        rla
+1072   0488 D2 8D 04    >        jp      nc,$+5
+1073   048B 19          >        add     hl,de
+1074   048C 89          >        adc     a,c
+1070   048D 29          >        add     hl,hl
+1071   048E 17          >        rla
+1072   048F D2 94 04    >        jp      nc,$+5
+1073   0492 19          >        add     hl,de
+1074   0493 89          >        adc     a,c
+1070   0494 29          >        add     hl,hl
+1071   0495 17          >        rla
+1072   0496 D2 9B 04    >        jp      nc,$+5
+1073   0499 19          >        add     hl,de
+1074   049A 89          >        adc     a,c
+1070   049B 29          >        add     hl,hl
+1071   049C 17          >        rla
+1072   049D D2 A2 04    >        jp      nc,$+5
+1073   04A0 19          >        add     hl,de
+1074   04A1 89          >        adc     a,c
+1070   04A2 29          >        add     hl,hl
+1071   04A3 17          >        rla
+1072   04A4 D2 A9 04    >        jp      nc,$+5
+1073   04A7 19          >        add     hl,de
+1074   04A8 89          >        adc     a,c
+1070   04A9 29          >        add     hl,hl
+1071   04AA 17          >        rla
+1072   04AB D2 B0 04    >        jp      nc,$+5
+1073   04AE 19          >        add     hl,de
+1074   04AF 89          >        adc     a,c
+1076   04B0             
+1077   04B0 29                  add     hl,hl           ;; Optimalizovana posledna iteracia
+1078   04B1 17                  rla
+1079   04B2 D0                  ret     nc
+1080   04B3 19                  add     hl,de
+1081   04B4 89                  adc     a,c
+1082   04B5 C9                  ret
+1083   04B6             
+1084   04B6             ;; Nasobenie HL = H * E
+1085   04B6             ;; Trva 195..243 T aj s call
+1086   04B6             
+1087   04B6 2E 00       m8x8    ld      l,#00
+1088   04B8 55                  ld      d,l
+1089   04B9                     DUP 7
+1090   04B9 29          >        add     hl,hl
+1091   04BA D2 BE 04    >        jp      nc,$+4
+1092   04BD 19          >        add     hl,de
+1090   04BE 29          >        add     hl,hl
+1091   04BF D2 C3 04    >        jp      nc,$+4
+1092   04C2 19          >        add     hl,de
+1090   04C3 29          >        add     hl,hl
+1091   04C4 D2 C8 04    >        jp      nc,$+4
+1092   04C7 19          >        add     hl,de
+1090   04C8 29          >        add     hl,hl
+1091   04C9 D2 CD 04    >        jp      nc,$+4
+1092   04CC 19          >        add     hl,de
+1090   04CD 29          >        add     hl,hl
+1091   04CE D2 D2 04    >        jp      nc,$+4
+1092   04D1 19          >        add     hl,de
+1090   04D2 29          >        add     hl,hl
+1091   04D3 D2 D7 04    >        jp      nc,$+4
+1092   04D6 19          >        add     hl,de
+1090   04D7 29          >        add     hl,hl
+1091   04D8 D2 DC 04    >        jp      nc,$+4
+1092   04DB 19          >        add     hl,de
+1094   04DC 29                  add     hl,hl
+1095   04DD D0                  ret     nc
+1096   04DE 19                  add     hl,de
+1097   04DF C9                  ret
+1098   04E0             
+1099   04E0             ;; Rutinky pre rychle delenie
+1100   04E0             
+1101   04E0             H31AF                                   ;; #31AF  
+1102   04E0             
+1103   04E0             ;; Floating point delenie 32/32 bit
+1104   04E0             ;;     s optimalizaciu na 16/16 bit
+1105   04E0             ;;             a dalej na 08/08 bit
+1106   04E0             
+1107   04E0 EB          DIVIDE  ex      de,hl           ;; HL ukazuje na delitela
+1108   04E1 CD F3 06            call    int2fp          ;; Prevod delitela na FP
+1109   04E4 EB                  ex      de,hl           ;; Ak je delitel nulovy
+1110   04E5 CA 38 05            jp      z,chyba         ;; tak skok na chybu 'Number too big'
+1111   04E8 CD F3 06            call    int2fp          ;; Prevod delenca na FP
+1112   04EB C8                  ret     z               ;; Ak je delenec nulovy tak vysledok bude rovno ten delenec
+1113   04EC             
+1114   04EC 7B                  ld      a,e             ;; Koniec mantisy pre ukoncenie delenia
+1115   04ED 32 C6 05            ld      (divme1+1),a
+1116   04F0 32 15 06            ld      (divme2+1),a
+1117   04F3             
+1118   04F3 1A                  ld      a,(de)          ;; Exponent delitela zinvertujeme
+1119   04F4 2F                  cpl                     ;; aby potom exponenty stacilo
+1120   04F5 3C                  inc     a               ;; scitat ako pri nasobeni
+1121   04F6 12                  ld      (de),a          ;; Exponent zostava v rozsahu #01-#FF
+1122   04F7 CD CD 06            call    chkund          ;; A este predbezna kontrola podtecenia
+1123   04FA             
+1124   04FA D5                  push    de              ;; Adresa delitela (toto bude STKEND)
+1125   04FB E5                  push    hl              ;; Adresa delenca  (tu bude vysledok)
+1126   04FC             
+1127   04FC 23                  inc     hl
+1128   04FD 13                  inc     de
+1129   04FE             
+1130   04FE 1A                  ld      a,(de)          ;; Znamienko delitela
+1131   04FF 4F                  ld      c,a
+1132   0500 F6 80               or      #80             ;; Priprava mantisy delitela pre delenie
+1133   0502 12                  ld      (de),a
+1134   0503             
+1135   0503 EB                  ex      de,hl           ;; HL=adresa mantisy delitela
+1136   0504 22 79 06            ld      (addel0+1),hl   ;; Najvyssi bajt mantisy delitela
+1137   0507 23                  inc     hl
+1138   0508 23                  inc     hl
+1139   0509 23                  inc     hl
+1140   050A 22 8B 06            ld      (addel3+1),hl   ;; Najnizsi bajt mantisy delitela
+1141   050D EB                  ex      de,hl
+1142   050E             
+1143   050E 79                  ld      a,c
+1144   050F AE                  xor     (hl)
+1145   0510 E6 80               and     #80
+1146   0512 46                  ld      b,(hl)
+1147   0513 77                  ld      (hl),a          ;; Znamienko vysledku #00/#80
+1148   0514 AF                  xor     a
+1149   0515 23                  inc     hl
+1150   0516 4E                  ld      c,(hl)          ;; Nacitanie mantisy delenca a
+1151   0517 77                  ld      (hl),a          ;; vynulovanie mantisy vysledku
+1152   0518 23                  inc     hl
+1153   0519 56                  ld      d,(hl)
+1154   051A 77                  ld      (hl),a
+1155   051B 23                  inc     hl
+1156   051C 5E                  ld      e,(hl)
+1157   051D 77                  ld      (hl),a
+1158   051E 78                  ld      a,b
+1159   051F F6 80               or      #80             ;; Odstranenie znamienka z mantisy
+1160   0521 47                  ld      b,a             ;; BCDE = mantisa delenca
+1161   0522             
+1162   0522 CD 78 06            call    delcmp          ;; Porovnanie ci je delenec mensi ako delitel
+1163   0525             
+1164   0525 9F                  sbc     a,a             ;; Simulacia chyby povodnej rutinky
+1165   0526 32 33 06            ld      (diverr+1),a    ;; Ulozenie infa o chybe
+1166   0529             
+1167   0529 E1                  pop     hl
+1168   052A DA 3A 05            jp      c,divmen        ;; Ak je delenec mensi tak skok
+1169   052D             
+1170   052D 34                  inc     (hl)            ;; Ak nie je mensi tak zvysime exponent
+1171   052E C2 3D 05            jp      nz,divnem       ;; Ak exponent nepretiekol, je vsetko ok
+1172   0531 35                  dec     (hl)            ;; Ak pretiekol, vratime ho nazad
+1173   0532 E3                  ex      (sp),hl         ;; a skusime zvysit druhy exponent
+1174   0533 34                  inc     (hl)
+1175   0534 E3                  ex      (sp),hl         ;; Ak ani ten nepretiekol, je vsetko ok
+1176   0535 C2 3D 05            jp      nz,divnem
+1177   0538 CF          chyba   rst     #08             ;; Inak ohlasime chybu
+1178   0539 05                  db      #05             ;; "Number to big"
+1179   053A             
+1180   053A CD 6E 06    divmen  call    del2x           ;; Zdvojnasobenie delenca (bude vzdy vecsi ako delitel)
+1181   053D E5          divnem  push    hl              ;; Odlozenie adresy vysledku
+1182   053E             
+1183   053E 2A 8B 06            ld      hl,(addel3+1)   ;; Kontrola sirky delenca a delitela
+1184   0541 7E                  ld      a,(hl)
+1185   0542 2B                  dec     hl
+1186   0543 B6                  or      (hl)
+1187   0544 B2                  or      d
+1188   0545 B3                  or      e               ;; Ak delenec aj delitel maju spodne wordy nenulove
+1189   0546 C2 DB 05            jp      nz,div32x       ;; potom musime pokracovat na plne 32 bitove delenie
+1190   0549             
+1191   0549 2B                  dec     hl              ;; Tu su delenec aj delitel max. 16 bitove
+1192   054A B6                  or      (hl)
+1193   054B B1                  or      c               ;; Ak oba maju nizsi bajt vyssieho wordu nenulovy
+1194   054C C2 86 05            jp      nz,div16x       ;; potom musime pokracovat na 16 bitove delenie
+1195   054F             
+1196   054F             ;; Delenie 8/8 bit
+1197   054F             
+1198   054F 2B          div08x  dec     hl              ;; Inak mozeme pokracovat 8 bitovym delenim
+1199   0550 5E                  ld      e,(hl)          ;; E = delitel
+1200   0551             
+1201   0551 78                  ld      a,b             ;; Odcitanie delitela od delenca
+1202   0552 93                  sub     e               ;; Ak je delenec uz po prvom odcitani nulovy,
+1203   0553 CA 58 06            jp      z,divpop        ;; v deleni dalej ani nemusime pokracovat
+1204   0556 57                  ld      d,a             ;; D = delenec
+1205   0557             
+1206   0557 E1                  pop     hl
+1207   0558 E5                  push    hl              ;; HL = adresa vysledku - exponent
+1208   0559 23                  inc     hl              ;; HL = adresa vysledku - mantisa
+1209   055A 3A C6 05            ld      a,(divme1+1)    ;; Koniec mantisy pre ukoncenie delenia
+1210   055D 47                  ld      b,a
+1211   055E 0E 40               ld      c,#40           ;; C = maska pre zapis bitu do mantisy
+1212   0560 C3 7D 05            jp      div8dv
+1213   0563             
+1214   0563             ;; Hlavna slucka delenia 8/8 bit
+1215   0563             ;; HL=pointer do mantisy vysledku
+1216   0563             ;;  C=maska pre zapisovany bit do mantisy vysledku
+1217   0563             ;;  D=delenec alebo co z neho zostava (zvysok)
+1218   0563             ;;  E=delitel
+1219   0563             ;;  B=hranica pre ukocenie delenia (koniec mantisy vysledku)
+1220   0563             
+1221   0563 57          div8ll  ld      d,a
+1222   0564 93                  sub     e
+1223   0565 DA 71 05            jp      c,div8nx
+1224   0568             
+1225   0568 57          div8st  ld      d,a
+1226   0569 79                  ld      a,c
+1227   056A B6                  or      (hl)            ;; Zapiseme jednicku
+1228   056B 77                  ld      (hl),a          ;; do prislusneho bitu mantisy
+1229   056C             
+1230   056C AF                  xor     a
+1231   056D AA                  xor     d               ;; Ak je delenec uz nulovy
+1232   056E CA 58 06            jp      z,divpop        ;; mozeme rovno ukoncit cele delenie
+1233   0571             
+1234   0571 79          div8nx  ld      a,c             ;; Posun na dalsi bit v bajte mantisy
+1235   0572 0F                  rrca
+1236   0573 4F                  ld      c,a
+1237   0574 D2 7D 05            jp      nc,div8dv       ;; Ak sme presli vsetky bity v bajte,
+1238   0577 23                  inc     hl              ;; posun na dalsi bajt mantisy
+1239   0578 7D                  ld      a,l
+1240   0579 B8                  cp      b               ;; Ak sme presli vsetky bajty mantisy
+1241   057A CA 23 06            jp      z,div8ee        ;; tak koniec a zaokruhlenie vysledku
+1242   057D             
+1243   057D 7A          div8dv  ld      a,d             ;; Zdvojnasobenie delenca
+1244   057E 87                  add     a,a
+1245   057F D2 63 05            jp      nc,div8ll       ;; Ak nepretiekol, pokracujeme v slucke delenia
+1246   0582 93                  sub     e               ;; Ak pretiekol, odcitame delitela
+1247   0583 C3 68 05            jp      div8st          ;; a do vysledku zapiseme jednotkovy bit
+1248   0586             
+1249   0586             ;; Delenie 16/16 bit
+1250   0586             
+1251   0586 5E          div16x  ld      e,(hl)          ;; Ulozenie delitela pre 16bit delenie
+1252   0587 2B                  dec     hl
+1253   0588 56                  ld      d,(hl)
+1254   0589             
+1255   0589 7B                  ld      a,e             ;; Nizsi bajt delitela
+1256   058A 32 AB 05            ld      (divdl0+1),a
+1257   058D 32 D2 05            ld      (divdl2+1),a
+1258   0590 7A                  ld      a,d             ;; Vyssi bajt delitela
+1259   0591 32 AF 05            ld      (divdl1+1),a
+1260   0594 32 D6 05            ld      (divdl3+1),a
+1261   0597             
+1262   0597 79                  ld      a,c             ;; Prve odcitanie sa vzdy podari
+1263   0598 93                  sub     e               ;; lebo delenec je tu vecsi
+1264   0599 5F                  ld      e,a             ;; a prvy bit vysledku bude vzdy 1
+1265   059A 78                  ld      a,b             ;; ale tento jednotkovy bit
+1266   059B 9A                  sbc     d               ;; zapisovat do mantisy nemusime
+1267   059C 57                  ld      d,a             ;; lebo na jeho mieste bude znamienko
+1268   059D             
+1269   059D B3                  or      e               ;; Ak je delenec uz po prvom odcitani nulovy,
+1270   059E CA 58 06            jp      z,divpop        ;; v deleni dalej ani nemusime pokracovat
+1271   05A1             
+1272   05A1 E1                  pop     hl
+1273   05A2 E5                  push    hl              ;; HL = adresa vysledku - exponent
+1274   05A3 23                  inc     hl              ;; HL = adresa vysledku - mantisa
+1275   05A4             
+1276   05A4 0E 40               ld      c,#40           ;; C = maska pre zapis bitu do mantisy
+1277   05A6 C3 CA 05            jp      divdva          ;; Skok do hlavnej slucky 16bit delenia
+1278   05A9             
+1279   05A9             ;; Hlavna slucka delenia 16/16 bit
+1280   05A9             ;; B=temporary
+1281   05A9             ;; C=maska pre bit v mantise
+1282   05A9             ;; HL=pointer do mantisy
+1283   05A9             ;; DE=delenec
+1284   05A9             
+1285   05A9 7B          divilo  ld      a,e             ;; Hlavna slucka delenia
+1286   05AA D6 55       divdl0  sub     #55             ;; Pokusne odcitame delitela od delenca
+1287   05AC 47                  ld      b,a             ;; (nizsi bajt rozdielu zatial ulozime do B)
+1288   05AD 7A                  ld      a,d
+1289   05AE DE 55       divdl1  sbc     #55             ;; Ak sa odcitanie nepodarilo
+1290   05B0 DA BD 05            jp      c,divnxt        ;; potom bude bit vysledku 0 a skok
+1291   05B3             
+1292   05B3 57                  ld      d,a             ;; Delenca nahradime vysledkom odcitania
+1293   05B4 58                  ld      e,b             ;; a bit vysledku bude 1
+1294   05B5 79          divset  ld      a,c
+1295   05B6 B6                  or      (hl)            ;; Zapiseme jednicku
+1296   05B7 77                  ld      (hl),a          ;; do prislusneho bitu mantisy
+1297   05B8             
+1298   05B8 7A                  ld      a,d
+1299   05B9 B3                  or      e               ;; Ak je delenec po odcitani uz nulovy
+1300   05BA CA 58 06            jp      z,divpop        ;; potom je delenie hovove a mozeme skoncit
+1301   05BD             
+1302   05BD 79          divnxt  ld      a,c             ;; Posun na dalsi bit v bajte mantisy
+1303   05BE 0F                  rrca
+1304   05BF 4F                  ld      c,a
+1305   05C0 D2 CA 05            jp      nc,divdva       ;; Ak sme presli vsetky bity v bajte,
+1306   05C3 23                  inc     hl              ;; posun na dalsi bajt mantisy
+1307   05C4 7D                  ld      a,l
+1308   05C5 FE 55       divme1  cp      #55             ;; Ak sme presli vsetky bajty mantisy
+1309   05C7 CA 25 06            jp      z,div16e        ;; tak koniec a zaokruhlenie vysledku
+1310   05CA             
+1311   05CA EB          divdva  ex      de,hl           ;; Zdvojnasobenie zvysku v delenci
+1312   05CB 29                  add     hl,hl
+1313   05CC EB                  ex      de,hl
+1314   05CD D2 A9 05            jp      nc,divilo       ;; Ak zvysok nepretiekol, skok na test ci je uz nulovy
+1315   05D0             
+1316   05D0 7B                  ld      a,e             ;; Ak zvysok pretiekol tak je urcite vecsi ako delitel
+1317   05D1 D6 55       divdl2  sub     #55
+1318   05D3 5F                  ld      e,a             ;; mozeme od zvysku rovno odcitat delitela
+1319   05D4 7A                  ld      a,d
+1320   05D5 DE 55       divdl3  sbc     #55
+1321   05D7 57                  ld      d,a             ;; a do vysledku rovno
+1322   05D8 C3 B5 05            jp      divset          ;; zapiseme jednotkovy bit
+1323   05DB             
+1324   05DB             ;; Delenie 32/32 bit
+1325   05DB             
+1326   05DB CD 8A 06    div32x  call    delsub          ;; Odcitanie delitela od delenca
+1327   05DE E1                  pop     hl
+1328   05DF             
+1329   05DF 78                  ld      a,b             ;; Test ci je delenec uz nulovy
+1330   05E0 B1                  or      c
+1331   05E1 B2                  or      d
+1332   05E2 B3                  or      e               ;; Ak je uz delenec nulovy,
+1333   05E3 CA 59 06            jp      z,divpep        ;; cele delenie rovno ukoncime.
+1334   05E6             
+1335   05E6 E5                  push    hl
+1336   05E7 23                  inc     hl
+1337   05E8 E5                  push    hl              ;; HL = smernik na bajty mantisy vysledku
+1338   05E9 3E 40               ld      a,#40           ;; Inicializacia masky pre ukladanie bitov do mantisy
+1339   05EB 32 04 06            ld      (divmsk+1),a
+1340   05EE C3 1A 06            jp      divtwo
+1341   05F1             
+1342   05F1             ;; Hlavna slucka delenia 32/32 bit
+1343   05F1             ;; HL=temporary
+1344   05F1             ;; BCDE=meniaci sa delenec
+1345   05F1             ;; Adresa do mantisy vysledku je na stacku
+1346   05F1             
+1347   05F1 78          divlop  ld      a,b
+1348   05F2 B1                  or      c
+1349   05F3 B2                  or      d
+1350   05F4 B3                  or      e               ;; Ak je uz delenec nulovy,
+1351   05F5 CA 57 06            jp      z,divend        ;; cele delenie rovno ukoncime.
+1352   05F8             
+1353   05F8 CD 78 06            call    delcmp          ;; Porovnanie ci je delenec mensi ako delitel
+1354   05FB 3F                  ccf
+1355   05FC D2 08 06            jp      nc,divpos       ;; Skok ak je mensi a vo vysledku bude nulovy bit
+1356   05FF             
+1357   05FF CD 8A 06    divsub  call    delsub          ;; Odcitanie delitela od delenca
+1358   0602             
+1359   0602 E1                  pop     hl              ;; Zapis jednotkoveho bitu do vysledku
+1360   0603 3E 55       divmsk  ld      a,#55           ;; Maska pre zapis bitu
+1361   0605 B6                  or      (hl)
+1362   0606 77                  ld      (hl),a
+1363   0607 E5                  push    hl
+1364   0608             
+1365   0608 21 04 06    divpos  ld      hl,divmsk+1     ;; Posun masky na dalsi bit
+1366   060B 7E                  ld      a,(hl)
+1367   060C 0F                  rrca
+1368   060D 77                  ld      (hl),a
+1369   060E D2 1A 06            jp      nc,divtwo
+1370   0611 E1                  pop     hl              ;; Ak maska prekrocila bajt
+1371   0612 23                  inc     hl              ;; tak bude posun na dalsi bajt mantisy
+1372   0613 7D                  ld      a,l
+1373   0614 FE 55       divme2  cp      #55             ;; Ak sme zapisali vsetky bity mantisy
+1374   0616 CA 2A 06            jp      z,divall        ;; tak delenie ukoncime
+1375   0619 E5                  push    hl
+1376   061A             
+1377   061A CD 6E 06    divtwo  call    del2x           ;; Zdvojnasobenie delenca, resp. zvysku po odcitani
+1378   061D DA FF 05            jp      c,divsub        ;; Ak pretiekol, je urcite vecsi ako delitel
+1379   0620 C3 F1 05            jp      divlop          ;; Inak budeme testovat ci uz nie je nulovy
+1380   0623             
+1381   0623             ;; Zaverecne osetrenie delenia a zaokruhlenie vysledku
+1382   0623             
+1383   0623 1E 00       div8ee  ld      e,#00           ;; Prevod delenca D0 => DE00
+1384   0625 42          div16e  ld      b,d             ;; Prevod delenca DE => BC00
+1385   0626 4B                  ld      c,e
+1386   0627 11 00 00            ld      de,#00
+1387   062A             
+1388   062A 3A 13 08    divall  ld      a,(seting)      ;; Simulacia aritmetickej chyby delenia
+1389   062D E6 10               and     #10             ;; Ak chybu netreba simulovat
+1390   062F CA 38 06            jp      z,diveok        ;; tak skok na spravne zaokruhlenie
+1391   0632 3E 55       diverr  ld      a,#55           ;; Inak test ci sa ma chyba prejavit
+1392   0634 B7                  or      a               ;; Ak sa ma prejavit tak
+1393   0635 C2 58 06            jp      nz,divpop       ;; zaokruhlovanie preskocime
+1394   0638             
+1395   0638 2B          diveok  dec     hl              ;; HL = posledny bajt mantisy vysledku
+1396   0639 CD 6E 06            call    del2x           ;; Zdvojnasobenie delenca  BCDE = BCDE << 1
+1397   063C DA 47 06            jp      c,divzzz        ;; Ak pretiekol, urcite je vecsi nez delitel
+1398   063F E5                  push    hl
+1399   0640 CD 78 06            call    delcmp          ;; Porovnanie delenca s delitelom
+1400   0643 E1                  pop     hl
+1401   0644 DA 58 06            jp      c,divpop        ;; Ak je stale mensi, 33-bit vysledku bude 0 a mozeme skoncit
+1402   0647 CD B7 06    divzzz  call    divzao          ;; 33-ty bit je 1, zaokruhlime mantisu smerom hore
+1403   064A C2 58 06            jp      nz,divpop       ;; Ak exponent nepretiekol tak ok
+1404   064D             
+1405   064D 35                  dec     (hl)            ;; Ked exponent delenca pretiekol, vratime ho nazad
+1406   064E D1                  pop     de              ;;   DE = adresa delenca
+1407   064F E1                  pop     hl              ;;   HL = adresa delitela
+1408   0650 34                  inc     (hl)            ;; a namiesto neho inkrementneme invertovany exponent delitela
+1409   0651 EB                  ex      de,hl           ;;   HL = adresa vysledku, DE = STKEND
+1410   0652 C2 5A 06            jp      nz,divexp       ;; Ak nepretiekol, je vsetko OK
+1411   0655 CF                  rst     #08
+1412   0656 05                  db      #05             ;; Inak chyba  Number to big
+1413   0657             
+1414   0657 F1          divend  pop     af              ;; Odstranenie pointra na mantisu
+1415   0658 E1          divpop  pop     hl              ;; Adresa vysledku
+1416   0659 D1          divpep  pop     de              ;; Adresa STKEND
+1417   065A             
+1418   065A 1A          divexp  ld      a,(de)
+1419   065B CD D5 06            call    matexp          ;; Urcenie exponentu vysledku (osetri aj pod/pretecenie)
+1420   065E 77                  ld      (hl),a          ;; Ulozenie exponentu vysledku
+1421   065F C9                  ret                     ;; Koniec delenia floating point * floating point
+1422   0660             
+1423   0660             ;; Rozne drobne podprogramy pre scitanie, nasobenie a delenie
+1424   0660             
+1425   0660             ;; Precitanie mantisy FP cisla do registrov
+1426   0660             ;;     Zaroven ulozi do cisla znamienko
+1427   0660             ;;     a nastavi najvyssi bit mantisy
+1428   0660             ;;  Vstup: HL = adresa citanej mantisy, A = znamienko
+1429   0660             ;; Vystup: HL = adresa za tou mantisou, BCDE = mantisa
+1430   0660             
+1431   0660 46          getmns  ld      b,(hl)
+1432   0661 77                  ld      (hl),a          ;; Ulozenie znamienka mantisy
+1433   0662 23                  inc     hl
+1434   0663 4E                  ld      c,(hl)
+1435   0664 23                  inc     hl
+1436   0665 56                  ld      d,(hl)
+1437   0666 23                  inc     hl
+1438   0667 5E                  ld      e,(hl)
+1439   0668 23                  inc     hl
+1440   0669 78                  ld      a,b
+1441   066A F6 80               or      #80             ;; Uprava mantisy na spravny tvar
+1442   066C 47                  ld      b,a             ;; nastavenim najvyssieho bitu na 1
+1443   066D C9                  ret
+1444   066E             
+1445   066E             ;; Zdvojnasobenie mantisy
+1446   066E             ;; BCDE = 2 * BCDE
+1447   066E             
+1448   066E EB          del2x   ex      de,hl
+1449   066F 29                  add     hl,hl
+1450   0670 EB                  ex      de,hl
+1451   0671 79          bc2x1c  ld      a,c
+1452   0672 8F                  adc     a,a
+1453   0673 4F                  ld      c,a
+1454   0674 78                  ld      a,b
+1455   0675 8F                  adc     a,a
+1456   0676 47                  ld      b,a
+1457   0677 C9                  ret
+1458   0678             
+1459   0678             ;; Porovnanie ci je delenec mensi ako delitel
+1460   0678             
+1461   0678             delcmp
+1462   0678 21 55 55    addel0  ld      hl,#5555        ;; Adresa bajtu 0 mantisy delitela
+1463   067B 78                  ld      a,b
+1464   067C BE                  cp      (hl)
+1465   067D C0                  ret     nz
+1466   067E 23                  inc     hl
+1467   067F 79                  ld      a,c
+1468   0680 BE                  cp      (hl)
+1469   0681 C0                  ret     nz
+1470   0682 23                  inc     hl
+1471   0683 7A                  ld      a,d
+1472   0684 BE                  cp      (hl)
+1473   0685 C0                  ret     nz
+1474   0686 23                  inc     hl
+1475   0687 7B                  ld      a,e
+1476   0688 BE                  cp      (hl)
+1477   0689 C9                  ret
+1478   068A             
+1479   068A             ;; Odcitanie delitela od delenca
+1480   068A             
+1481   068A             delsub
+1482   068A 21 55 55    addel3  ld      hl,#5555        ;; Adresa bajtu 3 mantisy delitela
+1483   068D 7B                  ld      a,e
+1484   068E 96                  sub     (hl)
+1485   068F 5F                  ld      e,a
+1486   0690 2B                  dec     hl
+1487   0691 7A                  ld      a,d
+1488   0692 9E                  sbc     (hl)
+1489   0693 57                  ld      d,a
+1490   0694 2B                  dec     hl
+1491   0695 79                  ld      a,c
+1492   0696 9E                  sbc     (hl)
+1493   0697 4F                  ld      c,a
+1494   0698 2B                  dec     hl
+1495   0699 78                  ld      a,b
+1496   069A 9E                  sbc     (hl)
+1497   069B 47                  ld      b,a
+1498   069C C9                  ret
+1499   069D             
+1500   069D             ;; Porovnanie absolutnych hodnot mantis
+1501   069D             ;;   Vstup: DE,HL = adresy cisel
+1502   069D             ;;  Vystup: Zero=rovnake, Carry=1 ak (DE) < (HL)
+1503   069D             
+1504   069D 23          mnscmp  inc     hl
+1505   069E 13                  inc     de
+1506   069F 7E                  ld      a,(hl)          ;; Znamienka mantis
+1507   06A0 F6 80               or      #80             ;; treba vymaskovat
+1508   06A2 4F                  ld      c,a
+1509   06A3 1A                  ld      a,(de)
+1510   06A4 F6 80               or      #80
+1511   06A6 B9                  cp      c
+1512   06A7 C0                  ret     nz
+1513   06A8 23                  inc     hl
+1514   06A9 13                  inc     de
+1515   06AA 1A                  ld      a,(de)
+1516   06AB BE                  cp      (hl)
+1517   06AC C0                  ret     nz
+1518   06AD 23                  inc     hl
+1519   06AE 13                  inc     de
+1520   06AF 1A                  ld      a,(de)
+1521   06B0 BE                  cp      (hl)
+1522   06B1 C0                  ret     nz
+1523   06B2 23                  inc     hl
+1524   06B3 13                  inc     de
+1525   06B4 1A                  ld      a,(de)
+1526   06B5 BE                  cp      (hl)
+1527   06B6 C9                  ret
+1528   06B7             
+1529   06B7             ;; Zaokruhlenie floating point cisla smerom hore
+1530   06B7             ;; alebo pripocitanie jednotky k celej 32 bitovej mantise
+1531   06B7             
+1532   06B7 34          divzao  inc     (hl)
+1533   06B8 C0                  ret     nz
+1534   06B9 2B                  dec     hl
+1535   06BA 34                  inc     (hl)
+1536   06BB C0                  ret     nz
+1537   06BC 2B                  dec     hl
+1538   06BD 34                  inc     (hl)
+1539   06BE C0                  ret     nz
+1540   06BF 2B                  dec     hl
+1541   06C0 7E                  ld      a,(hl)          ;; Bit 7 prveho bajtu mantisy je znamienko
+1542   06C1 34                  inc     (hl)            ;; (predbezne inkrementovanie bajtu)
+1543   06C2 E6 7F               and     #7F             ;; preto sa inkrementuje iba spodnych 7 bitov
+1544   06C4 3C                  inc     a
+1545   06C5 F0                  ret     p               ;; Ak nepretiekli do siedmeho bitu, tak je vsetko OK
+1546   06C6 3D                  dec     a
+1547   06C7 E6 80               and     #80             ;; Inak musime zachovat znamienko
+1548   06C9 77                  ld      (hl),a          ;; a ostatne bity vynulujeme
+1549   06CA 2B                  dec     hl              ;; a inkrementujeme exponent cisla
+1550   06CB 34                  inc     (hl)
+1551   06CC C9                  ret
+1552   06CD             
+1553   06CD             ;; Predbezna kontrola podtecenia
+1554   06CD             ;; na zaciatku nasobenia a delenia
+1555   06CD             
+1556   06CD 86          chkund  add     a,(hl)          ;; Ak exponenty scitame a pretecie to
+1557   06CE D8                  ret     c               ;; tak celkovy vysledok urcite nepodtecie
+1558   06CF FE 7F               cp      #7F             ;; Ak je sucet vecsi ako #7F
+1559   06D1 D0                  ret     nc              ;; tak je tiez pravdepodobne vsetko OK
+1560   06D2 C3 E4 06            jp      nulpop          ;; Inak je podtecenie a rovno vratime vysledok nula
+1561   06D5             
+1562   06D5             ;; Urcenie vysledneho exponentu pre nasobenie
+1563   06D5             ;;   Vstupne exponenty: (HL),A => 1..255 +128
+1564   06D5             ;;  Vystupny exponent:  non-zero: A => 0..254 +127
+1565   06D5             ;;                          zero: podtecenie (zapise nulovy vysledok)
+1566   06D5             
+1567   06D5 86          matexp  add     (hl)            ;; Scitanie exponentov
+1568   06D6 D2 DE 06            jp      nc,matenc       ;; Ak menej ako #FF tak skok
+1569   06D9 D6 80               sub     #80             ;; Uprava na rozsah #80-#FF
+1570   06DB D8                  ret     c               ;; Navrat ak je v rozsahu
+1571   06DC CF                  rst     #08             ;; #31AD  Inak ohlasime chybu
+1572   06DD 05                  DEFB    #05             ;; #31AE  'Number too big'
+1573   06DE             
+1574   06DE D6 80       matenc  sub     #80             ;; Uprava na rozsah #00-#7F
+1575   06E0 CA E4 06            jp      z,nulpop        ;; Ak je nula tak podtiekol
+1576   06E3 D0                  ret     nc              ;; Navrat ak nepodtiekol
+1577   06E4             
+1578   06E4             ;; Nastavenie nuloveho vysledku na adresu HL
+1579   06E4             ;; a tiez vytvori STKEND v DE ... DE=HL+5
+1580   06E4             
+1581   06E4 F1          nulpop  pop     af              ;; Odstranenie navratovej adresy
+1582   06E5 AF          nulset  xor     a               ;; Ulozenie nuly do vysledku
+1583   06E6 54                  ld      d,h
+1584   06E7 5D                  ld      e,l
+1585   06E8 12                  ld      (de),a
+1586   06E9 13                  inc     de
+1587   06EA 12                  ld      (de),a
+1588   06EB 13                  inc     de
+1589   06EC 12                  ld      (de),a
+1590   06ED 13                  inc     de
+1591   06EE 12                  ld      (de),a
+1592   06EF 13                  inc     de
+1593   06F0 12                  ld      (de),a
+1594   06F1 13                  inc     de
+1595   06F2 C9                  ret
+1596   06F3             
+1597   06F3             ;; Konverzia cisla z integer na floating point
+1598   06F3             ;; Rutinka podobna ako na #3297
+1599   06F3             ;;   Vstup: HL = adresa cisla na stacku
+1600   06F3             ;;  Vystup: Zero flag = cislo je nula
+1601   06F3             
+1602   06F3             H3297
+1603   06F3 7E          int2fp  ld      a,(hl)          ;; Ak exponent cisla
+1604   06F4 B7                  or      a               ;; nie je nulovy, cislo je uz FP
+1605   06F5 C0                  ret     nz              ;; a hned navrat
+1606   06F6 D5                  push    de
+1607   06F7 CD 38 07            call    H2D7F           ;; Nacitanie integer cisla
+1608   06FA EB                  ex      de,hl           ;; HL = absolutna hodnota integer cisla
+1609   06FB F5                  push    af
+1610   06FC 79                  ld      a,c
+1611   06FD E6 80               and     #80
+1612   06FF 4F                  ld      c,a             ;; Znamienko #00/#80 do C
+1613   0700 F1                  pop     af
+1614   0701 06 91               ld      b,#91           ;; Predbezna hodnota exponentu pre 16 bit
+1615   0703 DA 24 07            jp      c,int2st        ;; Skok pre hodnotu -65536
+1616   0706 AF                  xor     a
+1617   0707 AC                  xor     h
+1618   0708 C2 1E 07            jp      nz,int2n1       ;; Skok pre hodnotu v rozsahu 256..65535
+1619   070B AD                  xor     l
+1620   070C 45                  ld      b,l
+1621   070D CA 24 07            jp      z,int2st        ;; Skok pre hodnotu NULA
+1622   0710 6C                  ld      l,h             ;; Skok pre hodnotu v rozsahu 1..255
+1623   0711 06 89               ld      b,#89           ;; Predbezna hodnota exponentu pre 8 bit
+1624   0713 05          int2l1  dec     b
+1625   0714 87                  add     a,a
+1626   0715 D2 13 07            jp      nc,int2l1
+1627   0718 1F                  rra
+1628   0719 67                  ld      h,a
+1629   071A C3 24 07            jp      int2st
+1630   071D             
+1631   071D 29          int2l2  add     hl,hl
+1632   071E 05          int2n1  dec     b
+1633   071F 7C                  ld      a,h
+1634   0720 87                  add     a,a
+1635   0721 D2 1D 07            jp      nc,int2l2
+1636   0724 EB          int2st  ex      de,hl
+1637   0725 AF                  xor     a
+1638   0726 23                  inc     hl
+1639   0727 77                  ld      (hl),a          ;; Mantisa bajt 4  (bude vzdy nulovy)
+1640   0728 2B                  dec     hl
+1641   0729 77                  ld      (hl),a          ;; Mantisa bajt 3  (bude vzdy nulovy)
+1642   072A 2B                  dec     hl
+1643   072B 7A                  ld      a,d
+1644   072C E6 7F               and     #7F
+1645   072E B1                  or      c               ;; Pridanie znamienka do mantisy
+1646   072F 73                  ld      (hl),e          ;; Mantisa bajt 2
+1647   0730 2B                  dec     hl
+1648   0731 77                  ld      (hl),a          ;; Mantica bajt 1 (bit7=znamienko)
+1649   0732 2B                  dec     hl
+1650   0733 70                  ld      (hl),b          ;; Exponent
+1651   0734 D1                  pop     de
+1652   0735 AF                  xor     a
+1653   0736 A8                  xor     b               ;; Vystup: Zero pre nulove cislo
+1654   0737 C9                  ret
+1655   0738             
+1656   0738             ;; podpgm pro prevzeti celeho cisla ze zasobniku kalkulatoru
+1657   0738             ;; Rozsirenie: Pri -65536 vrati priznak CY=1
+1658   0738             ;;   Vstup: HL=adresa cisla
+1659   0738             ;;  Vystup: C=znamienko 00/FF, DE=absolutna hodnota
+1660   0738             
+1661   0738 23          H2D7F   inc     HL                      ;; #2D7F  nyni adresuje znamenko
+1662   0739 4E                  ld      C,(HL)                  ;; #2D80  to je prevzato do _C,#FF znaci zapor.
+1663   073A 23                  inc     HL                      ;; #2D81  adresuje LSB
+1664   073B 7E                  ld      A,(HL)                  ;; #2D82  prevezme LSB
+1665   073C A9                  xor     C                       ;; #2D83  a vytvori 1.doplnek
+1666   073D 91                  sub     C                       ;; #2D84  neg: prictenim 1: 2.doplnek
+1667   073E 5F                  ld      E,A                     ;; #2D85  LSB do _E
+1668   073F 23                  inc     HL                      ;; #2D86  ukazuje na MSB
+1669   0740 7E                  ld      A,(HL)                  ;; #2D87  prevezme jej
+1670   0741 89                  adc     C                       ;; #2D88  a pokud je zaporny
+1671   0742 A9                  xor     C                       ;; #2D89  vytvori 2.doplnek
+1672   0743 57                  ld      D,A                     ;; #2D8A  MSB do _D
+1673   0744             
+1674   0744 B3                  or      e               ;; Test ci cislo bolo 0 alebo akoze -65536
+1675   0745 C0                  ret     nz              ;; Ak nie tak hned navrat (CY=0)
+1676   0746 B1                  or      c               ;; Tak isto aj pre +0
+1677   0747 C8                  ret     z               ;; hned navrat
+1678   0748 3A 13 08            ld      a,(seting)      ;; Osetrenie stavu pre -65536 (#FF #00 #00)
+1679   074B E6 10               and     #10             ;; Ak chybu treba simulovat
+1680   074D C0                  ret     nz              ;; tak tiez hned navrat s C=#FF
+1681   074E 37                  scf                     ;; Inak nastavime CY ako priznak ze bolo -65536
+1682   074F             
+1683   074F C9                  ret                             ;; #2D8B
+1684   0750             
+1685   0750             ;; podpgm pro zapis celeho cisla na zasobnik kalkulatoru
+1686   0750             ;; (opak predchoziho podpgmu)
+1687   0750             ;; Vstup: HL=adresa cisla, C=znamienko 00/FF, DE=absolutna hodnota
+1688   0750             
+1689   0750 E5          H2D8E   push    HL                      ;; #2D8E  vstup se znamenkem v _C
+1690   0751                                                     ;; #2D8F  (#FF:zaporne, 0:kladne)
+1691   0751 36 00               ld      (HL),0                  ;; #2D8F  nulovan prvni bajt
+1692   0753 23                  inc     HL                      ;; #2D91
+1693   0754 71                  ld      (HL),C                  ;; #2D92  znamenko zapsano do druheho
+1694   0755 23                  inc     HL                      ;; #2D93  pro zaporne cislo bude vytvoren
+1695   0756 7B                  ld      A,E                     ;; #2D94  2.doplnek
+1696   0757 A9                  xor     C                       ;; #2D95  nejprve pro LSB
+1697   0758 91                  sub     C                       ;; #2D96
+1698   0759 77                  ld      (HL),A                  ;; #2D97  LSB zapsan
+1699   075A 23                  inc     HL                      ;; #2D98
+1700   075B 7A                  ld      A,D                     ;; #2D99  zpracovan MSB
+1701   075C 89                  adc     C                       ;; #2D9A
+1702   075D A9                  xor     C                       ;; #2D9B
+1703   075E 77                  ld      (HL),A                  ;; #2D9C  a take zapsan
+1704   075F 23                  inc     HL                      ;; #2D9D
+1705   0760 36 00               ld      (HL),0                  ;; #2D9E  5.bajt taktez nulovy
+1706   0762 E1                  pop     HL                      ;; #2DA0  obnoveni ukazatele na prvni bajt
+1707   0763 C9                  ret                             ;; #2DA1
+1708   0764             
+1709   0764             ;; funkce 'ABS' (op.kod #2A) Absolutni hodnota cisla
+1710   0764             
+1711   0764 06 FF       ABSOLU  ld      B,#FF                   ;; #346A  iniciace _B
+1712   0766 C3 6F 07            jp      H3474                   ;; #346C  a skok do rutiny NEGIER
+1713   0769             
+1714   0769             ;; podpgm pro zmenu znamenka posl.hodnoty na zasobniku (#1B)
+1715   0769             
+1716   0769 CD 98 07    NEGIER  call    H34E9                   ;; #346E  kdyz je cislo nula
+1717   076C D8                  ret     C                       ;; #3471  pak se nebude nic provadet
+1718   076D 06 00               ld      B,0                     ;; #3472  _B=0 pro negaci
+1719   076F 7E          H3474   ld      A,(HL)                  ;; #3474  prevzeti 1.bajtu
+1720   0770 A7                  and     A                       ;; #3475  pokud je nulovy
+1721   0771 CA 7E 07            jp      Z,H3483                 ;; #3476  jde o cislo "integer"
+1722   0774 23                  inc     HL                      ;; #3478  jinak ukazatel na 2.bajt
+1723   0775 78                  ld      A,B                     ;; #3479  bit7=1 pro 'ABS',bit7=0 pro negaci
+1724   0776 E6 80               and     #80                     ;; #347A  ponecha jen tento bit
+1725   0778 B6                  or      (HL)                    ;; #347C  (pro 'ABS' nastaven)
+1726   0779 EE 80               xor     #80
+1727   077B                     ;;rla                           ;; #347D  pres CARRY je invertovan
+1728   077B                     ;;ccf                           ;; #347E
+1729   077B                     ;;rra                           ;; #347F
+1730   077B 77                  ld      (HL),A                  ;; #3480  bajt se zmenenym znamenkem zpet
+1731   077C 2B                  dec     HL                      ;; #3481  ukazatel opet na 1.bajt
+1732   077D C9                  ret                             ;; #3482
+1733   077E             
+1734   077E             ;; zmena znamenka cisla "integer"
+1735   077E             
+1736   077E D5          H3483   push    DE                      ;; #3483  uschovan >STKEND<
+1737   077F E5                  push    HL                      ;; #3484  a ukazatel na cislo
+1738   0780 CD 38 07            call    H2D7F                   ;; #3485  znamenko do _C,cislo do _DE
+1739   0783 E1                  pop     HL                      ;; #3488  obnoven ukazatel na cislo
+1740   0784             
+1741   0784 D2 8F 07            jp      nc,H3489                ;; Ak to nebolo -65536 tak skok
+1742   0787 36 91               ld      (hl),#91                ;; Ak ano, ako vysledok zapiseme
+1743   0789 23                  inc     hl                      ;; floating point hodnotu +65536
+1744   078A 36 00               ld      (hl),#00                ;; #91 #00 ...
+1745   078C 2B                  dec     hl
+1746   078D D1                  pop     de
+1747   078E C9                  ret
+1748   078F             
+1749   078F 78          H3489   ld      A,B                     ;; #3489  #FF pro 'ABS',#00 pro negaci
+1750   0790 B1                  or      C                       ;; #348A  zde znamenko pro 'ABS' vzdy #FF
+1751   0791 2F                  cpl                             ;; #348B  znamenko invertovano
+1752   0792 4F                  ld      C,A                     ;; #348C  a kopie do _C
+1753   0793 CD 50 07            call    H2D8E                   ;; #348D  cislo "integer" zapsano zpet
+1754   0796 D1                  pop     DE                      ;; #3490  obnoveni >STKEND< v _DE
+1755   0797 C9                  ret                             ;; #3491
+1756   0798             
+1757   0798             ;; podpgm pro test,zda cislo na zasobniku je 0
+1758   0798             
+1759   0798 E5          H34E9   push    HL                      ;; #34E9  uschovan ukazatel na cislo
+1760   0799 C5                  push    BC                      ;; #34EA
+1761   079A 47                  ld      B,A                     ;; #34EB  _A uschovano do _B
+1762   079B 7E                  ld      A,(HL)                  ;; #34EC  prvni bajt prevzat
+1763   079C 23                  inc     HL                      ;; #34ED  a provedeno log.OR s dalsimi tremi
+1764   079D B6                  or      (HL)                    ;; #34EE  (vsechny musi byt nulove)
+1765   079E 23                  inc     HL                      ;; #34EF  (a CARRY bude take 0)
+1766   079F B6                  or      (HL)                    ;; #34F0
+1767   07A0 23                  inc     HL                      ;; #34F1
+1768   07A1 B6                  or      (HL)                    ;; #34F2
+1769   07A2 78                  ld      A,B                     ;; #34F3  obnoveni _A,
+1770   07A3 C1                  pop     BC                      ;; #34F4  _BC
+1771   07A4 E1                  pop     HL                      ;; #34F5  i ukazatele na cislo
+1772   07A5 C0                  ret     NZ                      ;; #34F6  cislo<>0:CARRY=0
+1773   07A6 37                  scf                             ;; #34F7  cislo =0:CARRY=1
+1774   07A7 C9                  ret                             ;; #34F8
+1775   07A8             
+1776   07A8             ;; Rychle porovnanie dvoch cisel namiesto odcitania
+1777   07A8             ;; Pouzite v relacnych operatoroch = < > <> =< =>
+1778   07A8             ;; V podstate robi vypocet: vysledok = SGN(cislo1-cislo2)
+1779   07A8             ;;
+1780   07A8             ;; Na rozdiel od povodne pouziteho poctiveho odcitania zvlada
+1781   07A8             ;; porovnat aj extremne pripady, napriklad: 1e38 s cislom -1e38
+1782   07A8             
+1783   07A8 D5          SPDCMP  push    de              ;; DE = adresa druheho cisla
+1784   07A9 E5                  push    hl              ;; HL = adresa  prveho cisla
+1785   07AA 1A                  ld      a,(de)
+1786   07AB 4E                  ld      c,(hl)          ;; C = exponent  prveho cisla
+1787   07AC 47                  ld      b,a             ;; B = exponent druheho cisla
+1788   07AD 23                  inc     hl
+1789   07AE 13                  inc     de
+1790   07AF 1A                  ld      a,(de)
+1791   07B0 AE                  xor     (hl)            ;; Ako prve porovname
+1792   07B1 E6 80               and     #80             ;; znamienka oboch cisel
+1793   07B3 7E                  ld      a,(hl)
+1794   07B4 07                  rlca                    ;; Ak su rozne, vysledkom bude +/-1
+1795   07B5 C2 FB 07            jp      nz,cmp1cy       ;; so znamienkom podla prveho cisla
+1796   07B8             
+1797   07B8             ;; Dalej sa porovnavaju iba cisla s rovnakym znamienkom
+1798   07B8             
+1799   07B8 78                  ld      a,b             ;; Test ci su obe cisla integer
+1800   07B9 B1                  or      c               ;; (musia mat nulove exponenty)
+1801   07BA C2 D8 07            jp      nz,cmpflt       ;; Skok pri floating point
+1802   07BD             
+1803   07BD             ;; Porovnanie cisel typu integer
+1804   07BD             
+1805   07BD 23          cmpint  inc     hl              ;; Posun na hodnoty cisel
+1806   07BE 13                  inc     de              ;; Cisla maju rovnake znamienko
+1807   07BF 1A                  ld      a,(de)          ;; a su v dvojkovom doplnku, preto
+1808   07C0 96                  sub     (hl)            ;; pre porovnanie ich staci odcitat
+1809   07C1 4F                  ld      c,a             ;; C = docasne nizsi bajt rozdielu
+1810   07C2 23                  inc     hl
+1811   07C3 13                  inc     de
+1812   07C4 1A                  ld      a,(de)
+1813   07C5 9E                  sbc     (hl)
+1814   07C6 11 01 00            ld      de,#01
+1815   07C9 3F                  ccf                     ;; Ak je prve cislo vecsie
+1816   07CA D2 FB 07            jp      nc,cmp1cy       ;; tak zapiseme vysledok +1
+1817   07CD B1                  or      c               ;; Ak je rozdiel cisel nenulovy
+1818   07CE 37                  scf                     ;; potom prve cislo je urcite mensie
+1819   07CF C2 FB 07            jp      nz,cmp1cy       ;; a zapiseme vysledok -1
+1820   07D2 AF          cmpnul  xor     a               ;; Nulovy rozdiel => cisla su rovnake
+1821   07D3 57                  ld      d,a
+1822   07D4 5F                  ld      e,a
+1823   07D5 C3 FF 07            jp      cmpcst
+1824   07D8             
+1825   07D8             ;; Porovnanie cisel typu floading point
+1826   07D8             
+1827   07D8 2B          cmpflt  dec     hl              ;; Posun nazad na exponenty cisel
+1828   07D9 1B                  dec     de
+1829   07DA CD F3 06            call    int2fp          ;; Prevod prveho cisla na FP (ak uz nie je)
+1830   07DD 37                  scf                     ;; Ak je prve cislo nula, druhe bude urcite kladne
+1831   07DE CA FB 07            jp      z,cmp1cy        ;; a vysledkom porovnania potom bude -1
+1832   07E1             
+1833   07E1 EB                  ex      de,hl           ;; HL ukazuje na druhe cislo
+1834   07E2 CD F3 06            call    int2fp          ;; Prevod druheho cisla na FP (ak uz nie je)
+1835   07E5 EB                  ex      de,hl           ;; Ak je druhe cislo nula, prve bude urcite kladne
+1836   07E6 CA FB 07            jp      z,cmp1cy        ;; a vysledkom porovnania potom bude +1
+1837   07E9             
+1838   07E9             ;; Dalej sa porovnavaju iba dve nenulove floating point cisla
+1839   07E9             
+1840   07E9 1A                  ld      a,(de)          ;; Porovnanie exponentov cisel
+1841   07EA BE                  cp      (hl)            ;; Ak su rozne,
+1842   07EB C2 F4 07            jp      nz,cmpfst       ;; skok na zapis +/-1 podla znamienka cisel
+1843   07EE             
+1844   07EE CD 9D 06            call    mnscmp          ;; Ak su exponenty rovnake, porovname mantisy
+1845   07F1 CA D2 07            jp      z,cmpnul        ;; Ak su aj mantisy rovnake, vysledok bude nula
+1846   07F4             
+1847   07F4 E1          cmpfst  pop     hl              ;; Cisla su urcite rozne
+1848   07F5 E5                  push    hl              ;; HL = adresa prveho cisla
+1849   07F6 23                  inc     hl              ;; HL = adresa prveho bajtu mantisy so znamienkom
+1850   07F7 3F                  ccf
+1851   07F8 9F                  sbc     a,a             ;; Vysledok porovnania absolutnych hodnot cisel
+1852   07F9 AE                  xor     (hl)            ;; vyxorujeme so znamienkom tychto cisel a tym
+1853   07FA 87                  add     a,a             ;; ziskame vysledok porovnania samotnych cisel
+1854   07FB             
+1855   07FB 11 01 00    cmp1cy  ld      de,#01          ;; Ulozenie +/-1 podla carry
+1856   07FE 9F                  sbc     a,a             ;; (CY=0 pre + a CY=1 pre -)
+1857   07FF 4F          cmpcst  ld      c,a             ;; C = znamienko cisla #00/#FF
+1858   0800 E1                  pop     hl              ;; HL = adresa vysledku
+1859   0801 CD 50 07            call    H2D8E           ;; Ulozenie vysledku porovnania -1/0/+1 na zasobnik
+1860   0804 D1                  pop     de              ;; DE = STKEND
+1861   0805 C9                  ret
+1862   0806             
+1863   0806             ;; Simulacia niektorych Z80 instrukcii
+1864   0806             
+1865   0806 F5          ldir    push    af
+1866   0807 7E          ldilop  ld      a,(hl)
+1867   0808 12                  ld      (de),a
+1868   0809 23                  inc     hl
+1869   080A 13                  inc     de
+1870   080B 0B                  dec     bc
+1871   080C 78                  ld      a,b
+1872   080D B1                  or      c
+1873   080E C2 07 08            jp      nz,ldilop
+1874   0811 F1                  pop     af
+1875   0812 C9                  ret
+1876   0813             
+1877   0813             ;; Koniec samotneho kodu
+1878   0813             
+1879   0813                     OUTEND
+1880   0813             
+1881   0813             ;; Nastavenie systemu
+1882   0813             
+1883   0813 00          seting  db      #00
+1884   0814             
+1885   0814             ;; Argumenty pre nasobenie 32x32 bit
+1886   0814             
+1887   0814 00          num1    ds      #04
+1888   0818 00          num2    ds      #04
+1889   081C             
+
+Value    Label
+------ - -----------------------------------------------------------
+0x0000 X SUBTRA
+0x0769   NEGIER
+0x0005 X ADDIER
+0x006F   addflt
+0x0043   addmoc
+0x0039   addoki
+0x0813   seting
+0x004B   addowe
+0x006D   H303C
+0x0059   addpos
+0x06F3   int2fp
+0x0081   add1nz
+0x0075   addcpy
+0x0806   ldir
+0x0091   addce1
+0x009E   addm33
+0x00C6   addrze
+0x00B0   addce2
+0x069D   mnscmp
+0x01EE   mnsrot
+0x010F   addsub
+0x00D3 X addadd
+0x00FB   addsto
+0x0247   mnszao
+0x0538   chyba
+0x012A   norma
+0x0149   no1xxx
+0x015E   no01xx
+0x016B   no001x
+0x0171   no0001
+0x0143   nornux
+0x0144   nornul
+0x01E5   norst2
+0x01CD   nor32s
+0x014E X no1xx0
+0x01AA   nor24s
+0x0157 X no1x00
+0x0189   nor16x
+0x015B X no1000
+0x0167   no0100
+0x0163 X no01x0
+0x0171   nor08s
+0x018B   nor16s
+0x0170 X no0010
+0x0179   nor08r
+0x01E2   norst0
+0x0193   nor16r
+0x01A4 X norzde
+0x01E3   norst1
+0x01C0   nor24t
+0x01B8   nor24r
+0x01DE   nor32t
+0x01D1   nor32r
+0x0205   addbtx
+0x01FF   addbts
+0x022E   addlll
+0x0219   addrrr
+0x021A   addrrx
+0x0232   addllx
+0x0250 X MULTIP
+0x030B   mulflt
+0x0255 X mulint
+0x0738   H2D7F
+0x0308   m65536
+0x0278   mulnul
+0x027C   mixxxx
+0x02DB   mulsde
+0x0297   mi1xxx
+0x0281 X mi01xx
+0x028E   mi011x
+0x0285 X mi0101
+0x04B6   m8x8
+0x02D8   mul0de
+0x02CE   mi0111
+0x0293 X mi0110
+0x02A0   mi1001
+0x02BA   mi11xx
+0x029C X mi10xx
+0x02AA   mi101x
+0x02D2   mulahl
+0x02E1   mi1011
+0x02FA   muliff
+0x02C4   mi111x
+0x02BF X mi1101
+0x02CF   muli8a
+0x02F6   muli32
+0x02C9 X mi1110
+0x02E2   muli8b
+0x047C   m8x16
+0x02EF   muli24
+0x0750   H2D8E
+0x02FD   muliss
+0x02FE   mulist
+0x0452   m16x16
+0x06E5   nulset
+0x06CD   chkund
+0x0660   getmns
+0x0814   num1
+0x0818   num2
+0x0342 X muxxxx
+0x0356   muxxx0
+0x0347 X muxx11
+0x03A9   mu1111
+0x034F X mux011
+0x03A3   mu1011
+0x0396   mu0011
+0x036B   mux0x0
+0x035B X mu11x0
+0x03A3   mu1110
+0x0396   mu1100
+0x0385   mux010
+0x0374 X mux000
+0x038A   mu1000
+0x0379 X mu0000
+0x03B9   mulset
+0x03B3   mu1010
+0x038A X mu0010
+0x038B X s8x16
+0x0397 X s8x32
+0x0466   m8x32
+0x03A3 X s16x32
+0x043A   m16x32
+0x03AC   mulss1
+0x03A9 X s32x32
+0x0404   m32x32
+0x03B3 X s16x16
+0x03CE   mulmok
+0x0671   bc2x1c
+0x03EF   mulsto
+0x06D5   matexp
+0x0428   m32sto
+0x0435   m32mmm
+0x044C   m16sto
+0x04E0 X H31AF
+0x04E0 X DIVIDE
+0x05C5   divme1
+0x0614   divme2
+0x0678   addel0
+0x068A   addel3
+0x0678   delcmp
+0x0632   diverr
+0x053A   divmen
+0x053D   divnem
+0x066E   del2x
+0x05DB   div32x
+0x0586   div16x
+0x054F X div08x
+0x0658   divpop
+0x057D   div8dv
+0x0563   div8ll
+0x0571   div8nx
+0x0568   div8st
+0x0623   div8ee
+0x05AA   divdl0
+0x05D1   divdl2
+0x05AE   divdl1
+0x05D5   divdl3
+0x05CA   divdva
+0x05A9   divilo
+0x05BD   divnxt
+0x05B5   divset
+0x0625   div16e
+0x068A   delsub
+0x0659   divpep
+0x0603   divmsk
+0x061A   divtwo
+0x05F1   divlop
+0x0657   divend
+0x0608   divpos
+0x05FF   divsub
+0x062A   divall
+0x0638   diveok
+0x0647   divzzz
+0x06B7   divzao
+0x065A   divexp
+0x06E4   nulpop
+0x06DE   matenc
+0x06F3 X H3297
+0x0724   int2st
+0x071E   int2n1
+0x0713   int2l1
+0x071D   int2l2
+0x0764 X ABSOLU
+0x076F   H3474
+0x0798   H34E9
+0x077E   H3483
+0x078F   H3489
+0x07A8 X SPDCMP
+0x07FB   cmp1cy
+0x07D8   cmpflt
+0x07BD X cmpint
+0x07D2   cmpnul
+0x07FF   cmpcst
+0x07F4   cmpfst
+0x0807   ldilop
