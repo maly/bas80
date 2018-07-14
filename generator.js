@@ -1230,6 +1230,11 @@ var generator = function(basic, CFG, PROC) {
         out = "\tCALL HP_INIT\n" + out;
     }
 
+    if (CFG.init) {
+      out = CFG.init + out;
+  }
+
+
     out ="\tORG "+CFG.org+"\n\t.ent $\n\n" + out; //zahlavi
 
     //append
@@ -1245,6 +1250,9 @@ var generator = function(basic, CFG, PROC) {
 
     //datadump
     out+=";----INITIALIZED DATA SEGMENT (RAM)\n"
+    if (CFG.ramstart) {
+      out+="\torg "+CFG.ramstart+"\n";
+    }
     if (ENV.datas.length) {
         out+="datapoint: dw $+2\n"
         out+="databegin:\n"
@@ -1279,4 +1287,4 @@ var generator = function(basic, CFG, PROC) {
 
     return out;
 }
-module.exports = generator
+if (typeof module != 'undefined') module.exports = generator

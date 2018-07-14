@@ -556,4 +556,4 @@ var BASIC = {
     }
 }
 
-module.exports = BASIC
+if (typeof module != 'undefined') module.exports = BASIC

@@ -1285,4 +1285,4 @@ var LIB = {
     }
 }
 
-module.exports = LIB
+if (typeof module != 'undefined') module.exports = LIB

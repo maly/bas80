@@ -299,4 +299,4 @@ function parse(source) {
     return basic
 }
 
-module.exports = parse
+if (typeof module != 'undefined') module.exports = parse

@@ -1,9 +1,11 @@
 var CONFIG = {
-    "OMENALPHA": {
-        org:"8000h",
-        ramtop:"0f800h",
+    "OMENCHARLIE": {
+        org:"0000h",
+        ramstart:"08000h",
+        ramtop:"08400h",
         goback:"RST 0",
         cpu:"I8080",
+        init:"\tLXI SP,RAMTOP\n\tDI\n",
         system: {
             "serout": {
                 uses:null,

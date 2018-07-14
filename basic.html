@@ -1,7 +1,7 @@
 <textarea id="source" cols=60 rows=40>
 dim b(10)
 let a=[b(3)]
-        
+
 
 </textarea>
 
@@ -12,6 +12,7 @@ let a=[b(3)]
 <script src="./targets/cpu/8080/library.js"></script>
 <script src="./targets/cpu/8080/basic.js"></script>
 <script src="./targets/omenalpha/cfg.js"></script>
+<script src="./targets/omencharlie/cfg.js"></script>
 
 <script src="lex.js"></script>
 <script src="parsing.js"></script>
@@ -27,13 +28,16 @@ var compile = function(){
     source=source.replace(/\&lt\;/gs,"<")
 
     //source +="\nEND\n"
+    //var ENGINE = "OMENALPHA"
+    var ENGINE = "OMENCHARLIE"
 
     var basic = parse(source)
 
 
     console.log(basic)
 
-    var asm = generator(basic,CONFIG.OMENALPHA,BASIC.I8080)
+
+    var asm = generator(basic,CONFIG[ENGINE],BASIC[CONFIG[ENGINE].cpu])
 
     document.getElementById("out").value = (asm)
 }
