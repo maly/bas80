@@ -1,14 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>BASIC</title>
+<style type="text/css" media="screen">
+    #editor {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width:500px;
+        font-size:16px;
+        font-family:monospace
+    }
+    #out {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 500px;
+        width:500px
+    }
+    aside {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 1030px;
+        width:200px
+    }
+</style>
+</head>
+<body>
+<div id="editor">dim b(10)
+  let a=[b(3)]
+</div>
+
+<!--
 <textarea id="source" cols=60 rows=40>
 dim b(10)
 let a=[b(3)]
 
 
 </textarea>
-
+-->
 <textarea id="out" cols=60 rows=40></textarea>
-
+<aside>
 <button onclick="compile()">Compile</button>
+
 <p><a href="https://github.com/maly/bas80/blob/master/README.md">README</a></p>
+</aside>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js"></script>
+<script src="./contribution/mode-basic.js"></script>
+<script>
+  var editor = ace.edit("editor");
+  editor.setTheme("ace/theme/monokai");
+  editor.session.setMode("ace/mode/vbscript");
+</script>
+
 <script src="./targets/cpu/8080/library.js"></script>
 <script src="./targets/cpu/8080/basic.js"></script>
 <script src="./targets/omenalpha/cfg.js"></script>
@@ -22,7 +69,11 @@ let a=[b(3)]
 
 
 var compile = function(){
-    var source = document.getElementById("source").value
+    var source
+
+    //= document.getElementById("source").value
+
+    source = editor.getValue()
 
     source=source.replace(/\&gt\;/gs,">")
     source=source.replace(/\&lt\;/gs,"<")
