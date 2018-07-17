@@ -32,6 +32,14 @@ var ARITY = {
 
 /* global croak */
 
+var findStructElement = function(elName) {
+  for(var k in ENV.structs) {
+    for (var i=0;i<ENV.structs[k].length;i++) {
+      if (ENV.structs[k][i].name==elName) return ENV.structs[k][i].type
+    }
+  }
+  return null
+}
 
 var exprType = function(expr,ln) {
     //var type = "undefined";
@@ -50,6 +58,10 @@ var exprType = function(expr,ln) {
     }
     if (type=="var$") {
         return "str"
+    }
+    if (type=="var.") {
+      var t = findStructElement(expr.index)
+      if (t) return t
     }
     if (type=="ptr") {
         return "int"
@@ -103,6 +115,13 @@ var expr = function(tokens, ln, bool) {
             n = tokens.shift();
             n.value = n.value * -1
             return n
+        }
+
+        if (n.type=="var" && (n.value.indexOf(".")>0)) {
+          //dot notation
+          var dedot = n.value.split(".");
+//          console.log(n,n.value.indexOf("."),dedot)
+          return {type:"var.",value:dedot[0],index:dedot[1]}
         }
 
         if (n.type=="punc" && n.value=="[") {

@@ -52,7 +52,7 @@ function InputStream(input) {
         return (/[a-z_]/i).test(ch);
     }
     function isId(ch) {
-        return isIdStart(ch) || "?!0123456789".indexOf(ch) >= 0;
+        return isIdStart(ch) || "?!.0123456789".indexOf(ch) >= 0;
     }
     function isOpChar(ch) {
         return "+-*/%=&|^<>!".indexOf(ch) >= 0;

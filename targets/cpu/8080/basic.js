@@ -33,6 +33,22 @@ var BASIC = {
             varL: function(expr,line) {
                 return ";[*DD*]\n\tXCHG\n\tLHLD v_"+expr.value+"\n\tXCHG\n"
             },
+            varStruct: function(expr,line,ENV) {
+              var stype = ENV.staticstructs[expr.value];
+              var struct = ENV.structs[stype];
+              var el = struct.filter(function(v){return v.name==expr.index})
+              if (!el) croak ("No such struct member variable",line)
+              if(el[0].offset) return "\tLHLD vss_"+expr.value+"+"+el[0].offset+"\n"
+              return "\tLHLD vss_"+expr.value+"\n"
+            },
+            varStructL: function(expr,line,ENV) {
+              var stype = ENV.staticstructs[expr.value];
+              var struct = ENV.structs[stype];
+              var el = struct.filter(function(v){return v.name==expr.index})
+              if (!el) croak ("No such struct member variable",line)
+              if(el[0].offset) return ";[*DD*]\n\tXCHG\n\tLHLD vss_"+expr.value+"+"+el[0].offset+"\n\tXCHG\n"
+              return ";[*DD*]\n\tXCHG\n\tLHLD vss_"+expr.value+"\n\tXCHG\n"
+            },
             varIndirect: function(expr,line) {
                 if (expr.varType=="str") return "\tLHLD H,vs_"+expr.value+"\n" //pointer to the string itself
                 return "\tLXI H,v_"+expr.value+"\n"
@@ -312,6 +328,9 @@ var BASIC = {
 
             storeInt: function(name) {
                 return "\tSHLD v_"+name+"\n"
+            },
+            storeIntOffset: function(name,offset) {
+              return "\tSHLD vss_"+name+"+"+offset+"\n"
             },
             storeStr: function(name) {
                 return "\tSHLD vs_"+name+"\n\tCALL hp_assign\n\tcall hp_gc\n"

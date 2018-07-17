@@ -107,7 +107,13 @@
             var size = ENV.intarr[k];
             out +="vai_"+k+":\t DS "+(2*size)+"\n";
         }
-        return out
+        for(k in ENV.staticstructs) {
+          var type = ENV.staticstructs[k];
+          var metas = ENV.structs[type];
+          var size = metas[metas.length-1].offset
+          out +="vss_"+k+":\t DS "+(size)+"\n";
+      }
+      return out
     }
 
     var strAsm = function() {
@@ -173,9 +179,18 @@ var ENV= {
         name=name.toLowerCase()
         ENV.procs[name] = name
     },
+    structs:{},
+    addStruct:function(name,value) {
+        name=name.toLowerCase()
+        ENV.structs[name] = value
+    },
     intarr:{},
     addArrInt:function(name,limit) {
         ENV.intarr[name] = limit
+    },
+    staticstructs:{},
+    addStaticStruct:function(name,type) {
+        ENV.staticstructs[name] = type
     },
     strs:[],
     addStr:function(s) {
@@ -215,6 +230,7 @@ var generator = function(basic, CFG, PROC) {
     ENV.uses=[]
     ENV.fns={}
     ENV.procs={}
+    ENV.structs={}
     ENV.datas=[]
     ENV.datalabels=[]
 
@@ -263,6 +279,14 @@ var generator = function(basic, CFG, PROC) {
         if (type=="var" && !left) {
             ENV.addVar(expr.value,"int")
             return CFG.xp.var(expr,line)
+        }
+        if (type=="var." && !left) {
+          if (!ENV.staticstructs[expr.value])  croak("You have to DIM structure first",line)
+          return CFG.xp.varStruct(expr,line,ENV)
+        }
+        if (type=="var." && left) {
+          if (!ENV.staticstructs[expr.value])  croak("You have to DIM structure first",line)
+          return CFG.xp.varStructL(expr,line,ENV)
         }
         if (type=="var" && left) {
             ENV.addVar(expr.value,"int")
@@ -509,7 +533,14 @@ var generator = function(basic, CFG, PROC) {
                     break;
                 case "dim":
                     epar = expr(tokens,line)
-                    //console.log(epar)
+                    if (epar.type=="var" && ENV.structs[epar.value]!==undefined) {
+                      while(tokens.length) {
+                        ENV.addStaticStruct(tokens.shift().value,epar.value)
+                        if (!tokens.length) break;
+                        if (!isPunc(",")) croak("Separate variables by comma",line)
+                      }
+                      break;
+                    }
                     if (epar.type!="var[]") croak("DIM needs a variable name",line);
                     if (epar.index.type!="num") croak("DIM needs a constant size",line);
                     ENV.addArrInt(epar.value,epar.index.value)
@@ -592,7 +623,32 @@ var generator = function(basic, CFG, PROC) {
                         ENV.addProc(par.value)
                         break;
                     }
-                    croak("DEF without FN",line)
+                  if (par.type=="var" && par.value=="struct") {
+                      //def proc
+                      tokens.shift()
+                      par = tokens.shift(); //struct name
+
+                      if (ENV.structs[par.value]) croak("Structure is already defined",line)
+
+                      var structure = [];
+                      var bytes=0;
+                      while(tokens.length) {
+                        var sname = tokens.shift();
+                        if (!isPunc("(")) croak("Syntax error: element(type)",line)
+                        var stype=tokens.shift();
+                        if (!isPunc(")")) croak("Syntax error: element(type)",line)
+                        if (tokens.length && !isPunc(",")) croak("Syntax error: comma is missing",line)
+                        structure.push({name:sname.value,type:stype.value,offset:bytes})
+                        if (stype.value=="int") bytes+=2;
+                        if (stype.value=="str") bytes+=2;
+                      }
+                      structure.push({name:null,type:null,offset:bytes})
+
+                      //console.log(par.value,structure)
+                      ENV.addStruct(par.value,structure)
+                      break;
+                  }
+                  croak("DEF without an usable entity",line)
                     break;
                 case "ramtop":
                     par = tokens[0];
@@ -829,7 +885,8 @@ var generator = function(basic, CFG, PROC) {
                     }
                     if (epar.type!=="assign") croak("LET should assign",line)
                     par = epar.left
-            if (par.type!="var" && par.type!="var[]" && par.type!="var$" && par.type!="slice$") croak("No variable name",line)
+                    //console.log(epar)
+                    if (par.type!="var" && par.type!="var[]" && par.type!="var$" && par.type!="slice$" && par.type!="var.") croak("No variable name",line)
                     if (par.type=="var$") {
                         ENV.addVar(par.value,"str")
                         ENV.addUse("__heap")
@@ -842,8 +899,8 @@ var generator = function(basic, CFG, PROC) {
                     }
                     ex = epar.right
                     et = exprType(ex,line);
-            out+=exprAsm(ex,line,et);
-            if (par.type=="var") {
+                    out+=exprAsm(ex,line,et);
+                    if (par.type=="var") {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         ENV.addVar(par.value,"int")
                         out+=CFG.asm.storeInt(par.value);
@@ -851,7 +908,22 @@ var generator = function(basic, CFG, PROC) {
                             par = multiassign.pop()
                             out+=CFG.asm.storeInt(par.value);
                         }
-            } else if (par.type=="var[]") {
+                    } else if (par.type=="var.") {
+                      var structName = ENV.staticstructs[par.value];
+                      if (!structName) croak("Not a static struct",line)
+                      var struct = ENV.structs[structName];
+                      if (!struct) croak("Structure not defined",line)
+                      var el = struct.filter(function(v){return v.name==par.index})
+                      if (!el) croak("Struct member not defined",line)
+                      el = el[0]
+                      if (et!=el.type) croak("Cannot assign this (type mismatch)",line)
+                      //ENV.addVar(par.value,"int")
+                      out+=CFG.asm.storeIntOffset(par.value,el.offset);
+                      while(multiassign.length) {
+                          par = multiassign.pop()
+                          out+=CFG.asm.storeIntOffset(par.value,el.offset);
+                      }
+                  } else if (par.type=="var[]") {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         if (!ENV.intarr[par.value])  croak("You have to DIM array first",line)
                         if (par.index.type=="num" && par.index.value>=ENV.intarr[par.value]) croak("Index out of bound",line)
@@ -862,13 +934,13 @@ var generator = function(basic, CFG, PROC) {
                         } else {
                             out += CFG.asm.storeA(par,line,et,ENV,exprAsm);
                         }
-            } else if (par.type=="var$") {
+                    } else if (par.type=="var$") {
                         if (et!="str") croak("Cannot assign this to string variable",line)
                         out+=CFG.asm.storeStr(par.value)
-            } else if (par.type=="slice$") {
+                    } else if (par.type=="slice$") {
                         if (et!="str") croak("Cannot assign this to string slice",line)
                         out+=CFG.asm.storeSlice(par.value,par,line,ENV,exprAsm)
-            }
+                    }
                     break;
                 case "poke":
                     //addr
