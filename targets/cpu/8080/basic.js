@@ -33,19 +33,19 @@ var BASIC = {
             varL: function(expr,line) {
                 return ";[*DD*]\n\tXCHG\n\tLHLD v_"+expr.value+"\n\tXCHG\n"
             },
-            varStruct: function(expr,line,ENV) {
+            varStruct: function(expr,line,ENV,croak) {
               var stype = ENV.staticstructs[expr.value];
               var struct = ENV.structs[stype];
               var el = struct.filter(function(v){return v.name==expr.index})
-              if (!el) croak ("No such struct member variable",line)
+              if (!el) croak("No such struct member variable",line)
               if(el[0].offset) return "\tLHLD vss_"+expr.value+"+"+el[0].offset+"\n"
               return "\tLHLD vss_"+expr.value+"\n"
             },
-            varStructL: function(expr,line,ENV) {
+            varStructL: function(expr,line,ENV,croak) {
               var stype = ENV.staticstructs[expr.value];
               var struct = ENV.structs[stype];
               var el = struct.filter(function(v){return v.name==expr.index})
-              if (!el) croak ("No such struct member variable",line)
+              if (!el) croak("No such struct member variable",line)
               if(el[0].offset) return ";[*DD*]\n\tXCHG\n\tLHLD vss_"+expr.value+"+"+el[0].offset+"\n\tXCHG\n"
               return ";[*DD*]\n\tXCHG\n\tLHLD vss_"+expr.value+"\n\tXCHG\n"
             },
@@ -56,7 +56,7 @@ var BASIC = {
                 }
                 return "\tLXI H,v_"+expr.value+"\n"
             },
-            varIndirectL: function(expr,line) {
+            varIndirectL: function(expr,line,offset) {
                 if (expr.varType=="str") return ";[*DD*]\n\tXCHG\n\tLHLD vs_"+expr.value+"\n\tXCHG\n" //pointer to the string itself
                 if (offset!==undefined) {
                   return "[*DD*]\n\tLXI D,vss_"+expr.value+"+"+offset+"\n"

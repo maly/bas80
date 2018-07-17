@@ -82,8 +82,9 @@
     var varAsm = function() {
         var out = ""
         var k;
+        var type,size;
         for(k in ENV.vars) {
-            var type = ENV.vars[k];
+            type = ENV.vars[k];
             var name = k.split("_")[0]
             switch (type) {
                 case "int":
@@ -104,13 +105,13 @@
             }
         }
         for(k in ENV.intarr) {
-            var size = ENV.intarr[k];
+            size = ENV.intarr[k];
             out +="vai_"+k+":\t DS "+(2*size)+"\n";
         }
         for(k in ENV.staticstructs) {
-          var type = ENV.staticstructs[k];
+          type = ENV.staticstructs[k];
           var metas = ENV.structs[type];
-          var size = metas[metas.length-1].offset
+          size = metas[metas.length-1].offset
           out +="vss_"+k+":\t DS "+(size)+"\n";
       }
       return out
@@ -291,11 +292,11 @@ var generator = function(basic, CFG, PROC) {
         }
         if (type=="var." && !left) {
           if (!ENV.staticstructs[expr.value])  croak("You have to DIM structure first",line)
-          return CFG.xp.varStruct(expr,line,ENV)
+          return CFG.xp.varStruct(expr,line,ENV,croak)
         }
         if (type=="var." && left) {
           if (!ENV.staticstructs[expr.value])  croak("You have to DIM structure first",line)
-          return CFG.xp.varStructL(expr,line,ENV)
+          return CFG.xp.varStructL(expr,line,ENV,croak)
         }
         if (type=="var" && left) {
             ENV.addVar(expr.value,"int")
