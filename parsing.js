@@ -128,8 +128,12 @@ var expr = function(tokens, ln, bool) {
             //expectPunctuation("[");
             ex = expr(tokens,ln,bool)
             //console.log(ex)
-            if (ex.type!="var" && ex.type!="var[]" && ex.type!="var$" && ex.type!="str") croak("You cannot get pointer to this!",ln)
-            et = exprType(ex,ln);
+            if (ex.type!="var" && ex.type!="var." && ex.type!="var[]" && ex.type!="var$" && ex.type!="str") croak("You cannot get pointer to this!",ln)
+            if (ex.type=="var.") {
+              et="int"
+            } else {
+              et = exprType(ex,ln);
+            }
             //console.log(ex,et)
             expectPunctuation("]");
             return {type:"ptr",value:ex.value,varType:et,ex:ex}

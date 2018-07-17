@@ -49,12 +49,18 @@ var BASIC = {
               if(el[0].offset) return ";[*DD*]\n\tXCHG\n\tLHLD vss_"+expr.value+"+"+el[0].offset+"\n\tXCHG\n"
               return ";[*DD*]\n\tXCHG\n\tLHLD vss_"+expr.value+"\n\tXCHG\n"
             },
-            varIndirect: function(expr,line) {
+            varIndirect: function(expr,line,offset) {
                 if (expr.varType=="str") return "\tLHLD H,vs_"+expr.value+"\n" //pointer to the string itself
+                if (offset!==undefined) {
+                  return "\tLXI H,vss_"+expr.value+"+"+offset+"\n"
+                }
                 return "\tLXI H,v_"+expr.value+"\n"
             },
             varIndirectL: function(expr,line) {
                 if (expr.varType=="str") return ";[*DD*]\n\tXCHG\n\tLHLD vs_"+expr.value+"\n\tXCHG\n" //pointer to the string itself
+                if (offset!==undefined) {
+                  return "[*DD*]\n\tLXI D,vss_"+expr.value+"+"+offset+"\n"
+                }
                 return ";[*DD*]\n\tLXI D,v_"+expr.value+"\n"
             },
             varS: function(expr,line) {

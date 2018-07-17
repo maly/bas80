@@ -254,7 +254,16 @@ var generator = function(basic, CFG, PROC) {
         }
     }
 
-
+    var getStructItemOffset = function (varName,varIndex,line){
+      var structName = ENV.staticstructs[varName];
+      if (!structName) croak("Not a static struct",line)
+      var struct = ENV.structs[structName];
+      if (!struct) croak("Structure not defined",line)
+      if (varIndex=="") return {offset:0};
+      var el = struct.filter(function(v){return v.name==varIndex})
+      if (!el) croak("Struct member not defined",line)
+      return el[0]
+    }
     //CFG.ENV = ENV
     var exprAsm = function(expr,line,etype,left) {
       var cs
@@ -305,6 +314,12 @@ var generator = function(basic, CFG, PROC) {
                     return CFG.xp.varAIIndirect(expr,line)
                 }
                 return CFG.xp.varAIndirect(expr,line,ENV, exprAsm);
+            }
+            //console.log(expr.ex)
+            if (expr.ex.type=="var.") {
+             // console.log(expr.ex)
+              var el= getStructItemOffset(expr.ex.value,expr.ex.index,line)
+              return CFG.xp.varIndirect(expr,line,el.offset);
             }
             ENV.addVar(expr.value,expr.varType)
             return CFG.xp.varIndirect(expr,line)
@@ -916,6 +931,7 @@ var generator = function(basic, CFG, PROC) {
                             out+=CFG.asm.storeInt(par.value);
                         }
                     } else if (par.type=="var.") {
+                      /*
                       var structName = ENV.staticstructs[par.value];
                       if (!structName) croak("Not a static struct",line)
                       var struct = ENV.structs[structName];
@@ -923,6 +939,8 @@ var generator = function(basic, CFG, PROC) {
                       var el = struct.filter(function(v){return v.name==par.index})
                       if (!el) croak("Struct member not defined",line)
                       el = el[0]
+                      */
+                      var el = getStructItemOffset(par.value,par.index,line)
                       var cast = false;
                       if (el.type=="byte") {
                         el.type="int";
