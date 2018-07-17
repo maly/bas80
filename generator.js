@@ -639,6 +639,7 @@ var generator = function(basic, CFG, PROC) {
                         if (!isPunc(")")) croak("Syntax error: element(type)",line)
                         if (tokens.length && !isPunc(",")) croak("Syntax error: comma is missing",line)
                         structure.push({name:sname.value,type:stype.value,offset:bytes})
+                        if (stype.value=="byte") bytes+=1;
                         if (stype.value=="int") bytes+=2;
                         if (stype.value=="str") bytes+=2;
                       }
@@ -899,7 +900,13 @@ var generator = function(basic, CFG, PROC) {
                     }
                     ex = epar.right
                     et = exprType(ex,line);
+                    //console.log(et)
+
                     out+=exprAsm(ex,line,et);
+                    if (et=="byte") {
+                      et="int"
+                      out+="\tMVI H,0\n"; //cast byte to int
+                    }
                     if (par.type=="var") {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         ENV.addVar(par.value,"int")
@@ -916,12 +923,17 @@ var generator = function(basic, CFG, PROC) {
                       var el = struct.filter(function(v){return v.name==par.index})
                       if (!el) croak("Struct member not defined",line)
                       el = el[0]
+                      var cast = false;
+                      if (el.type=="byte") {
+                        el.type="int";
+                        cast = true;
+                      }
                       if (et!=el.type) croak("Cannot assign this (type mismatch)",line)
                       //ENV.addVar(par.value,"int")
-                      out+=CFG.asm.storeIntOffset(par.value,el.offset);
+                      out+=CFG.asm.storeIntOffset(par.value,el.offset,cast);
                       while(multiassign.length) {
                           par = multiassign.pop()
-                          out+=CFG.asm.storeIntOffset(par.value,el.offset);
+                          out+=CFG.asm.storeIntOffset(par.value,el.offset,cast);
                       }
                   } else if (par.type=="var[]") {
                         if (et!="int") croak("Cannot assign this to int variable",line)

@@ -329,7 +329,10 @@ var BASIC = {
             storeInt: function(name) {
                 return "\tSHLD v_"+name+"\n"
             },
-            storeIntOffset: function(name,offset) {
+            storeIntOffset: function(name,offset,cast) {
+              if (cast) {
+                return "\tMOV A,L\n\tSTA vss_"+name+"+"+offset+"\n"
+              }
               return "\tSHLD vss_"+name+"+"+offset+"\n"
             },
             storeStr: function(name) {
