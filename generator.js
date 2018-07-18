@@ -331,6 +331,7 @@ var generator = function(basic, CFG, PROC) {
             return CFG.xp.varL(expr,line)
         }
         if (type=="ptr" && !left) {
+          //console.log(expr)
             if (expr.ex.type=="str") {
                 cs=ENV.addStr(expr.value);
                 return CFG.xp.str(expr,line,cs);
@@ -350,8 +351,10 @@ var generator = function(basic, CFG, PROC) {
               var el= getStructItemOffset(expr.ex.value,expr.ex.index,line)
               return CFG.xp.varIndirect(expr,line,el.offset);
             }
-            ENV.addVar(expr.value,expr.varType)
-            return CFG.xp.varIndirect(expr,line)
+            if (expr.ex.type=="var") {
+              ENV.addVar(expr.value,expr.varType)
+              return CFG.xp.varIndirect(expr,line)
+            }
         }
         if (type=="ptr" && left) {
             if (expr.ex.type=="str") {
@@ -428,6 +431,12 @@ var generator = function(basic, CFG, PROC) {
                 if (target===null) croak("Target line not found",line)
                return CFG.xp.userfn(expr,line,ENV,exprAsm, target)
             }
+            if(expr.value=="lptr") {
+              var target = findLabel(expr.operands[0].value,labels)
+              if (!target) croak("LPTR needs a valid line label",line)
+              console.log(target)
+              return CFG.xp.num({type:"num",value:"CMD"+target},line)
+            }
             return CFG.xp.fn(expr,line,ENV,exprAsm, LIB);
         }
         if (type=="fn" && left) {
@@ -439,7 +448,12 @@ var generator = function(basic, CFG, PROC) {
                 if (target===null) croak("Target line not found",line)
                return CFG.xp.userfnL(expr,line,ENV,exprAsm, target)
             }
-
+            if(expr.value=="lptr") {
+              var target = findLabel(expr.operands[0].value,labels)
+              if (!target) croak("LPTR needs a valid line label",line)
+              console.log(target)
+              return CFG.xp.numL({type:"num",value:"CMD"+target},line)
+            }
             return CFG.xp.fnL(expr,line,ENV,exprAsm, LIB);
         }
         croak("Cannot evaluate "+JSON.stringify(expr),line)

@@ -370,6 +370,10 @@ Returns the ASCII code of the first character in a string.
 
 Returns upper / lower byte of int
 
+### int LPTR(label)
+
+Gets a pointer to the given label (pointer lead to a code area!)
+
 ## Pointers
 
 You can getg a pointer (an unsigned int) to a variable, an array, a string variable or a string constant. Use angle braces around the element, e.g. `LET a = [b]` to get an address to a memory place where the B variable resides.

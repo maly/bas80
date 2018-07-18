@@ -23,6 +23,7 @@ var ARITY = {
     "dpeek":["int"],
     "sgn":["int"],
     "rnd":[],
+    "lptr":["int"],
     "len":["str"],
     "asc":["str"],
     "val":["str"],
