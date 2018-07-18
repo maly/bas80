@@ -395,6 +395,8 @@ Lets assume that `ptr` is a pointer to the first member of a structure. E.g.`LET
 
 `LET ptr{key} = ptr{key} + 5` - structure pointer can be used on a both sides of an assign.
 
+*WARNING!* Structure pointers has no checks! If you use a pointer to an invalid area, results will be unpredictable and it can crash or destroy data!
+
 ## String slices
 
 String variable can be "sliced" (like with LEFT$, MID$, RIGHT$), but in a more flexible way. Just use the string slice syntax as described below.
