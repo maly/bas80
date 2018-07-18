@@ -265,6 +265,22 @@ var generator = function(basic, CFG, PROC) {
       if (!el) croak("Struct member not defined",line)
       return el[0]
     }
+
+    var getStructMember = function(struct,member) {
+      if (struct) {
+        return ENV.structs[struct].filter(function(v){return v.name==member})
+      }
+      //struct name not given
+      var gsm = null;
+      for(var sn in ENV.structs) {
+        var el = getStructMember(sn,member);
+        //console.log(el)
+        if (!el || el.length===0) continue;
+        if (gsm) croak("Cannot decide which struct should be used for "+member,line)
+        gsm=el;
+      }
+      return gsm;
+    }
     //CFG.ENV = ENV
     var exprAsm = function(expr,line,etype,left) {
       var cs
@@ -297,6 +313,18 @@ var generator = function(basic, CFG, PROC) {
         if (type=="var." && left) {
           if (!ENV.staticstructs[expr.value])  croak("You have to DIM structure first",line)
           return CFG.xp.varStructL(expr,line,ENV,croak)
+        }
+        if (type=="var{}" && !left) {
+          var member = getStructMember(expr.struct,expr.member)
+          if (!member) croak("Invalid struct pointer",line)
+          var el=member[0]
+          return CFG.xp.varStructPointer(expr,el,line,ENV,croak)
+        }
+        if (type=="var{}" && left) {
+          var member = getStructMember(expr.struct,expr.member)
+          if (!member) croak("Invalid struct pointer",line)
+          var el=member[0]
+          return CFG.xp.varStructPointerL(expr,el,line,ENV,croak)
         }
         if (type=="var" && left) {
             ENV.addVar(expr.value,"int")
@@ -903,7 +931,7 @@ var generator = function(basic, CFG, PROC) {
                     if (epar.type!=="assign") croak("LET should assign",line)
                     par = epar.left
                     //console.log(epar)
-                    if (par.type!="var" && par.type!="var[]" && par.type!="var$" && par.type!="slice$" && par.type!="var.") croak("No variable name",line)
+                    if (par.type!="var" && par.type!="var[]" && par.type!="var{}" && par.type!="var$" && par.type!="slice$" && par.type!="var.") croak("No variable name",line)
                     if (par.type=="var$") {
                         ENV.addVar(par.value,"str")
                         ENV.addUse("__heap")
@@ -932,28 +960,32 @@ var generator = function(basic, CFG, PROC) {
                             out+=CFG.asm.storeInt(par.value);
                         }
                     } else if (par.type=="var.") {
-                      /*
-                      var structName = ENV.staticstructs[par.value];
-                      if (!structName) croak("Not a static struct",line)
-                      var struct = ENV.structs[structName];
-                      if (!struct) croak("Structure not defined",line)
-                      var el = struct.filter(function(v){return v.name==par.index})
-                      if (!el) croak("Struct member not defined",line)
-                      el = el[0]
-                      */
                       var el = getStructItemOffset(par.value,par.index,line)
                       var cast = false;
                       if (el.type=="byte") {
-                        el.type="int";
+                        //el.type="int";
                         cast = true;
                       }
-                      if (et!=el.type) croak("Cannot assign this (type mismatch)",line)
+                      if (et!=el.type && (cast && et!="int")) croak("Cannot assign this (type mismatch)",line)
                       //ENV.addVar(par.value,"int")
                       out+=CFG.asm.storeIntOffset(par.value,el.offset,cast);
                       while(multiassign.length) {
                           par = multiassign.pop()
                           out+=CFG.asm.storeIntOffset(par.value,el.offset,cast);
                       }
+                    } else if (par.type=="var{}") {
+                      var member = getStructMember(par.struct,par.member)
+                      if (!member) croak("Invalid struct pointer",line)
+                      el=member[0]
+                      var cast = false;
+                      if (el.type=="byte") {
+                        cast = true;
+                      }
+                      //et = member[0].type;
+                      if (et!=el.type && (cast && et!="int")) croak("Cannot assign this (type mismatch)",line)
+                      console.log(par.value,el.offset,cast)
+                      out+=CFG.asm.storeIntOffsetPointer(par.value,el.offset,cast);
+
                   } else if (par.type=="var[]") {
                         if (et!="int") croak("Cannot assign this to int variable",line)
                         if (!ENV.intarr[par.value])  croak("You have to DIM array first",line)
@@ -1020,14 +1052,14 @@ var generator = function(basic, CFG, PROC) {
                     break
 
                 case "for":
-            par = tokens.shift();
-            if (par.type!="var") croak("No usable variable name",line)
-            next = tokens.shift();
-            if (next.type!="op" || next.value!="=") croak("FOR without an initial assignment",line)
-                    var exi = expr(tokens,line);
-                    var eti = exprType(exi,line);
+                    par = tokens.shift();
+                    if (par.type!="var") croak("No usable variable name",line)
                     next = tokens.shift();
-            if (next.type!="kw" || next.value!="to") croak("FOR without TO",line)
+                    if (next.type!="op" || next.value!="=") croak("FOR without an initial assignment",line)
+                            var exi = expr(tokens,line);
+                            var eti = exprType(exi,line);
+                            next = tokens.shift();
+                    if (next.type!="kw" || next.value!="to") croak("FOR without TO",line)
 
                     var limit = "ex"
                     ex = expr(tokens,line);

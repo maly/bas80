@@ -63,6 +63,10 @@ var exprType = function(expr,ln) {
       var t = findStructElement(expr.index)
       if (t) return t
     }
+    if (type=="var{}") {
+      var t = findStructElement(expr.member)
+      if (t) return t
+    }
     if (type=="ptr") {
         return "int"
     }
@@ -137,6 +141,15 @@ var expr = function(tokens, ln, bool) {
             //console.log(ex,et)
             expectPunctuation("]");
             return {type:"ptr",value:ex.value,varType:et,ex:ex}
+        }
+
+        if (n.type=="var" && tokens.length && tokens[0].type=="punc" && tokens[0].value=="{") {
+          //it should be an struct denominator
+          tokens.shift();
+          ex = tokens.shift().value.split(".");
+          expectPunctuation("}")
+          if (ex.length==1) {return {type:"var{}",value:n.value,struct:null,member:ex[0]}}
+          return {type:"var{}",value:n.value,struct:ex[0],member:ex[1]}
         }
 
         if (n.type=="var" && tokens.length && tokens[0].type=="punc" && tokens[0].value=="(") {

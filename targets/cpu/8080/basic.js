@@ -49,6 +49,30 @@ var BASIC = {
               if(el[0].offset) return ";[*DD*]\n\tXCHG\n\tLHLD vss_"+expr.value+"+"+el[0].offset+"\n\tXCHG\n"
               return ";[*DD*]\n\tXCHG\n\tLHLD vss_"+expr.value+"\n\tXCHG\n"
             },
+            varStructPointer: function(expr,el,line,ENV,croak) {
+              var out="\tLHLD v_"+expr.value+"\n"
+              if(el.offset) {
+                out+="\tLXI B,"+el.offset+"\n\tDAD B\n"
+              }
+              if (el.type=="byte") {
+                out+="\tMOV L,M\n"
+              } else {
+                out+="\tMOV A,M\n\tINX H\n\tMOV H,M\n\tMOV L,A\n"
+              }
+              return out
+            },
+            varStructPointerL: function(expr,el,line,ENV,croak) {
+              var out="[*DD*]\n\tPUSH H\n\tLHLD v_"+expr.value+"\n"
+              if(el.offset) {
+                out+="\tLXI B,"+el.offset+"\n\tDAD B\n"
+              }
+              if (el.type=="byte") {
+                out+="\tMOV L,M\n"
+              } else {
+                out+="\tMOV A,M\n\tINX H\n\tMOV H,M\n\tMOV L,A\n"
+              }
+              return out+"\tXCHG\n\tPOP H\n"
+            },
             varIndirect: function(expr,line,offset) {
                 if (expr.varType=="str") return "\tLHLD H,vs_"+expr.value+"\n" //pointer to the string itself
                 if (offset!==undefined) {
@@ -340,6 +364,25 @@ var BASIC = {
                 return "\tMOV A,L\n\tSTA vss_"+name+"+"+offset+"\n"
               }
               return "\tSHLD vss_"+name+"+"+offset+"\n"
+            },
+            storeIntOffsetPointer: function(name,offset,cast) {
+              var out="\tXCHG\n\tLHLD v_"+name+"\n"
+              if(offset>0) {
+                if (offset<4) {
+                  while(offset>0) {
+                    out+="\tINX H\n";
+                    offset--
+                  }
+                } else {
+                  out+="\tLXI B,"+offset+"\n\tDAD B\n"
+                }
+              }
+              if (cast) {
+                out+="\tMOV M,E\n"
+              } else {
+                out+="\tMOV M,E\n\tINX H\n\tMOV M,D\n"
+              }
+              return out
             },
             storeStr: function(name) {
                 return "\tSHLD vs_"+name+"\n\tCALL hp_assign\n\tcall hp_gc\n"

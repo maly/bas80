@@ -349,6 +349,52 @@ Returns upper / lower byte of int
 
 You can getg a pointer (an unsigned int) to a variable, an array, a string variable or a string constant. Use angle braces around the element, e.g. `LET a = [b]` to get an address to a memory place where the B variable resides.
 
+## Structures
+
+### DEF STRUCT member[,member...]
+
+Member is a record in the form name(type), e.g. value(int) or name(str). Structures can use a "byte" type. It takes only one byte. The order of struct members is preserved. E.g. structure defined by `def struct mydata key(int),value(int),flag(byte)` has following footprint:
+
+key: bytes 0, 1
+value: bytes 2, 3
+flag: byte 4
+
+and it is 5 bytes long.
+
+Structure has to be declared before its first use!
+
+### DIM structure variable[,variable...]
+
+Allocates memory for given struct type in a static memory area. `DIM mydata a,b,c` allocates three areas, 5 bytes each, for three structured variable, named a, b and c
+
+Static structure has to be dimensed before its first use!
+
+### Structure element access
+
+Use dot notation as in other languages, e.g. a.key, b.value, ... You can use this notation in expression and in LET command:
+
+`LET a.key = 15`
+
+`LET n = a.value * 3`
+
+### Structure pointers
+
+You can get a pointer to structure member by [] notation, see above. So:
+
+`LET ptr = [a.key]` assign pointer to member `key` of structure `a`.
+
+`LET ptr = [a.]` is a syntactic sugar - takes a pointer to the first structure member.
+
+### Work with structure pointers
+
+Lets assume that `ptr` is a pointer to the first member of a structure. E.g.`LET ptr = [c.]`. Now you can work with member values by a curly braces notation:
+
+`PRINT ptr{mydata.value}` takes a variable "ptr" and it assume that ptr contains a pointer to some structure of type `mydata`. Then prints a `value` member (in fact, it takes bytes 2 and 3).
+
+`PRINT ptr{value}` is a shorthand form, but it assumes that there is a only one structure with member named "value". If there are more than one structure with a "value" member, it throws an error.
+
+`LET ptr{key} = ptr{key} + 5` - structure pointer can be used on a both sides of an assign.
+
 ## String slices
 
 String variable can be "sliced" (like with LEFT$, MID$, RIGHT$), but in a more flexible way. Just use the string slice syntax as described below.
