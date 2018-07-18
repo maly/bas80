@@ -62,7 +62,7 @@ var BASIC = {
               return out
             },
             varStructPointerL: function(expr,el,line,ENV,croak) {
-              var out="[*DD*]\n\tPUSH H\n\tLHLD v_"+expr.value+"\n"
+              var out=";[*DD*]\n\tPUSH H\n\tLHLD v_"+expr.value+"\n"
               if(el.offset) {
                 out+="\tLXI B,"+el.offset+"\n\tDAD B\n"
               }
@@ -83,7 +83,7 @@ var BASIC = {
             varIndirectL: function(expr,line,offset) {
                 if (expr.varType=="str") return ";[*DD*]\n\tXCHG\n\tLHLD vs_"+expr.value+"\n\tXCHG\n" //pointer to the string itself
                 if (offset!==undefined) {
-                  return "[*DD*]\n\tLXI D,vss_"+expr.value+"+"+offset+"\n"
+                  return ";[*DD*]\n\tLXI D,vss_"+expr.value+"+"+offset+"\n"
                 }
                 return ";[*DD*]\n\tLXI D,v_"+expr.value+"\n"
             },
