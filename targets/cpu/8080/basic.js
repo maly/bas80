@@ -516,7 +516,12 @@ var BASIC = {
                 return out;
             },
 
-
+            readptr: function() {
+              return "\tLHLD datapoint\n"
+            },
+            setptr: function() {
+              return "\tXCHG\n\tLHLD datapoint\n\tDAD D\n\tDAD D\n\tSHLD datapoint\n"
+            },
             poke: function(addr,addrT,value,valueT,exprAsm,line) {
                 var out=""
                 if (value.type!="num") {

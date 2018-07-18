@@ -125,6 +125,31 @@ The essential loop in BASIC.
 
 Next iteration for the FOR loop.
 
+### DATA value[,value...]
+
+Define some data and store them into memory
+
+### READ variable[,variable...]
+
+Reads some data from DATAs
+
+### RESTORE label
+
+Set pointer for READ to the first line with DATA after given label
+
+### READPTR variable, N
+
+Store actual DATA pointer into a variable and move pointer forward by N items.
+
+```
+READPTR object, 4
+...
+sprite:
+DATA 1,2,4,4
+sprite2:
+DATA 10,11,15,27
+```
+
 ### REPEAT
 
 The begin of REPEAT - UNTIL loop

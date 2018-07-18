@@ -646,6 +646,22 @@ var generator = function(basic, CFG, PROC) {
                         if (!isPunc(",")) croak("Separate names with a comma",line)
                     }
                     break;
+                case "readptr":
+                    ex = isVar()
+                    if (!ex) croak("READPTR needs a variable name",line)
+                    if (!isPunc(",")) croak("READPTR needs two parameters",line)
+                    ex2 = expr(tokens,line)
+                    if (ex.type=="var") {
+                        //console.log(ex,ex2)
+
+                        ENV.addVar(ex.value,"int")
+                        out+=CFG.asm.readptr(line);
+                        out+=CFG.asm.storeInt(ex.value,line)
+                        if (ex2.type=="num" && ex2.value===0) break;
+                        out+=exprAsm(ex2,line,"int")
+                        out+=CFG.asm.setptr(line);
+                    }
+                    break;
                 case "def":
                     par = tokens[0];
                     if (par.type=="fn" && par.value=="fn") {
