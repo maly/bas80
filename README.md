@@ -374,6 +374,11 @@ Returns upper / lower byte of int
 
 Gets a pointer to the given label (pointer lead to a code area!)
 
+### int DPTR(label)
+
+Gets a pointer to the first DATA after the given label (pointer lead to a data area!)
+
+
 ## Pointers
 
 You can getg a pointer (an unsigned int) to a variable, an array, a string variable or a string constant. Use angle braces around the element, e.g. `LET a = [b]` to get an address to a memory place where the B variable resides.

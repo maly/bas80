@@ -434,8 +434,12 @@ var generator = function(basic, CFG, PROC) {
             if(expr.value=="lptr") {
               var target = findLabel(expr.operands[0].value,labels)
               if (!target) croak("LPTR needs a valid line label",line)
-              console.log(target)
               return CFG.xp.num({type:"num",value:"CMD"+target},line)
+            }
+            if(expr.value=="dptr") {
+              var target = findLabel(expr.operands[0].value,labels)
+              if (!target) croak("DPTR needs a valid line label",line)
+              return CFG.xp.num({type:"num",value:"dt_"+expr.operands[0].value},line)
             }
             return CFG.xp.fn(expr,line,ENV,exprAsm, LIB);
         }
@@ -451,8 +455,12 @@ var generator = function(basic, CFG, PROC) {
             if(expr.value=="lptr") {
               var target = findLabel(expr.operands[0].value,labels)
               if (!target) croak("LPTR needs a valid line label",line)
-              console.log(target)
               return CFG.xp.numL({type:"num",value:"CMD"+target},line)
+            }
+            if(expr.value=="dptr") {
+              var target = findLabel(expr.operands[0].value,labels)
+              if (!target) croak("DPTR needs a valid line label",line)
+              return CFG.xp.numL({type:"num",value:"dt_"+expr.operands[0].value},line)
             }
             return CFG.xp.fnL(expr,line,ENV,exprAsm, LIB);
         }
