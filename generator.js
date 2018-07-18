@@ -207,6 +207,13 @@ var ENV= {
         }
         ENV.datas.push("\t DW "+s+"\n")
     },
+    addDataB:function(s,label) {
+      if (label) {
+          ENV.datas.push("dt_"+label+":\n");
+          ENV.datalabels.push(label)
+      }
+      ENV.datas.push("\t DB "+s+"\n")
+    },
     uses:[],
     addUse:function(s) {
         if (ENV.uses.indexOf(s)<0) {
@@ -622,6 +629,21 @@ var generator = function(basic, CFG, PROC) {
                       } else if (par.type=="str") {
                           //console.log(par.value,label)
                           ENV.addData("cs_"+ENV.addStr(par.value),label)
+                          if(!isPunc(",")) break
+                      } else {
+                          croak("Invalid data",line)
+                      }
+                      label = null;
+                      par = tokens.shift()
+                    }
+                    break;
+                case "byte":
+                    var label = line.label
+                    par = tokens.shift()
+                    while(par) {
+                      if (par.type=="num") {
+                          //console.log(par.value,label)
+                          ENV.addDataB(par.value,label)
                           if(!isPunc(",")) break
                       } else {
                           croak("Invalid data",line)

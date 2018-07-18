@@ -150,6 +150,10 @@ sprite2:
 DATA 10,11,15,27
 ```
 
+### BYTE value[,value...]
+
+A non-standard DATA equivalent. Given values are stored as a byte (not two bytes like standard data). So it's not suitable for READ etc. Its aim is to DPTR function to have a method for defining some data tables.
+
 ### REPEAT
 
 The begin of REPEAT - UNTIL loop
