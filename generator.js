@@ -528,6 +528,7 @@ var generator = function(basic, CFG, PROC) {
     for(var i=0;i<basic.length;i++) {
       var par,next;
       var line = basic[i];
+      basic[i]._index = i;
       out+="CMD"+i+":\n"
       if (line._skip) {
             while (ifskip.length) {
@@ -1083,6 +1084,23 @@ var generator = function(basic, CFG, PROC) {
                     et2 = exprType(ex2,line);
                     out+=CFG.asm.dpoke(ex,et,ex2,et2,exprAsm,line)
                     break;
+
+                case "syscall":
+                    //addr
+                    ex = expr(tokens,line);
+                    et = exprType(ex,line);
+                    var parcall = [];
+                    while (tokens.length) {
+                      if (!isPunc(",")) croak("Syntax error",line);
+                      ex2 = expr(tokens,line);
+                      et2 = exprType(ex2,line);
+                      parcall.push([ex2,et2])
+                    }
+                    //value
+
+                    out+=CFG.asm.syscall(ex,et,parcall,exprAsm,line,croak)
+                    break;
+
 
                 case "out":
                     //addr

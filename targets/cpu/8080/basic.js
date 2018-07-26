@@ -563,7 +563,53 @@ var BASIC = {
                 }
                 return out;
             },
+            syscall: function(addr,addrT,parcall,exprAsm,line,croak) {
+              var out = "";
+              if (addr.type == "num") {
+                //out+="\tLXI H,"+addr+"\n"
+              } else {
+                out+="\tLXI H,sysc"+line._index+"\n"
+                out+="\tPUSH H\n"
+                out+=exprAsm(addr,line,addrT)
+                out+="\tPUSH H\n"
+              }
 
+              if (parcall.length==4) {
+                if (parcall[3][0].type=="num") {
+                  if ((parcall[3][0].value>255) || (parcall[3][0].value<-128)) croak("A value out of limit for the last argument",line)
+                  out+="\tMVI A,"+parcall[3][0].value+"\n"
+                } else {
+                  out+=exprAsm(parcall[3][0],line,parcall[3][1])
+                  out+="\tMOV A,L\n"
+                }
+              }
+              if (parcall.length>2) {
+                if (parcall[2][0].type=="num") {
+                  out+="\tLXI B,"+parcall[2][0].value+"\n"
+                } else {
+                  out+=exprAsm(parcall[2][0],line,parcall[2][1])
+                  out+="\tMOV B,H\n\tMOV C,L\n"
+                }
+              }
+              if (parcall.length>1) {
+                out+=exprAsm(parcall[1][0],line,parcall[1][1],true)
+              }
+              if (parcall.length>0) {
+                out+=exprAsm(parcall[0][0],line,parcall[0][1])
+              }
+
+              if (addr.type == "num") {
+                out+="\tCALL "+addr.value+"\n"
+              } else {
+                out+="\tRET ;fake CALL\n"
+                out+="sysc"+line._index+":\n"
+              }
+
+
+              //console.log(line)
+              return out;
+
+            },
             _forstep: function(loops) {
                 var out = "";
                 var step = loops[0][4];

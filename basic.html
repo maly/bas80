@@ -30,17 +30,11 @@
 </head>
 <body>
 <div id="editor">
-
-    def struct cosi key(int),value(int),flag(byte)
-    def struct block key(int)
-    dim cosi b,c,d
-    let c.flag=b.flag
-    let a=[b.]
-    n = a{value}
-    readptr x,4
-    let n = dptr(sprite)
-
-sprite:  data 10,11,12,15
+a=5
+syscall 100
+syscall 100,555,222,777
+syscall a
+syscall a,1024
 
 </div>
 
