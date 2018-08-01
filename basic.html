@@ -30,7 +30,6 @@
 </head>
 <body>
 <div id="editor">
-  [a] = 6
 a=5
 syscall 100
 syscall 100,555,222,777
@@ -100,7 +99,7 @@ var compile = function(){
 
     document.getElementById("out").value = (asm)}
     catch (e) {
-      console.log(e.message)
+      //console.log(e.message)
       var err = JSON.parse(e.message)
       //console.log(err)
       if (source) {

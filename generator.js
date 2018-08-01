@@ -216,6 +216,13 @@ var ENV= {
       }
       ENV.datas.push("\t DB "+s+"\n")
     },
+    syslabels:{},
+    lDef: function(label) {
+      if (!ENV.syslabels[label]) ENV.syslabels[label]=0;
+    },
+    lUse: function(label) {
+      ENV.syslabels[label]=1;
+    },
     uses:[],
     addUse:function(s) {
         if (ENV.uses.indexOf(s)<0) {
@@ -243,6 +250,7 @@ var generator = function(basic, CFG, PROC) {
     ENV.structs={}
     ENV.datas=[]
     ENV.datalabels=[]
+    ENV.syslabels={}
 
     var k;
 
@@ -443,6 +451,7 @@ var generator = function(basic, CFG, PROC) {
             if(expr.value=="lptr") {
               target = findLabel(expr.operands[0].value,labels)
               if (!target) croak("LPTR needs a valid line label",line)
+              ENV.lUse("CMD"+target)
               return CFG.xp.num({type:"num",value:"CMD"+target},line)
             }
             if(expr.value=="dptr") {
@@ -464,6 +473,7 @@ var generator = function(basic, CFG, PROC) {
             if(expr.value=="lptr") {
               target = findLabel(expr.operands[0].value,labels)
               if (!target) croak("LPTR needs a valid line label",line)
+              ENV.lUse("CMD"+target)
               return CFG.xp.numL({type:"num",value:"CMD"+target},line)
             }
             if(expr.value=="dptr") {
@@ -534,6 +544,7 @@ var generator = function(basic, CFG, PROC) {
       var line = basic[i];
       basic[i]._index = i;
       out+="CMD"+i+":\n"
+      ENV.lDef("CMD"+i);
       if (line._skip) {
             while (ifskip.length) {
                 out+="ELSKIP"+ifskip[0]+":\n"
@@ -549,18 +560,20 @@ var generator = function(basic, CFG, PROC) {
         out+="; "+cmd+"\n"
         switch(cmd) {
           case "goto":
-                    par = tokens[0];
+                    par = tokens.shift();
                     target = findLabel(par.value,labels);
                     if (target===null) croak("Target line not found",line)
+                    ENV.lUse("CMD"+target)
                     out+=CFG.asm.jmp("CMD"+target);
             break;
-                case "gosub":
-            par = tokens[0];
+          case "gosub":
+                    par = tokens.shift();
                     target = findLabel(par.value,labels);
                     if (target===null) croak("Target line not found",line)
+                    ENV.lUse("CMD"+target)
                     out+=CFG.asm.docall("CMD"+target);
             break;
-                case "return":
+          case "return":
                     if (tokens.length) {
                         //return expr.
                         ex = expr(tokens,line)
@@ -923,6 +936,7 @@ var generator = function(basic, CFG, PROC) {
                         out+=exprAsm(ex2,line,et2,true)
                     }
                     //console.log(ex,ex2)
+                    ENV.lUse("CMD"+target)
                     out+=CFG.asm.docall("CMD"+target)
 
                     break
@@ -941,6 +955,7 @@ var generator = function(basic, CFG, PROC) {
                             et = exprType(ex2,line);
                             out+=exprAsm(ex2,line,et2,true)
                         }
+                        ENV.lUse("CMD"+target)
                         out+=CFG.asm.docall("CMD"+target)
 
                         break
@@ -1503,6 +1518,13 @@ var generator = function(basic, CFG, PROC) {
 
     out +="\n\nHEAP EQU $\nRAMTOP EQU "+CFG.ramtop+"\nds RAMTOP-$\n\n"; //zapati
 
+    //console.log(ENV.syslabels)
+    for (k in ENV.syslabels) {
+      if (ENV.syslabels[k]===0) {
+        //console.log("remove",k+":\n")
+        out = out.replace(k+":\n","")
+      }
+    }
 
     return out;
 }
