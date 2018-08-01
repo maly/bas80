@@ -4,7 +4,7 @@
 
 The BASIC compiler for 8bit CPUs
 
-Version 0 - early alpha. Use on your own risk.
+Version 1 - beta. Use on your own risk.
 
 [A live compiler](https://maly.github.io/bas80/basic.html)
 
@@ -14,14 +14,26 @@ Version 0 - early alpha. Use on your own risk.
 - You can omit the line number, if it is not necessary
 - The output is compatible with ASM80 syntax
 - Case insensitive (you can write PRINT as well as print or Print)
-- label can be an integer ("line number") or string (ended with a colon, e.g. `hello:`)
+- Label can be an integer ("line number") or string (ended with a colon, e.g. `hello:`)
 - String slices (like a ZX Spectrum BASIC)
+- Data structures
+- Named subroutines
+- Pointers
+- Local variables (very limited)
+- Data push and pop (for recursion)
 
 ## Limitations:
 
 - Integer numbers only
 - Two bytes integer, i.e. -32768 to +32767
 - No computed GOTO, GOSUB
+
+## To do
+
+- Files
+- Graphics
+- Sound
+- Basic objects
 
 ## Commands:
 
