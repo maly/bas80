@@ -41,7 +41,7 @@ Version 1 - beta. Use on your own risk.
 ### LET var$ = string expression
 
 The LET keyword can be omitted.
-Multiple assignment is allowed, just use `LET var[,var,var...]=expr` Vars have to be scalar int
+Multiple assignment is allowed, just use `LET var[,var,var...]=expr`. Vars have to be scalar int for multiassignment
 
 
 ### PRINT
@@ -105,7 +105,6 @@ ELSE
  ... do something for a is not 10
 ENDIF
 ```
-
 
 ### ON expr GOTO l0[,l1...]
 
@@ -234,6 +233,8 @@ Array length has to be a constant, so no computed DIMs allowed!
 
 Sets the first unused addr to given constant expression. BASIC will not use any memory above the RAMTOP (stack is not affected)
 
+Should be used only once (It takes the last value, ramtop is not dynamic)
+
 ### TAKE var
 ### TAKE var1,var2
 ### FN(label,expr)
@@ -241,7 +242,7 @@ Sets the first unused addr to given constant expression. BASIC will not use any 
 ### PUSH var[,var...]
 ### POP var[,var...]
 
-This is an attempt to bring a FUNCTION concept into BASIC. Write function as a regular subroutine (like one for the GOSUB) and begin it with TAKE command.
+This is an attempt to bring a FUNCTION concept into BASIC. Yopu can write function as a regular subroutine (like one for the GOSUB) and begin it with TAKE command.
 
 TAKE takes one or two integers from calling environment and store them into given variables.
 FN() acts like a GOSUB - the first argument is a label (line number or string), the second argument (and the third, if given) acts like a parameters. They are passed to the subroutine. Subroutine can take them with the TAKE command.
@@ -342,7 +343,7 @@ myproc 5,10*a
 ```
 Of course you can use one label as FN and PROC.
 
-## FUNCTIONS
+## BUILT-IN FUNCTIONS
 
 ### int ABS (int)
 
@@ -401,7 +402,7 @@ Gets a pointer to the first DATA after the given label (pointer lead to a data a
 
 ## Pointers
 
-You can getg a pointer (an unsigned int) to a variable, an array, a string variable or a string constant. Use angle braces around the element, e.g. `LET a = [b]` to get an address to a memory place where the B variable resides.
+You can get a pointer (an unsigned int) to a variable, an array, a string variable or a string constant. Use angle braces around the element, e.g. `LET a = [b]` to get an address to a memory place where the B variable resides.
 
 ## Structures
 
@@ -443,7 +444,7 @@ You can get a pointer to structure member by [] notation, see above. So:
 
 Lets assume that `ptr` is a pointer to the first member of a structure. E.g.`LET ptr = [c.]`. Now you can work with member values by a curly braces notation:
 
-`PRINT ptr{mydata.value}` takes a variable "ptr" and it assume that ptr contains a pointer to some structure of type `mydata`. Then prints a `value` member (in fact, it takes bytes 2 and 3).
+`PRINT ptr{mydata.value}` takes a variable "ptr" and assumes that ptr contains a pointer to some structure of type `mydata`. Then prints a `value` member (in fact, it takes bytes 2 and 3).
 
 `PRINT ptr{value}` is a shorthand form, but it assumes that there is a only one structure with member named "value". If there are more than one structure with a "value" member, it throws an error.
 
