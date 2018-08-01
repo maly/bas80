@@ -188,9 +188,7 @@ Store two bytes to given address
 
 ### SYSCALL addr[,HL[,DE[,BC[,A]]]]
 
-System call invoke a subroutine at the given address. You can specify the contents for register pairs HL, DE, BC and A (8080-based and Z80-based systems only).
-
-
+System call invoke a subroutine at the given address. You can specify the contents for register pairs HL, DE, BC and A (8080-based and Z80-based systems only)
 
 ### OUT port,val
 
