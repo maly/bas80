@@ -46,6 +46,7 @@ var findStructElement = function(elName) {
 var exprType = function(expr,ln) {
     //var type = "undefined";
     var type = expr.type;
+    var t;
     if (type=="num") {
         return "int"
     }
@@ -62,11 +63,11 @@ var exprType = function(expr,ln) {
         return "str"
     }
     if (type=="var.") {
-      var t = findStructElement(expr.index)
+      t = findStructElement(expr.index)
       if (t) return t
     }
     if (type=="var{}") {
-      var t = findStructElement(expr.member)
+      t = findStructElement(expr.member)
       if (t) return t
     }
     if (type=="ptr") {
