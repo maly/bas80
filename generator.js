@@ -1422,6 +1422,8 @@ var generator = function(basic, CFG, PROC) {
 
             if (tokens.length) croak("Extra characters "+JSON.stringify(tokens), line)
 
+        } else {
+          croak("Line should start with a statement",line)
         }
 
 
