@@ -88,6 +88,8 @@ var compile = function(){
     //var ENGINE = "OMENALPHA"
     var ENGINE = "OMENCHARLIE"
 
+    try{
+
     var basic = parse(source)
 
 
@@ -96,7 +98,17 @@ var compile = function(){
 
     var asm = generator(basic,CONFIG[ENGINE],BASIC[CONFIG[ENGINE].cpu])
 
-    document.getElementById("out").value = (asm)
+    document.getElementById("out").value = (asm)}
+    catch (e) {
+      console.log(e.message)
+      var err = JSON.parse(e.message)
+      //console.log(err)
+      if (source) {
+        document.getElementById("out").value = "*** ERROR: "+err.error+"\nAt line "+err._numline+"\nCommand "+err._cmd+"\n\n"+err.source
+      } else {
+        document.getElementById("out").value = "*** PARSER ERROR: "+err.error+"\nAt line "+err._numline+"\nPosition "+err._cmd
+      }
+    }
 }
 
 compile()

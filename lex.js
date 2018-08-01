@@ -18,7 +18,7 @@ function InputStream(input) {
         return peek() == "";
     }
     function croak(msg) {
-        throw new Error(msg + " (" + line + ":" + col + ")");
+        throw new Error(JSON.stringify({source:"",error:msg,_numline:line,_cmd:col}));
     }
  }
 

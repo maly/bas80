@@ -36,7 +36,9 @@
     }
 
     var croak = function(msg,ln) {
-      throw new Error(msg + " ("+ln._numline+":"+ln._cmd+")");
+      ln.error = msg;
+      throw new Error(JSON.stringify(ln));
+      //throw new Error(msg + " ("+ln._numline+":"+ln._cmd+")", ln);
     }
 
 
