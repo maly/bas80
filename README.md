@@ -6,7 +6,7 @@ The BASIC compiler for 8bit CPUs
 
 Version 1 - beta. Use on your own risk.
 
-[A live compiler](https://maly.github.io/bas80/basic.html)
+[A live compiler](https://bas80.com/basic.html)
 
 ## Features:
 
