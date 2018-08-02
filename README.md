@@ -30,6 +30,7 @@ Version 1 - beta. Use on your own risk.
 
 ## To do
 
+- Heap allocation / free
 - Files
 - Graphics
 - Sound
