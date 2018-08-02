@@ -468,7 +468,7 @@ Syntax is `var$(first TO last)`. If `first` is omitted it assumes first=0. If `l
 Slice can be used as left side of assign command (LET):
 
 A$ = "Hello world"
-A$(3,4) = "p,"
+A$(3 TO 4) = "p,"
 A$ -> "Help, world"
 
 ## Operators
