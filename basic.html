@@ -30,11 +30,14 @@
 </head>
 <body>
 <div id="editor">
-a=5
-syscall 100
-syscall 100,555,222,777
-syscall a
-syscall a,1024
+  A$ = "Hello world"
+  print A$(3 TO 5)
+  print A$( TO 5)
+  print A$(5 TO )
+
+  A$(3,4) = "p,"
+  print a$
+
 
 </div>
 
@@ -99,7 +102,7 @@ var compile = function(){
 
     document.getElementById("out").value = (asm)}
     catch (e) {
-      //console.log(e.message)
+      console.log(e)
       var err = JSON.parse(e.message)
       //console.log(err)
       if (source) {
