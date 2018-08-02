@@ -1380,7 +1380,7 @@ var generator = function(basic, CFG, PROC) {
                     }
                     ENV.addUse("println")
                     out+=CFG.asm.docall("println")
-                    if (hasstr) out+=CFG.asm.docall("hp_gc");
+                    //if (hasstr) out+=CFG.asm.docall("hp_gc");
 
                     break;
 
@@ -1422,7 +1422,7 @@ var generator = function(basic, CFG, PROC) {
                         ENV.addUse("println")
                         out+=CFG.asm.docall("println")
                     }
-                    if (hasstr) out+=CFG.asm.docall("hp_gc");
+                    //if (hasstr) out+=CFG.asm.docall("hp_gc");
 
                     break;
 
@@ -1441,7 +1441,10 @@ var generator = function(basic, CFG, PROC) {
 
             if (tokens.length) croak("Extra characters "+JSON.stringify(tokens), line)
 
+        } else if (tokens.length>0 && tokens[0].type=="remark") {
+          //That's OK
         } else {
+          //console.log(line)
           croak("Line should start with a statement",line)
         }
 
