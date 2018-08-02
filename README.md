@@ -178,7 +178,7 @@ If cond is false, jump to the appropriate REPEAT command. Otherwise continues.
 
 If cond is false, skip after the appropriate ENDWHILE command. Otherwise continues into the loop.
 
-### ENDWHILE
+### ENDWHILE (alias: WEND)
 
 Goes immediately back to the appropriate WHILE command...
 
