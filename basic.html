@@ -35,7 +35,7 @@
   print A$( TO 5)
   print A$(5 TO )
 
-  A$(3,4) = "p,"
+  A$(3 TO 4) = "p,"
   print a$
 
 
@@ -52,6 +52,11 @@ let a=[b(3)]
 <textarea id="out" cols=60 rows=40></textarea>
 <aside>
 <button onclick="compile()">Compile</button>
+<br>
+<select id="model">
+  <option value="OMENALPHA" selected>OMEN Alpha</option>
+  <option value="OMENCHARLIE">OMEN Charlie</option>
+</select>
 
 <p><a href="https://github.com/maly/bas80/blob/master/README.md">README</a></p>
 </aside>
@@ -88,7 +93,9 @@ var compile = function(){
 
     //source +="\nEND\n"
     //var ENGINE = "OMENALPHA"
-    var ENGINE = "OMENCHARLIE"
+    //var ENGINE = "OMENCHARLIE"
+
+    var ENGINE = document.getElementById("model").value;
 
     try{
 

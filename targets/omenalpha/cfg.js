@@ -1,5 +1,5 @@
-var CONFIG = {
-    "OMENALPHA": {
+var CONFIG = CONFIG || {};
+CONFIG.OMENALPHA= {
         org:"8000h",
         ramtop:"0f800h",
         goback:"RST 0",
@@ -31,5 +31,5 @@ var CONFIG = {
         xp:{},
         asm:{}
     }
-}
+
 if (typeof module != 'undefined') module.exports=CONFIG
