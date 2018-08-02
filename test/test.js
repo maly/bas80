@@ -12,6 +12,7 @@ var doTest = function(fn) {
     console.log("OK, passed")
     return true;
   } catch(e) {
+    //console.log(e)
     var err = JSON.parse(e.message);
     console.log("ERROR:"+err.error,err._numline,err._cmd);
     return false;

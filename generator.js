@@ -248,6 +248,7 @@ var generator = function(basic, CFG, PROC) {
     ENV.fns={}
     ENV.procs={}
     ENV.structs={}
+    ENV.staticstructs={}
     ENV.datas=[]
     ENV.datalabels=[]
     ENV.syslabels={}
