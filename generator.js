@@ -1063,7 +1063,7 @@ var generator = function(basic, CFG, PROC) {
                       }
                       //et = member[0].type;
                       if (et!=el.type && (cast && et!="int")) croak("Cannot assign this (type mismatch)",line)
-                      console.log(par.value,el.offset,cast)
+                      //console.log(par.value,el.offset,cast)
                       out+=CFG.asm.storeIntOffsetPointer(par.value,el.offset,cast);
 
                   } else if (par.type=="var[]") {
