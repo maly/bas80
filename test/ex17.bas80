@@ -1,0 +1,7 @@
+DEF FN factorial
+
+print factorial(5)
+
+factorial: take fact;fact
+    if fact=1 then return 1;fact
+    return factorial(fact-1)*fact;fact

@@ -1,0 +1,7 @@
+A$ = "Hello world"
+print A$(3 TO 5)
+print A$( TO 5)
+print A$(5 TO )
+
+A$(3 TO 4) = "p,"
+print a$

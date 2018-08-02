@@ -1,0 +1,7 @@
+READPTR object1, 4
+READPTR object2, 4
+
+sprite:
+DATA 1,2,4,4
+sprite2:
+DATA 10,11,15,27

@@ -1,0 +1,15 @@
+a = 5
+
+if a>5 then print "OK"
+
+if a=5 then 20
+
+20 print "OK"
+
+if a=5 then print "HELLO" else print "ELSE"
+
+if a = 5 then
+  print "THEN1"
+else
+ print "ELSE1"
+endif

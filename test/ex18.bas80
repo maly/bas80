@@ -1,0 +1,11 @@
+def struct mydata key(int),value(int),flag(byte)
+
+DIM mydata a,b,c
+
+LET a.key = 15
+
+LET n = a.value * 3
+
+LET ptr = [a.key]
+
+LET ptr{key} = ptr{key} + 5

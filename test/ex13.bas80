@@ -1,0 +1,7 @@
+a = 10
+while a
+if a=7 then continue
+print a
+a--
+if a=3 then break
+wend
