@@ -55,6 +55,8 @@ PRINT a+b*c
 PRINT "Hello,";
 PRINT " world."
 
+[Example](./test/ex01.bas80)
+
 ### INPUT
 
 Allows combine more variables as well as PRINT expressions
@@ -63,21 +65,34 @@ INPUT a
 INPUT a,b
 INPUT "Your name:",a$
 
+[Example](./test/ex02.bas80)
+
+
 ### GOTO
 
 Needs a constant target: GOTO 100. No "computed GOTOs"
+
+[Example](./test/ex03.bas80)
+
 
 ### GOSUB
 
 Call subroutine at given label.
 
+[Example](./test/ex04.bas80)
+
+
 ### RETURN [expr]
 
 Return from subroutine. Expression value is, if used, returned as from function
 
+[Example](./test/ex04.bas80)
+
 ### IF expr THEN command[s]
 
 Evaluate expression. If its value is zero, then skip to the next line. If nonzero, continues.
+
+[Example](./test/ex05.bas80)
 
 ### IF expr THEN label
 
@@ -113,9 +128,13 @@ Evaluate an expression and GOTO to n-th label. Indexed from 0, so if expr=0, the
 
 _ON takes only the lower part of expression value. So expr=256 is the same as expr=0._
 
+[Example](./test/ex06.bas80)
+
 ### ON expr GOSUB l0[,l1...]
 
 The same as ON expr GOTO, but this time it is calling a subroutine instead the jump.
+
+[Example](./test/ex07.bas80)
 
 ### REM
 
@@ -133,6 +152,8 @@ End of program with a "STOPPED" message.
 
 The essential loop in BASIC.
 
+[Example](./test/ex08.bas80)
+
 ### NEXT var
 
 Next iteration for the FOR loop.
@@ -140,6 +161,8 @@ Next iteration for the FOR loop.
 ### DATA value[,value...]
 
 Define some data and store them into memory
+
+[Example](./test/ex09.bas80)
 
 ### READ variable[,variable...]
 
@@ -162,6 +185,9 @@ sprite2:
 DATA 10,11,15,27
 ```
 
+[Example](./test/ex10.bas80)
+
+
 ### BYTE value[,value...]
 
 A non-standard DATA equivalent. Given values are stored as a byte (not two bytes like standard data). So it's not suitable for READ etc. Its aim is to DPTR function to have a method for defining some data tables.
@@ -169,6 +195,8 @@ A non-standard DATA equivalent. Given values are stored as a byte (not two bytes
 ### REPEAT
 
 The begin of REPEAT - UNTIL loop
+
+[Example](./test/ex11.bas80)
 
 ### UNTIL cond
 
@@ -178,6 +206,8 @@ If cond is false, jump to the appropriate REPEAT command. Otherwise continues.
 
 If cond is false, skip after the appropriate ENDWHILE command. Otherwise continues into the loop.
 
+[Example](./test/ex12.bas80)
+
 ### ENDWHILE (alias: WEND)
 
 Goes immediately back to the appropriate WHILE command...
@@ -186,6 +216,8 @@ Goes immediately back to the appropriate WHILE command...
 
 Usable in the FOR, REPEAT or WHILE loops. Invoke the next iteration.
 
+[Example](./test/ex13.bas80)
+
 ### BREAK
 
 Usable in the FOR, REPEAT or WHILE loops. Properly exits the loop.
@@ -193,6 +225,8 @@ Usable in the FOR, REPEAT or WHILE loops. Properly exits the loop.
 ### POKE addr,val
 
 Store one byte to given address
+
+[Example](./test/ex14.bas80)
 
 ### DPOKE addr,val
 
@@ -229,6 +263,9 @@ DIM should appears in the source code prior to the first using of array! Not in 
 You have to place DIM at the top of code. DIM does nothing in code, it just inform the compiler about the array limits.
 
 Array length has to be a constant, so no computed DIMs allowed!
+
+[Example](./test/ex15.bas80)
+
 
 ### RAMTOP const
 
@@ -300,6 +337,7 @@ factorial: take fact;fact
     if fact=1 then return 1;fact
     return factorial(fact-1)*fact;fact
 ```
+[Example](./test/ex16.bas80)
 
 
 ### CALL label,par
@@ -324,6 +362,8 @@ DEF FN factorial
 ...
 PRINT factorial(5)
 ```
+
+[Example](./test/ex17.bas80)
 
 ### DEF PROC funcLabel
 
@@ -419,6 +459,9 @@ and it is 5 bytes long.
 
 Structure has to be declared before its first use!
 
+[Example](./test/ex18.bas80)
+
+
 ### DIM structure variable[,variable...]
 
 Allocates memory for given struct type in a static memory area. `DIM mydata a,b,c` allocates three areas, 5 bytes each, for three structured variable, named a, b and c
@@ -470,6 +513,9 @@ Slice can be used as left side of assign command (LET):
 A$ = "Hello world"
 A$(3 TO 4) = "p,"
 A$ -> "Help, world"
+
+[Example](./test/ex19.bas80)
+
 
 ## Operators
 
