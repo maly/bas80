@@ -1,0 +1,3 @@
+REM goto
+10 print "HELLO"
+20 GOTO 10

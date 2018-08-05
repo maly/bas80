@@ -1,0 +1,6 @@
+a = $C000
+
+poke a,1
+dpoke a,12345
+
+poke $fff0,$ff

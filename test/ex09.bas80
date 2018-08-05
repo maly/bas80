@@ -1,0 +1,11 @@
+gosub 100
+gosub 100
+restore 500
+gosub 100
+
+100 read a,b,c,d
+print a,b,c,d
+return
+
+data 1,2,3,4
+500 data 5,6,7,8

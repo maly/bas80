@@ -1,0 +1,12 @@
+a = 5
+
+on a gosub lab1, lab2, lab3, foo, bar, 20
+
+10 PRINT 1
+20 PRINT 2
+lab1: print 3
+lab2: print 4
+lab3: print 5
+foo: print 6
+bar: print 7
+return

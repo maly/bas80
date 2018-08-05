@@ -36,7 +36,9 @@
     }
 
     var croak = function(msg,ln) {
-      throw new Error(msg + " ("+ln._numline+":"+ln._cmd+")");
+      ln.error = msg;
+      throw new Error(JSON.stringify(ln));
+      //throw new Error(msg + " ("+ln._numline+":"+ln._cmd+")", ln);
     }
 
 
@@ -214,6 +216,13 @@ var ENV= {
       }
       ENV.datas.push("\t DB "+s+"\n")
     },
+    syslabels:{},
+    lDef: function(label) {
+      if (!ENV.syslabels[label]) ENV.syslabels[label]=0;
+    },
+    lUse: function(label) {
+      ENV.syslabels[label]=1;
+    },
     uses:[],
     addUse:function(s) {
         if (ENV.uses.indexOf(s)<0) {
@@ -239,8 +248,10 @@ var generator = function(basic, CFG, PROC) {
     ENV.fns={}
     ENV.procs={}
     ENV.structs={}
+    ENV.staticstructs={}
     ENV.datas=[]
     ENV.datalabels=[]
+    ENV.syslabels={}
 
     var k;
 
@@ -290,7 +301,7 @@ var generator = function(basic, CFG, PROC) {
     }
     //CFG.ENV = ENV
     var exprAsm = function(expr,line,etype,left) {
-      var cs
+      var cs, member, el;
 
         if (typeof etype=="undefined") etype="int";
         if (typeof left=="undefined") left=false;
@@ -322,15 +333,15 @@ var generator = function(basic, CFG, PROC) {
           return CFG.xp.varStructL(expr,line,ENV,croak)
         }
         if (type=="var{}" && !left) {
-          var member = getStructMember(expr.struct,expr.member)
+          member = getStructMember(expr.struct,expr.member)
           if (!member) croak("Invalid struct pointer",line)
-          var el=member[0]
+          el=member[0]
           return CFG.xp.varStructPointer(expr,el,line,ENV,croak)
         }
         if (type=="var{}" && left) {
-          var member = getStructMember(expr.struct,expr.member)
+          member = getStructMember(expr.struct,expr.member)
           if (!member) croak("Invalid struct pointer",line)
-          var el=member[0]
+          el=member[0]
           return CFG.xp.varStructPointerL(expr,el,line,ENV,croak)
         }
         if (type=="var" && left) {
@@ -355,7 +366,7 @@ var generator = function(basic, CFG, PROC) {
             //console.log(expr.ex)
             if (expr.ex.type=="var.") {
              // console.log(expr.ex)
-              var el= getStructItemOffset(expr.ex.value,expr.ex.index,line)
+              el= getStructItemOffset(expr.ex.value,expr.ex.index,line)
               return CFG.xp.varIndirect(expr,line,el.offset);
             }
             if (expr.ex.type=="var") {
@@ -439,12 +450,13 @@ var generator = function(basic, CFG, PROC) {
                return CFG.xp.userfn(expr,line,ENV,exprAsm, target)
             }
             if(expr.value=="lptr") {
-              var target = findLabel(expr.operands[0].value,labels)
+              target = findLabel(expr.operands[0].value,labels)
               if (!target) croak("LPTR needs a valid line label",line)
+              ENV.lUse("CMD"+target)
               return CFG.xp.num({type:"num",value:"CMD"+target},line)
             }
             if(expr.value=="dptr") {
-              var target = findLabel(expr.operands[0].value,labels)
+              target = findLabel(expr.operands[0].value,labels)
               if (!target) croak("DPTR needs a valid line label",line)
               return CFG.xp.num({type:"num",value:"dt_"+expr.operands[0].value},line)
             }
@@ -460,12 +472,13 @@ var generator = function(basic, CFG, PROC) {
                return CFG.xp.userfnL(expr,line,ENV,exprAsm, target)
             }
             if(expr.value=="lptr") {
-              var target = findLabel(expr.operands[0].value,labels)
+              target = findLabel(expr.operands[0].value,labels)
               if (!target) croak("LPTR needs a valid line label",line)
+              ENV.lUse("CMD"+target)
               return CFG.xp.numL({type:"num",value:"CMD"+target},line)
             }
             if(expr.value=="dptr") {
-              var target = findLabel(expr.operands[0].value,labels)
+              target = findLabel(expr.operands[0].value,labels)
               if (!target) croak("DPTR needs a valid line label",line)
               return CFG.xp.numL({type:"num",value:"dt_"+expr.operands[0].value},line)
             }
@@ -524,12 +537,15 @@ var generator = function(basic, CFG, PROC) {
 
     var hasstr,chan;
 
+    var label,cast;
+
     /* global expr, exprType */
     for(var i=0;i<basic.length;i++) {
       var par,next;
       var line = basic[i];
       basic[i]._index = i;
       out+="CMD"+i+":\n"
+      ENV.lDef("CMD"+i);
       if (line._skip) {
             while (ifskip.length) {
                 out+="ELSKIP"+ifskip[0]+":\n"
@@ -545,18 +561,20 @@ var generator = function(basic, CFG, PROC) {
         out+="; "+cmd+"\n"
         switch(cmd) {
           case "goto":
-                    par = tokens[0];
+                    par = tokens.shift();
                     target = findLabel(par.value,labels);
                     if (target===null) croak("Target line not found",line)
+                    ENV.lUse("CMD"+target)
                     out+=CFG.asm.jmp("CMD"+target);
             break;
-                case "gosub":
-            par = tokens[0];
+          case "gosub":
+                    par = tokens.shift();
                     target = findLabel(par.value,labels);
                     if (target===null) croak("Target line not found",line)
+                    ENV.lUse("CMD"+target)
                     out+=CFG.asm.docall("CMD"+target);
             break;
-                case "return":
+          case "return":
                     if (tokens.length) {
                         //return expr.
                         ex = expr(tokens,line)
@@ -620,7 +638,7 @@ var generator = function(basic, CFG, PROC) {
                     ENV.addArrInt(epar.value,epar.index.value)
                     break;
                 case "data":
-                    var label = line.label
+                    label = line.label
                     par = tokens.shift()
                     while(par) {
                       if (par.type=="num") {
@@ -639,7 +657,7 @@ var generator = function(basic, CFG, PROC) {
                     }
                     break;
                 case "byte":
-                    var label = line.label
+                    label = line.label
                     par = tokens.shift()
                     while(par) {
                       if (par.type=="num") {
@@ -919,6 +937,7 @@ var generator = function(basic, CFG, PROC) {
                         out+=exprAsm(ex2,line,et2,true)
                     }
                     //console.log(ex,ex2)
+                    ENV.lUse("CMD"+target)
                     out+=CFG.asm.docall("CMD"+target)
 
                     break
@@ -937,6 +956,7 @@ var generator = function(basic, CFG, PROC) {
                             et = exprType(ex2,line);
                             out+=exprAsm(ex2,line,et2,true)
                         }
+                        ENV.lUse("CMD"+target)
                         out+=CFG.asm.docall("CMD"+target)
 
                         break
@@ -1022,7 +1042,7 @@ var generator = function(basic, CFG, PROC) {
                         }
                     } else if (par.type=="var.") {
                       var el = getStructItemOffset(par.value,par.index,line)
-                      var cast = false;
+                      cast = false;
                       if (el.type=="byte") {
                         //el.type="int";
                         cast = true;
@@ -1038,13 +1058,13 @@ var generator = function(basic, CFG, PROC) {
                       var member = getStructMember(par.struct,par.member)
                       if (!member) croak("Invalid struct pointer",line)
                       el=member[0]
-                      var cast = false;
+                      cast = false;
                       if (el.type=="byte") {
                         cast = true;
                       }
                       //et = member[0].type;
                       if (et!=el.type && (cast && et!="int")) croak("Cannot assign this (type mismatch)",line)
-                      console.log(par.value,el.offset,cast)
+                      //console.log(par.value,el.offset,cast)
                       out+=CFG.asm.storeIntOffsetPointer(par.value,el.offset,cast);
 
                   } else if (par.type=="var[]") {
@@ -1361,7 +1381,7 @@ var generator = function(basic, CFG, PROC) {
                     }
                     ENV.addUse("println")
                     out+=CFG.asm.docall("println")
-                    if (hasstr) out+=CFG.asm.docall("hp_gc");
+                    //if (hasstr) out+=CFG.asm.docall("hp_gc");
 
                     break;
 
@@ -1403,7 +1423,7 @@ var generator = function(basic, CFG, PROC) {
                         ENV.addUse("println")
                         out+=CFG.asm.docall("println")
                     }
-                    if (hasstr) out+=CFG.asm.docall("hp_gc");
+                    //if (hasstr) out+=CFG.asm.docall("hp_gc");
 
                     break;
 
@@ -1422,6 +1442,11 @@ var generator = function(basic, CFG, PROC) {
 
             if (tokens.length) croak("Extra characters "+JSON.stringify(tokens), line)
 
+        } else if (tokens.length>0 && tokens[0].type=="remark") {
+          //That's OK
+        } else {
+          //console.log(line)
+          croak("Line should start with a statement",line)
         }
 
 
@@ -1497,6 +1522,13 @@ var generator = function(basic, CFG, PROC) {
 
     out +="\n\nHEAP EQU $\nRAMTOP EQU "+CFG.ramtop+"\nds RAMTOP-$\n\n"; //zapati
 
+    //console.log(ENV.syslabels)
+    for (k in ENV.syslabels) {
+      if (ENV.syslabels[k]===0) {
+        //console.log("remove",k+":\n")
+        out = out.replace(k+":\n","")
+      }
+    }
 
     return out;
 }

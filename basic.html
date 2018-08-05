@@ -30,11 +30,14 @@
 </head>
 <body>
 <div id="editor">
-a=5
-syscall 100
-syscall 100,555,222,777
-syscall a
-syscall a,1024
+  A$ = "Hello world"
+  print A$(3 TO 5)
+  print A$( TO 5)
+  print A$(5 TO )
+
+  A$(3 TO 4) = "p,"
+  print a$
+
 
 </div>
 
@@ -49,8 +52,13 @@ let a=[b(3)]
 <textarea id="out" cols=60 rows=40></textarea>
 <aside>
 <button onclick="compile()">Compile</button>
+<br>
+<select id="model">
+  <option value="OMENALPHA" selected>OMEN Alpha</option>
+  <option value="OMENCHARLIE">OMEN Charlie</option>
+</select>
 
-<p><a href="https://github.com/maly/bas80/blob/master/README.md">README</a></p>
+<p><a href="https://github.com/maly/bas80/blob/master/README.md">README, manual etc.</a></p>
 </aside>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.3/ace.js"></script>
@@ -85,7 +93,11 @@ var compile = function(){
 
     //source +="\nEND\n"
     //var ENGINE = "OMENALPHA"
-    var ENGINE = "OMENCHARLIE"
+    //var ENGINE = "OMENCHARLIE"
+
+    var ENGINE = document.getElementById("model").value;
+
+    try{
 
     var basic = parse(source)
 
@@ -95,7 +107,17 @@ var compile = function(){
 
     var asm = generator(basic,CONFIG[ENGINE],BASIC[CONFIG[ENGINE].cpu])
 
-    document.getElementById("out").value = (asm)
+    document.getElementById("out").value = (asm)}
+    catch (e) {
+      console.log(e)
+      var err = JSON.parse(e.message)
+      //console.log(err)
+      if (source) {
+        document.getElementById("out").value = "*** ERROR: "+err.error+"\nAt line "+err._numline+"\nCommand "+err._cmd+"\n\n"+err.source
+      } else {
+        document.getElementById("out").value = "*** PARSER ERROR: "+err.error+"\nAt line "+err._numline+"\nPosition "+err._cmd
+      }
+    }
 }
 
 compile()

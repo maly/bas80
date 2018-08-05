@@ -1,0 +1,8 @@
+print fn(factorial,5)
+
+factorial: take fact
+    if fact=1 then return 1
+    push fact
+    temp = fn(factorial,fact-1)
+    pop fact
+    return temp*fact

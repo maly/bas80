@@ -4,9 +4,9 @@
 
 The BASIC compiler for 8bit CPUs
 
-Version 0 - early alpha. Use on your own risk.
+Version 1 - beta. Use on your own risk.
 
-[A live compiler](https://maly.github.io/bas80/basic.html)
+[A live compiler](https://bas80.com/basic.html)
 
 ## Features:
 
@@ -14,8 +14,13 @@ Version 0 - early alpha. Use on your own risk.
 - You can omit the line number, if it is not necessary
 - The output is compatible with ASM80 syntax
 - Case insensitive (you can write PRINT as well as print or Print)
-- label can be an integer ("line number") or string (ended with a colon, e.g. `hello:`)
+- Label can be an integer ("line number") or string (ended with a colon, e.g. `hello:`)
 - String slices (like a ZX Spectrum BASIC)
+- Data structures
+- Named subroutines
+- Pointers
+- Local variables (very limited)
+- Data push and pop (for recursion)
 
 ## Limitations:
 
@@ -23,13 +28,21 @@ Version 0 - early alpha. Use on your own risk.
 - Two bytes integer, i.e. -32768 to +32767
 - No computed GOTO, GOSUB
 
+## To do
+
+- Heap allocation / free
+- Files
+- Graphics
+- Sound
+- Basic objects
+
 ## Commands:
 
 ### LET var = expression
 ### LET var$ = string expression
 
 The LET keyword can be omitted.
-Multiple assignment is allowed, just use `LET var[,var,var...]=expr` Vars have to be scalar int
+Multiple assignment is allowed, just use `LET var[,var,var...]=expr`. Vars have to be scalar int for multiassignment
 
 
 ### PRINT
@@ -42,6 +55,8 @@ PRINT a+b*c
 PRINT "Hello,";
 PRINT " world."
 
+[Example](./test/ex01.bas80)
+
 ### INPUT
 
 Allows combine more variables as well as PRINT expressions
@@ -50,21 +65,34 @@ INPUT a
 INPUT a,b
 INPUT "Your name:",a$
 
+[Example](./test/ex02.bas80)
+
+
 ### GOTO
 
 Needs a constant target: GOTO 100. No "computed GOTOs"
+
+[Example](./test/ex03.bas80)
+
 
 ### GOSUB
 
 Call subroutine at given label.
 
+[Example](./test/ex04.bas80)
+
+
 ### RETURN [expr]
 
 Return from subroutine. Expression value is, if used, returned as from function
 
+[Example](./test/ex04.bas80)
+
 ### IF expr THEN command[s]
 
 Evaluate expression. If its value is zero, then skip to the next line. If nonzero, continues.
+
+[Example](./test/ex05.bas80)
 
 ### IF expr THEN label
 
@@ -94,16 +122,19 @@ ELSE
 ENDIF
 ```
 
-
 ### ON expr GOTO l0[,l1...]
 
 Evaluate an expression and GOTO to n-th label. Indexed from 0, so if expr=0, then goto to l0, if expr=1 then goto to l1 etc. You can use up to 128 labels at once. If expr > num of labels, then no goto is performed.
 
 _ON takes only the lower part of expression value. So expr=256 is the same as expr=0._
 
+[Example](./test/ex06.bas80)
+
 ### ON expr GOSUB l0[,l1...]
 
 The same as ON expr GOTO, but this time it is calling a subroutine instead the jump.
+
+[Example](./test/ex07.bas80)
 
 ### REM
 
@@ -121,6 +152,8 @@ End of program with a "STOPPED" message.
 
 The essential loop in BASIC.
 
+[Example](./test/ex08.bas80)
+
 ### NEXT var
 
 Next iteration for the FOR loop.
@@ -128,6 +161,8 @@ Next iteration for the FOR loop.
 ### DATA value[,value...]
 
 Define some data and store them into memory
+
+[Example](./test/ex09.bas80)
 
 ### READ variable[,variable...]
 
@@ -150,6 +185,9 @@ sprite2:
 DATA 10,11,15,27
 ```
 
+[Example](./test/ex10.bas80)
+
+
 ### BYTE value[,value...]
 
 A non-standard DATA equivalent. Given values are stored as a byte (not two bytes like standard data). So it's not suitable for READ etc. Its aim is to DPTR function to have a method for defining some data tables.
@@ -157,6 +195,8 @@ A non-standard DATA equivalent. Given values are stored as a byte (not two bytes
 ### REPEAT
 
 The begin of REPEAT - UNTIL loop
+
+[Example](./test/ex11.bas80)
 
 ### UNTIL cond
 
@@ -166,13 +206,17 @@ If cond is false, jump to the appropriate REPEAT command. Otherwise continues.
 
 If cond is false, skip after the appropriate ENDWHILE command. Otherwise continues into the loop.
 
-### ENDWHILE
+[Example](./test/ex12.bas80)
+
+### ENDWHILE (alias: WEND)
 
 Goes immediately back to the appropriate WHILE command...
 
 ### CONTINUE
 
 Usable in the FOR, REPEAT or WHILE loops. Invoke the next iteration.
+
+[Example](./test/ex13.bas80)
 
 ### BREAK
 
@@ -182,15 +226,15 @@ Usable in the FOR, REPEAT or WHILE loops. Properly exits the loop.
 
 Store one byte to given address
 
+[Example](./test/ex14.bas80)
+
 ### DPOKE addr,val
 
 Store two bytes to given address
 
 ### SYSCALL addr[,HL[,DE[,BC[,A]]]]
 
-System call invoke a subroutine at the given address. You can specify the contents for register pairs HL, DE, BC and A (8080-based and Z80-based systems only).
-
-
+System call invoke a subroutine at the given address. You can specify the contents for register pairs HL, DE, BC and A (8080-based and Z80-based systems only)
 
 ### OUT port,val
 
@@ -220,9 +264,14 @@ You have to place DIM at the top of code. DIM does nothing in code, it just info
 
 Array length has to be a constant, so no computed DIMs allowed!
 
+[Example](./test/ex15.bas80)
+
+
 ### RAMTOP const
 
 Sets the first unused addr to given constant expression. BASIC will not use any memory above the RAMTOP (stack is not affected)
+
+Should be used only once (It takes the last value, ramtop is not dynamic)
 
 ### TAKE var
 ### TAKE var1,var2
@@ -231,7 +280,7 @@ Sets the first unused addr to given constant expression. BASIC will not use any 
 ### PUSH var[,var...]
 ### POP var[,var...]
 
-This is an attempt to bring a FUNCTION concept into BASIC. Write function as a regular subroutine (like one for the GOSUB) and begin it with TAKE command.
+This is an attempt to bring a FUNCTION concept into BASIC. Yopu can write function as a regular subroutine (like one for the GOSUB) and begin it with TAKE command.
 
 TAKE takes one or two integers from calling environment and store them into given variables.
 FN() acts like a GOSUB - the first argument is a label (line number or string), the second argument (and the third, if given) acts like a parameters. They are passed to the subroutine. Subroutine can take them with the TAKE command.
@@ -288,6 +337,7 @@ factorial: take fact;fact
     if fact=1 then return 1;fact
     return factorial(fact-1)*fact;fact
 ```
+[Example](./test/ex16.bas80)
 
 
 ### CALL label,par
@@ -313,6 +363,8 @@ DEF FN factorial
 PRINT factorial(5)
 ```
 
+[Example](./test/ex17.bas80)
+
 ### DEF PROC funcLabel
 
 Another sugar for you. If you annotate function with DEF PROC on the beginning of a source code, you can use the function name as a procedure without CALL funcLabel,..., just directly like funcLabel par[,par]
@@ -332,7 +384,7 @@ myproc 5,10*a
 ```
 Of course you can use one label as FN and PROC.
 
-## FUNCTIONS
+## BUILT-IN FUNCTIONS
 
 ### int ABS (int)
 
@@ -391,7 +443,7 @@ Gets a pointer to the first DATA after the given label (pointer lead to a data a
 
 ## Pointers
 
-You can getg a pointer (an unsigned int) to a variable, an array, a string variable or a string constant. Use angle braces around the element, e.g. `LET a = [b]` to get an address to a memory place where the B variable resides.
+You can get a pointer (an unsigned int) to a variable, an array, a string variable or a string constant. Use angle braces around the element, e.g. `LET a = [b]` to get an address to a memory place where the B variable resides.
 
 ## Structures
 
@@ -406,6 +458,9 @@ flag: byte 4
 and it is 5 bytes long.
 
 Structure has to be declared before its first use!
+
+[Example](./test/ex18.bas80)
+
 
 ### DIM structure variable[,variable...]
 
@@ -433,7 +488,7 @@ You can get a pointer to structure member by [] notation, see above. So:
 
 Lets assume that `ptr` is a pointer to the first member of a structure. E.g.`LET ptr = [c.]`. Now you can work with member values by a curly braces notation:
 
-`PRINT ptr{mydata.value}` takes a variable "ptr" and it assume that ptr contains a pointer to some structure of type `mydata`. Then prints a `value` member (in fact, it takes bytes 2 and 3).
+`PRINT ptr{mydata.value}` takes a variable "ptr" and assumes that ptr contains a pointer to some structure of type `mydata`. Then prints a `value` member (in fact, it takes bytes 2 and 3).
 
 `PRINT ptr{value}` is a shorthand form, but it assumes that there is a only one structure with member named "value". If there are more than one structure with a "value" member, it throws an error.
 
@@ -456,8 +511,11 @@ Syntax is `var$(first TO last)`. If `first` is omitted it assumes first=0. If `l
 Slice can be used as left side of assign command (LET):
 
 A$ = "Hello world"
-A$(3,4) = "p,"
+A$(3 TO 4) = "p,"
 A$ -> "Help, world"
+
+[Example](./test/ex19.bas80)
+
 
 ## Operators
 

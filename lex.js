@@ -18,7 +18,7 @@ function InputStream(input) {
         return peek() == "";
     }
     function croak(msg) {
-        throw new Error(msg + " (" + line + ":" + col + ")");
+        throw new Error(JSON.stringify({source:"",error:msg,_numline:line,_cmd:col}));
     }
  }
 
@@ -235,7 +235,13 @@ function parse(source) {
                     nout.push(t)
                     if (out.tokens.length) {
                         if (out.tokens[0].type=="num") {
-                            nout.push({type:"kw",value:"goto"})
+                          /*
+                            basic.push(nout)
+                            nout = [];
+                            out.label=null;
+                            out._cmd++;
+                            */
+                           // nout.push({type:"kw",value:"goto"})
                         }
                     }
                 }

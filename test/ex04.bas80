@@ -1,0 +1,8 @@
+REM Gosub test
+10 GOSUB 100
+20 GOSUB myroutine
+100 PRINT "OK"
+110 RETURN
+
+myroutine: PRINT "OK again"
+return

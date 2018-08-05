@@ -1,0 +1,3 @@
+INPUT a
+INPUT a,b
+INPUT "Your name:",a$

@@ -1,5 +1,5 @@
-var CONFIG = {
-    "OMENCHARLIE": {
+var CONFIG = CONFIG || {};
+CONFIG.OMENCHARLIE = {
         org:"0000h",
         ramstart:"08000h",
         ramtop:"08400h",
@@ -33,5 +33,5 @@ var CONFIG = {
         xp:{},
         asm:{}
     }
-}
+
 if (typeof module != 'undefined') module.exports=CONFIG

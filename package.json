@@ -1,0 +1,30 @@
+{
+  "name": "basic80",
+  "version": "1.0.0",
+  "description": "A BASIC compiler",
+  "main": "generator.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "colors": "^1.3.1",
+    "uglify-js": "^3.4.6"
+  },
+  "devDependencies": {
+    "colors": "^1.3.1",
+    "uglify-js": "^3.4.6"
+  },
+  "scripts": {
+    "test": "node test/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maly/bas80.git"
+  },
+  "author": "Martin Maly",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/maly/bas80/issues"
+  },
+  "homepage": "https://github.com/maly/bas80#readme"
+}

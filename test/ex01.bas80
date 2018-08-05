@@ -1,0 +1,5 @@
+PRINT a,b,c
+PRINT a$,b$
+PRINT a+b*c
+PRINT "Hello,";
+PRINT " world."

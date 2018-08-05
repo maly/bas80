@@ -3,14 +3,14 @@
 	"./monolith.js": {
 		"files":
 		[
-			{"file":"./monolith-prefix.js", "minify":false},
+			{"file":"./monolith-prefix.jspart", "minify":false},
 			{"file":"./targets/cpu/8080/library.js", "minify":true},
 			{"file":"./targets/cpu/8080/basic.js", "minify":true},
 			{"file":"./targets/omenalpha/cfg.js", "minify":true},
 			{"file":"./lex.js", "minify":true},
 			{"file":"./parsing.js", "minify":true},
 			{"file":"./generator.js", "minify":true},
-			{"file":"./monolith-postfix.js", "minify":false}
+			{"file":"./monolith-postfix.jspart", "minify":false}
 		]
 	}
 
