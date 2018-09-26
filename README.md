@@ -440,6 +440,10 @@ Gets a pointer to the given label (pointer lead to a code area!)
 
 Gets a pointer to the first DATA after the given label (pointer lead to a data area!)
 
+### int MALLOC(size)
+
+Allocates SIZE bytes on the heap memory. Returns a pointer to this area. You can free this area by FREE command (see below).
+
 
 ## Pointers
 
