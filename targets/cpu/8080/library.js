@@ -1182,6 +1182,12 @@ var LIB = {
         "\tMOV L,A\n"+
         "\tRET\n"
     },
+    "f_malloc":{
+      uses:["__heap"],
+      code: "\tMOV C,L\n"+
+      "\tMOV B,H\n"+
+      "\tJMP hp_a\n"
+    },
     "f_in":{
         uses:null,
         sysdq:["iofix"],

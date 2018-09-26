@@ -30,7 +30,7 @@ function InputStream(input) {
             "poke dpoke dim ramtop push pop syscall take def call swap out on write wait "+
             "alloc free "+
             "while endwhile wend ";
-    var functions = " abs neg rnd max chr$ sgn len val peek dpeek low high fn in asc lptr dptr ";
+    var functions = " abs neg rnd max chr$ sgn len val peek dpeek low high fn in asc malloc lptr dptr ";
     return {
         next  : next,
         peek  : peek,

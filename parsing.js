@@ -21,6 +21,7 @@ var ARITY = {
     "in":["int"],
     "fn":["int","int"],
     "dpeek":["int"],
+    "malloc":["int"],
     "sgn":["int"],
     "rnd":[],
     "lptr":["int"],
