@@ -637,6 +637,39 @@ var generator = function(basic, CFG, PROC) {
                     if (epar.index.type!="num") croak("DIM needs a constant size",line);
                     ENV.addArrInt(epar.value,epar.index.value)
                     break;
+
+                case "alloc":
+                    epar = expr(tokens,line)
+                    if (epar.type=="var" && ENV.structs[epar.value]!==undefined) {
+                      var sx = ENV.structs[epar.value];
+                      var slen = sx[sx.length-1].offset;
+                      ENV.addUse("__heap")
+                      while(tokens.length) {
+                        //ENV.addStaticStruct(tokens.shift().value,epar.value)
+                        out+=CFG.asm.malloc(slen)
+                        ex = tokens.shift();
+                        //console.log("Alloc",epar.value,)
+                        ENV.addVar(ex.value,"int")
+                        out+=CFG.asm.storeInt(ex.value,line)
+                        if (!tokens.length) break;
+                        if (!isPunc(",")) croak("Separate variables by comma",line)
+                      }
+                      break;
+                    }
+                    else croak("ALLOC needs a struct name",line);
+
+                    break;
+                case "free":
+                    while (tokens.length) {
+                      ex = tokens.shift()
+                      out += exprAsm(ex,line,"int")
+                      // free
+                      out += CFG.asm.free();
+                      if (!tokens.length) break;
+                      if (!isPunc(",")) croak("Separate variables by comma",line)
+                    }
+                    out+=CFG.asm.docall("hp_gc");
+                    break;
                 case "data":
                     label = line.label
                     par = tokens.shift()

@@ -410,6 +410,14 @@ var BASIC = {
                 return out
             },
 
+            malloc: function(size) {
+              return "\tLXI B,"+size+"\n\tCALL hp_a\n";
+            },
+
+            free: function() {
+              return "\tCALL hp_free\n";
+            },
+
             storeStrNoGC: function(name) {
                 return "\tSHLD vs_"+name+"\n\tCALL hp_assign\n"
             },

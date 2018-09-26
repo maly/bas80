@@ -21,6 +21,7 @@ Version 1 - beta. Use on your own risk.
 - Pointers
 - Local variables (very limited)
 - Data push and pop (for recursion)
+- Heap allocation / free
 
 ## Limitations:
 
@@ -30,7 +31,6 @@ Version 1 - beta. Use on your own risk.
 
 ## To do
 
-- Heap allocation / free
 - Files
 - Graphics
 - Sound
@@ -495,6 +495,20 @@ Lets assume that `ptr` is a pointer to the first member of a structure. E.g.`LET
 `LET ptr{key} = ptr{key} + 5` - structure pointer can be used on a both sides of an assign.
 
 *WARNING!* Structure pointers has no checks! If you use a pointer to an invalid area, results will be unpredictable and it can crash or destroy data!
+
+## Dynamic allocation of structures
+
+You can dynamic allocate the structure on a heap memory and free this memory back.
+
+### ALLOC structure variable[,variable...]
+
+It allocates enough memory for a structure and store the address of memory (i.e. pointer) to the given variable. You can allocate more structs with single ALLOC.
+
+`ALLOC mydata p,q` allocates two areas in a memory. Both areas has size equal to the size of the mydata struct.
+
+### FREE [variable,...]
+
+Free memory area, previously allocated by ALLOC (or MALLOC) command. FREE always performs a garbage collection, so you can use simple FREE (without any variables) to force garbage collecting.
 
 ## String slices
 
