@@ -35,6 +35,7 @@ Version 1 - beta. Use on your own risk.
 - Graphics
 - Sound
 - Basic objects
+- Exceptions
 
 ## Commands:
 

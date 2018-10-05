@@ -388,6 +388,38 @@ var LIB = {
         "    jmp s_strcpy\n"
     },
 
+    //EXCEPTION mgmt
+
+    "exception": {
+      uses:[],
+      code:
+      "\tLHLD savesp\n"+
+      "\tSPHL\n"+
+      "\tPUSH B\n"+
+      "\tLXI H,emsg\n"+
+      "ex_again: MOV E,M\n"+
+      "\tINX H\n"+
+      "\tMOV D,M\n"+
+      "\tINX H\n"+
+      "\tMOV A,E\n"+
+      "\tOR D\n"+
+      "\tJZ exc_out\n"+
+      "\tDCR B\n"+
+      "\tJZ exc_out\n"+
+      "\tXCHG\n"+
+      "\tcall printstr\n"+
+      "\tjmp errgo\n"+
+      "ex_out: POP B\n"+
+      "\tJMP errgo\n"+
+      "emsg: DW e_ovfl, e_idx, e_div, e_oom, e_data\n"+
+      "\tDW 0\n"+
+      "e_ovfl: .cstr \"MULT OVFL\"\n"+
+      "e_idx: .cstr \"INDEX OUT OF LIMITS\"\n"+
+      "e_div: .cstr \"DIV BY ZERO\"\n"+
+      "e_oom: .cstr \"OUT OF MEMORY\"\n"+
+      "e_data: .cstr \"NO DATA\"\n"
+    },
+
     //ERROR management
     "errovfl": {
         uses:["printstr"],

@@ -1501,6 +1501,25 @@ var generator = function(basic, CFG, PROC) {
         out = "\tCALL HP_INIT\n" + out;
     }
 
+    if (ENV.uses.indexOf("errovfl")>=0) {
+      out = "\tLXI H,errovfl\n\tSHLD ex_table+0\n" + out;
+    }
+    if (ENV.uses.indexOf("erridx")>=0) {
+      out = "\tLXI H,erridx\n\tSHLD ex_table+2\n" + out;
+    }
+    if (ENV.uses.indexOf("errdiv")>=0) {
+      out = "\tLXI H,errdiv\n\tSHLD ex_table+4\n" + out;
+    }
+    if (ENV.uses.indexOf("erroom")>=0) {
+      out = "\tLXI H,erroom\n\tSHLD ex_table+6\n" + out;
+    }
+    if (ENV.uses.indexOf("errstop")>=0) {
+      out = "\tLXI H,errstop\n\tSHLD ex_table+8\n" + out;
+    }
+    if (ENV.uses.indexOf("errnodata")>=0) {
+      out = "\tLXI H,errnodata\n\tSHLD ex_table+10\n" + out;
+    }
+
     if (CFG.init) {
       out = CFG.init + out;
   }
@@ -1544,14 +1563,16 @@ var generator = function(basic, CFG, PROC) {
     }
 
     //vardump
-    out+=";----BSS SEGMENT\n"
-    out+=varAsm();
+    out += ";----BSS SEGMENT\n"
+    out += "ex_table: DS 16\n"
+
+    out += varAsm();
 
     //append
     if (appendInput) {
         out += "i_buffer: ds 257\n";
     }
-
+    out += "\nSAVESP: DS 2\n"
 
     out +="\n\nHEAP EQU $\nRAMTOP EQU "+CFG.ramtop+"\nds RAMTOP-$\n\n"; //zapati
 
