@@ -48,8 +48,9 @@ let a=[b(3)]
 <button onclick="compile()">Compile</button>
 <br>
 <select id="model">
-  <option value="OMENALPHA" selected>OMEN Alpha</option>
+  <option value="OMENALPHA">OMEN Alpha</option>
   <option value="OMENCHARLIE">OMEN Charlie</option>
+  <option value="OMENKILO" selected>OMEN Kilo</option>
 </select>
 
 <p><a href="https://github.com/maly/bas80/blob/master/README.md">README, manual etc.</a></p>
@@ -65,8 +66,11 @@ let a=[b(3)]
 
 <script src="./targets/cpu/8080/library.js"></script>
 <script src="./targets/cpu/8080/basic.js"></script>
+<script src="./targets/cpu/6809/library.js"></script>
+<script src="./targets/cpu/6809/basic.js"></script>
 <script src="./targets/omenalpha/cfg.js"></script>
 <script src="./targets/omencharlie/cfg.js"></script>
+<script src="./targets/omenkilo/cfg.js"></script>
 
 <script src="lex.js"></script>
 <script src="parsing.js"></script>
