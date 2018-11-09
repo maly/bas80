@@ -16,16 +16,16 @@ var BASIC = {
             },
             /*eslint no-unused-vars: "off"*/
             num: function(expr,line) {
-                return "\tLXI H,"+expr.value+"\n"
+                return "\tLDX #"+expr.value+"\n"
             },
             numL: function(expr,line) {
-                return ";[*DD*]\n\tLXI D,"+expr.value+"\n"
+                return ";[*DD*]\n\tLDD #"+expr.value+"\n"
             },
             str: function(expr,line,cs) {
-                return "\tLXI H,cs_"+cs+"\t;"+expr.value+"\n"
+                return "\tLDX #cs_"+cs+"\t;"+expr.value+"\n"
             },
             strL: function(expr,line) {
-                return ";[*DD*]\n\tLXI D,"+expr.value+"\n"
+                return ";[*DD*]\n\tLDD #"+expr.value+"\n"
             },
             var: function(expr,line) {
                 return "\tLHLD v_"+expr.value+"\n"
