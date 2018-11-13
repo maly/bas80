@@ -28,26 +28,26 @@ var BASIC = {
                 return ";[*DD*]\n\tLDD #"+expr.value+"\n"
             },
             var: function(expr,line) {
-                return "\tLHLD v_"+expr.value+"\n"
+                return "\tLDX v_"+expr.value+"\n"
             },
             varL: function(expr,line) {
-                return ";[*DD*]\n\tXCHG\n\tLHLD v_"+expr.value+"\n\tXCHG\n"
+                return ";[*DD*]\n\tLDD v_"+expr.value+"\n"
             },
             varStruct: function(expr,line,ENV,croak) {
               var stype = ENV.staticstructs[expr.value];
               var struct = ENV.structs[stype];
               var el = struct.filter(function(v){return v.name==expr.index})
               if (!el) croak("No such struct member variable",line)
-              if(el[0].offset) return "\tLHLD vss_"+expr.value+"+"+el[0].offset+"\n"
-              return "\tLHLD vss_"+expr.value+"\n"
+              if(el[0].offset) return "\tLDX vss_"+expr.value+"+"+el[0].offset+"\n"
+              return "\tLDX vss_"+expr.value+"\n"
             },
             varStructL: function(expr,line,ENV,croak) {
               var stype = ENV.staticstructs[expr.value];
               var struct = ENV.structs[stype];
               var el = struct.filter(function(v){return v.name==expr.index})
               if (!el) croak("No such struct member variable",line)
-              if(el[0].offset) return ";[*DD*]\n\tXCHG\n\tLHLD vss_"+expr.value+"+"+el[0].offset+"\n\tXCHG\n"
-              return ";[*DD*]\n\tXCHG\n\tLHLD vss_"+expr.value+"\n\tXCHG\n"
+              if(el[0].offset) return ";[*DD*]\n\tLDD vss_"+expr.value+"+"+el[0].offset+"\n"
+              return ";[*DD*]\n\tLDD vss_"+expr.value+"\n"
             },
             varStructPointer: function(expr,el,line,ENV,croak) {
               var out="\tLHLD v_"+expr.value+"\n"
@@ -222,14 +222,14 @@ var BASIC = {
                     out += exprAsm(expr.operands[1])
                 } else
                 for(var i=0;i<expr.operands.length;i++) {
-                    out += exprAsm(expr.operands[i])+"\tPUSH H\n"
+                    out += exprAsm(expr.operands[i])+"\tPSHS X\n"
                 }
                 ENV.addUse("f_"+expr.value);
                 if (LIB["f_"+expr.value].inline) {
                     out+=LIB["f_"+expr.value].code
                     return out;
                 }
-                out += "\tCALL f_"+expr.value+"\n"
+                out += "\tJSR f_"+expr.value+"\n"
                 return out;
             },
             fnL: function(expr,line,ENV, exprAsm,LIB) {
@@ -241,14 +241,14 @@ var BASIC = {
                     out += exprAsm(expr.operands[1])
                 } else
                 for(var i=0;i<expr.operands.length;i++) {
-                    out += exprAsm(expr.operands[i])+"\tPUSH H\n"
+                    out += exprAsm(expr.operands[i])+"\tPSHS X\n"
                 }
                 ENV.addUse("f_"+expr.value);
                 if (LIB["f_"+expr.value].inline) {
                     out+=LIB["f_"+expr.value].code
-                    return out+"\tXCHG\n";
+                    return out+"\tPSHS X\n";
                 }
-                out += "\tCALL f_"+expr.value+"\n\tXCHG\n"
+                out += "\tCALL f_"+expr.value+"\n\tTFR X,D\n\tPULS X\n"
                 return out;
             },
 
@@ -256,15 +256,15 @@ var BASIC = {
             shortcuts: function(expr,line,etype,ENV, exprAsm) {
                 var out="";
                 if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="+") {
-                    out = exprAsm(expr.left,line,etype)+"\tINX H\n"
+                    out = exprAsm(expr.left,line,etype)+"\tINC X\n"
                     return out
                 }
                 if (expr.left.type=="num" && expr.left.value==1 && expr.operator=="+") {
-                    out = exprAsm(expr.right,line,etype)+"\tINX H\n"
+                    out = exprAsm(expr.right,line,etype)+"\tINC X\n"
                     return out
                 }
                 if (expr.right.type=="num" && expr.right.value==1 && expr.operator=="-") {
-                    out = exprAsm(expr.left,line,etype)+"\tDCX H\n"
+                    out = exprAsm(expr.left,line,etype)+"\tDEC X\n"
                     return out
                 }
                 if (expr.right.type=="num" && expr.right.value==2 && expr.operator=="*") {
