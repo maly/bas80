@@ -50,11 +50,13 @@ Multiple assignment is allowed, just use `LET var[,var,var...]=expr`. Vars have 
 
 Can has one or more parameters, delimited with semicolon or comma.
 
+```
 PRINT a,b,c
 PRINT a$,b$
 PRINT a+b*c
 PRINT "Hello,";
 PRINT " world."
+```
 
 [Example](./test/ex01.bas80)
 
@@ -62,16 +64,18 @@ PRINT " world."
 
 Allows combine more variables as well as PRINT expressions
 
+```
 INPUT a
 INPUT a,b
 INPUT "Your name:",a$
+```
 
 [Example](./test/ex02.bas80)
 
 
 ### GOTO
 
-Needs a constant target: GOTO 100. No "computed GOTOs"
+Needs a constant target: `GOTO 100`. No "computed GOTOs" allowed.
 
 [Example](./test/ex03.bas80)
 
