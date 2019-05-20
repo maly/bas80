@@ -391,36 +391,39 @@ var LIB = {
     //EXCEPTION mgmt
 
     "exception": {
-      uses:[],
+      uses:["printstr"],
       code:
       "\tLHLD savesp\n"+
       "\tSPHL\n"+
       "\tPUSH B\n"+
+      "\tINR B\n"+
       "\tLXI H,emsg\n"+
       "ex_again: MOV E,M\n"+
       "\tINX H\n"+
       "\tMOV D,M\n"+
       "\tINX H\n"+
       "\tMOV A,E\n"+
-      "\tOR D\n"+
+      "\tORA D\n"+
       "\tJZ exc_out\n"+
       "\tDCR B\n"+
-      "\tJZ exc_out\n"+
+      "\tJNZ ex_again\n"+
       "\tXCHG\n"+
       "\tcall printstr\n"+
       "\tjmp errgo\n"+
-      "ex_out: POP B\n"+
+      "exc_out: POP B\n"+
       "\tJMP errgo\n"+
-      "emsg: DW e_ovfl, e_idx, e_div, e_oom, e_data\n"+
+      "emsg: DW e_ovfl, e_idx, e_div, e_oom, e_data,e_stop\n"+
       "\tDW 0\n"+
       "e_ovfl: .cstr \"MULT OVFL\"\n"+
       "e_idx: .cstr \"INDEX OUT OF LIMITS\"\n"+
       "e_div: .cstr \"DIV BY ZERO\"\n"+
       "e_oom: .cstr \"OUT OF MEMORY\"\n"+
-      "e_data: .cstr \"NO DATA\"\n"
+      "e_data: .cstr \"NO DATA\"\n"+
+      "e_stop: .cstr \"STOP\"\n"
     },
 
     //ERROR management
+/*
     "errovfl": {
         uses:["printstr"],
         code:
@@ -431,58 +434,47 @@ var LIB = {
         "\tdb 0ah,0dh\n"+
         "\t.cstr \"### MULT OVFL\",0dh,0ah\n"
     },
+    */
+    "errovfl": {
+      uses:["exception"],
+      code:
+      "\tmvi b,0\n"+
+      "\tjmp exception\n"
+  },
+
+
     "erridx": {
-        uses:["printstr"],
+        uses:["exception"],
         code:
-        "\tlxi h,erridx_m\n"+
-        "\tcall printstr\n"+
-        "\tjmp errgo\n"+
-        "erridx_m:\n"+
-        "\tdb 0ah,0dh\n"+
-        "\t.cstr \"### INDEX OUT OF LIMITS\",0dh,0ah\n"
+        "\tmvi b,1\n"+
+        "\tjmp exception\n"
     },
     "errdiv": {
-        uses:["printstr"],
+        uses:["exception"],
         code:
-        "\tlxi h,errdiv_m\n"+
-        "\tcall printstr\n"+
-        "\tjmp errgo\n"+
-        "errdiv_m:\n"+
-        "\tdb 0ah,0dh\n"+
-        "\t.cstr \"### DIVISION BY ZERO\",0dh,0ah\n"
+        "\tmvi b,2\n"+
+        "\tjmp exception\n"
     },
     "erroom": {
-        uses:["printstr"],
+        uses:["exception"],
         code:
-        "\tlxi h,erroom_m\n"+
-        "\tcall printstr\n"+
-        "\tjmp errgo\n"+
-        "erroom_m:\n"+
-        "\tdb 0ah,0dh\n"+
-        "\t.cstr \"### OUT OF MEMORY\",0dh,0ah\n"
-    },
-    "errstop": {
-        uses:["printstr"],
-        code:
-        "\tlxi h,errstop_m\n"+
-        "\tcall printstr\n"+
-        "\tjmp errgo\n"+
-        "errstop_m:\n"+
-        "\tdb 0ah,0dh\n"+
-        "\t.cstr \"### STOP\",0dh,0ah\n"
-
+        "\tmvi b,3\n"+
+        "\tjmp exception\n"
     },
     "errnodata": {
-        uses:["printstr"],
+        uses:["exception"],
         code:
-        "\tlxi h,errnodata_m\n"+
-        "\tcall printstr\n"+
-        "\tjmp errgo\n"+
-        "errnodata_m:\n"+
-        "\tdb 0ah,0dh\n"+
-        "\t.cstr \"### NO DATA\",0dh,0ah\n"
+        "\tmvi b,4\n"+
+        "\tjmp exception\n"
 
     },
+    "errstop": {
+      uses:["exception"],
+      code:
+      "\tmvi b,5\n"+
+      "\tjmp exception\n"
+
+  },
 
     //SYSTEM
     "mul16": {
