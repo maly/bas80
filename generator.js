@@ -832,8 +832,40 @@ var generator = function(basic, CFG, PROC) {
                     break;
 
                 case "on":
+
+                  // on error?
+
+
                     ex = isVar()
                     if (!ex) croak("ON needs a variable name",line)
+
+
+                    if (ex.value.toLowerCase()=="error") {
+                      var forError = null;
+
+                      if (tokens[0].type=="num") {
+                        //error number specification
+                        forError = tokens[0].value;
+                        tokens.shift();
+                      }
+
+                      var go = isKw("goto");
+                      if (!go) croak("ON ERROR needs a GOTO",line)
+                      if (!tokens.length) croak("ON ERROR needs a GOTO line/label",line)
+                      target = findLabel(tokens[0].value,labels);
+                      tokens.shift();
+                      ENV.lUse("CMD"+target)
+                      //console.log(go, target, forError)
+                      //toDo
+                      if (forError===null) {
+                        out += CFG.asm.onerrorAll(target)
+                      } else {
+                        out += CFG.asm.onerrorNum(target,forError)
+                      }
+
+                      break;
+                    }
+
                     out+=CFG.xp.var(ex,line)
                     ENV.addVar(ex.value,"int")
                     if (!tokens.length) croak("ON needs a GOTO/GOSUB",line)

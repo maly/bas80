@@ -677,8 +677,30 @@ var BASIC = {
                 return out
             },
 
+            onerrorNum: function(target, errnum) {
+              var out = ""
+              //out += "\tmvi e,"+(2*errnum)+"\n"
+              //out += "\tmvi d,0\n"
+              out += "\tlxi h,CMD"+target+"\n"
+              out += "\tshld ex_table+"+(2*errnum)+"\n"
+              return out
+          },
+          onerrorAll: function(target, errnum) {
+            var out = ""
+            out += "\tlxi h,CMD"+target+"\n"
+            out += "\tshld ex_table ;overflow\n"
+            out += "\tshld ex_table+2 ;index out\n"
+            out += "\tshld ex_table+4 ;div by zero\n"
+            out += "\tshld ex_table+6 ;out of memory\n"
+            out += "\tshld ex_table+8 ;no data\n"
+            out += "\tshld ex_table+10 ;stop\n"
+            out += "\tshld ex_table+12 ;user1\n"
+            out += "\tshld ex_table+14 ;user2\n"
+            return out
+        },
 
-            strUnassign: function(name) {
+
+          strUnassign: function(name) {
                 return "\tLHLD vs_"+name+"\n\tCALL hp_unass\n"
             }
 
