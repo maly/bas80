@@ -155,6 +155,8 @@ You can specify the error number:
 - 5 is for STOP command (it has no common sense at all)
 - 6 and 7 are for user-specified exceptions (to be implemented)
 
+[Example](./test/ex20.bas80)
+
 
 ### REM
 

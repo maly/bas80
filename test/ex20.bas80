@@ -1,0 +1,11 @@
+on error 2 goto err
+
+10 print "Enter a,b"
+input a,b
+print a;"/";b;"=";a/b
+goto 10
+
+err: print "ERROR! Division by zero!"
+goto 10
+
+
