@@ -4,7 +4,7 @@ CONFIG.OMENALPHA= {
         ramtop:"0f800h",
         goback:"RST 0",
         cpu:"I8080",
-        init:"\tLXI H,0\n\tDAD SP\n\tSHLD savesp\n",
+        init:"\t.engine alpha\n\tLXI H,0\n\tDAD SP\n\tSHLD savesp\n",
         system: {
             "serout": {
                 uses:null,
