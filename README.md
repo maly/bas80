@@ -141,6 +141,21 @@ The same as ON expr GOTO, but this time it is calling a subroutine instead the j
 
 [Example](./test/ex07.bas80)
 
+### ON ERROR [errnum] GOTO label
+
+It allows overrule the error handling. Instead of message output, it will catch the error and performs GOTO to specified label. There are no warranty about anything (especially the stack), so the safest way is do what is necessary and re-initialization the whole program.
+
+You can specify the error number:
+
+- 0 is for overflow during multiplication
+- 1 is for index out of bounds
+- 2 is for division by zero
+- 3 is for out of memory errror
+- 4 is for out of data error
+- 5 is for STOP command (it has no common sense at all)
+- 6 and 7 are for user-specified exceptions (to be implemented)
+
+
 ### REM
 
 Remark. Compiler ignores everything after this keyword until the end of line.
