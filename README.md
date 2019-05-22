@@ -163,6 +163,11 @@ Throw an error. Errnum should be in range (0..7), for detail description see abo
 
 E.g. `THROW 2` simulate the "division by 0" error.
 
+### RUN
+
+Runs the program again. It means the stack pointer is restored, heap is reallocated, all variables are undefined, etc.
+
+
 ### REM
 
 Remark. Compiler ignores everything after this keyword until the end of line.

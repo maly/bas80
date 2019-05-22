@@ -1340,6 +1340,9 @@ var generator = function(basic, CFG, PROC) {
                 tokens.shift(); //drop
 
             break;
+            case "run":
+                out += CFG.asm.run();
+            break;
                 case "input":
                     hasstr = false;
                     while(tokens.length) {

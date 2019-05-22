@@ -706,6 +706,14 @@ var BASIC = {
           return out
       },
 
+      run: function() {
+        var out = "";
+        out +="\tLHLD SAVESP\n"
+        out +="\tSPHL\n"
+        out +="\tJMP RUNPROG\n"
+        return out
+      },
+
 
           strUnassign: function(name) {
                 return "\tLHLD vs_"+name+"\n\tCALL hp_unass\n"
