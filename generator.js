@@ -1330,7 +1330,16 @@ var generator = function(basic, CFG, PROC) {
                     out+=CFG.asm.jmpEx0("WB"+loops[0][0]);
             break;
 
+            case "throw":
+                par = tokens[0];
+                if (par.type!="num") croak("THROW needs a constant value",line);
+                if (par.value<0) croak("THROW needs a value between 0 and 7",line);
+                if (par.value>7) croak("THROW needs a value between 0 and 7",line);
 
+                out += CFG.asm.throwN(par.value);
+                tokens.shift(); //drop
+
+            break;
                 case "input":
                     hasstr = false;
                     while(tokens.length) {
@@ -1493,7 +1502,7 @@ var generator = function(basic, CFG, PROC) {
                     break;
 
                     default:
-                        croak("Keyword not implemented", line)
+                        croak("Keyword '"+cmd+"' not implemented", line)
 
             }
 

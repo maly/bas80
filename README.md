@@ -157,6 +157,11 @@ You can specify the error number:
 
 [Example](./test/ex20.bas80)
 
+### THROW errnum
+
+Throw an error. Errnum should be in range (0..7), for detail description see above (ON ERROR)
+
+E.g. `THROW 2` simulate the "division by 0" error.
 
 ### REM
 

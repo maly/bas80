@@ -699,6 +699,13 @@ var BASIC = {
             return out
         },
 
+        throwN: function(errnum) {
+          var out = ""
+          out += "\tlhld ex_table+"+(errnum*2)+"\n"
+          out += "\tpchl\n"
+          return out
+      },
+
 
           strUnassign: function(name) {
                 return "\tLHLD vs_"+name+"\n\tCALL hp_unass\n"
