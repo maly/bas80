@@ -326,7 +326,7 @@ var BASIC = {
                 return "\tRET\n"
             },
             end: function() {
-                return "\tRST 0\n"
+                return "\tJMP ERRGO\n"
             },
             dopush: function() {
                 return "\tPUSH H\n"

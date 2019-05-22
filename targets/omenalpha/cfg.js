@@ -2,7 +2,8 @@ var CONFIG = CONFIG || {};
 CONFIG.OMENALPHA= {
         org:"8000h",
         ramtop:"0f800h",
-        goback:"RST 0",
+//        goback:"RST 0",
+        goback:"LHLD SAVESP\n\tSPHL\n\tRET\n",
         cpu:"I8080",
         init:"\t.engine alpha\nRUNPROG:\tLXI H,0\n\tDAD SP\n\tSHLD savesp\n",
         system: {
