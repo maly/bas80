@@ -56,7 +56,8 @@ let a=[b(3)]
 <button onclick="compile()">Compile</button>
 <br>
 <select id="model">
-  <option value="OMENALPHA" selected>OMEN Alpha</option>
+  <option value="IL" selected>IL</option>
+  <option value="OMENALPHA">OMEN Alpha</option>
   <option value="OMENCHARLIE">OMEN Charlie</option>
 </select>
 
@@ -73,6 +74,9 @@ let a=[b(3)]
 
 <script src="./targets/cpu/8080/library.js"></script>
 <script src="./targets/cpu/8080/basic.js"></script>
+<script src="./targets/cpu/IL/library.js"></script>
+<script src="./targets/cpu/IL/basic.js"></script>
+<script src="./targets/il/cfg.js"></script>
 <script src="./targets/omenalpha/cfg.js"></script>
 <script src="./targets/omencharlie/cfg.js"></script>
 

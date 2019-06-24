@@ -1433,7 +1433,11 @@ var generator = function(basic, CFG, PROC) {
                         et = exprType(ex,line);
                         out+=exprAsm(ex,line,et);
                         ENV.addUse("print"+et)
-                        out+=CFG.asm.docall("print"+et, ENV)
+                        out+=CFG.asm.docall("print"+et, ENV);
+                        console.log(printET)
+                        // Sem napsat nějaké rozdělené volání. Docall by tu neměl být.
+                        // Tři různé funkce, ať se dá v ASM IL dobře škálovat.
+                        out += CFG.asm.doPrint
                         println = true;
                         if (isPunc(";")) {
                             println = false;
