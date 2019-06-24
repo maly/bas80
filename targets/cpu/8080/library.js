@@ -340,14 +340,16 @@ var LIB = {
     "printcomma": {
         uses:["serout"],
         code: "\tMVI A,2ch ;comma\n"+
-        "\tCALL SEROUT\n"+
-        "\tRET\n"
+        "\tJMP SEROUT\n"
+        //"\tCALL SEROUT\n"+
+        //"\tRET\n"
     },
     "printquot": {
         uses:["serout"],
         code: "\tMVI A,22h ;quot\n"+
-        "\tCALL SEROUT\n"+
-        "\tRET\n"
+        "\tJMP SEROUT\n"
+        //"\tCALL SEROUT\n"+
+        //"\tRET\n"
     },
 
     "input": {
