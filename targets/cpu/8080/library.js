@@ -326,16 +326,18 @@ var LIB = {
         code: "\tMVI A,0Dh\n"+
         "\tCALL SEROUT\n"+
         "\tMVI A,0Ah\n"+
-        "\tCALL SEROUT\n"+
-        "\tRET\n"
+        "\tJMP SEROUT\n"
+        //"\tCALL SEROUT\n"+
+        //"\tRET\n"
     },
     "printtab": {
         uses:["serout"],
         code: "\tMVI A,20h\n"+
         "\tCALL SEROUT\n"+
         "\tMVI A,09h\n"+
-        "\tCALL SEROUT\n"+
-        "\tRET\n"
+        "\tJMP SEROUT\n"
+        //"\tCALL SEROUT\n"+
+        //"\tRET\n"
     },
     "printcomma": {
         uses:["serout"],
@@ -936,6 +938,7 @@ var LIB = {
      */
     "o_concat": {
     uses:["__heap"],
+    inlinable:true,
     code: ""+
         "\tpush h\n"+
         "\tpush d\n"+
@@ -1171,6 +1174,7 @@ var LIB = {
     "f_rnd": {
         uses:null,
         //sysdw:["seed1","seed2"],
+        inlinable:true,
         code: ""+
         "\tLHLD sv_seed1\n"+
         "\tMOV b,h\n"+

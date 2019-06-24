@@ -296,6 +296,9 @@ var BASIC = {
                     return out;
                 }
                 ENV.addUse(opfn);
+                //[docall]
+                ENV.called(opfn)
+                //console.log(this)
                 out += "\tCALL "+opfn+"\n"
                 return out;
             },
@@ -319,7 +322,9 @@ var BASIC = {
             jmpEx0: function(target) {
                 return "\tMOV A,H\n\tORA L\n\tJZ "+target+"\n"
             },
-            docall: function(target) {
+            docall: function(target, ENV) {
+                ENV.called(target);
+                console.log("CALLED ",target)
                 return "\tCALL "+target+"\n"
             },
             ret: function() {

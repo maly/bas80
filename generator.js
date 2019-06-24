@@ -127,12 +127,15 @@
         }
         return out
     }
-/* global LIB */
-    var fnAsm = function() {
+
+    var replace
+/* global LIB, embedding into main ASM */
+    var fnAsm = function(oldAsm) {
         var out = "";
         var fname,i;
         fname = ENV.uses.shift()
         while(fname) {
+          console.log(fname, ENV.usesCount[fname], ENV.callCount[fname])
             var fn = LIB[fname]
             if (!fn) throw new Error("Cannot link "+fname)
 
@@ -151,6 +154,21 @@
                     ENV.addVar(fn.sysdq[i],"sysdq")
                 }
             }
+
+            if (fn.inlinable && ENV.callCount[fname]==1) {
+              //hledat CALL
+              //console.log(fname)
+
+              oldAsm = oldAsm.replace("CALL "+fname,
+                ";---"+fname+" INLINED ---\n"+
+                fname+":\n"+
+                fn.code.replace("RET\n","; RET disabled\n\t; RET\n")+
+                ";---"+fname+"-end---\n\n"
+              )
+              fname = ENV.uses.shift()
+              continue;
+            }
+
             out+=";---"+fname+"---\n"
             out+=fname+":\n"
             out += fn.code
@@ -158,7 +176,7 @@
 
             fname = ENV.uses.shift()
         }
-        return out;
+        return oldAsm + out;
 
     }
 
@@ -224,17 +242,27 @@ var ENV= {
       ENV.syslabels[label]=1;
     },
     uses:[],
+    usesCount:{},
+    callCount:{},
+    called: function(s) {
+      //console.log("callcount",s)
+      ENV.callCount[s]++
+    },
     addUse:function(s) {
         if (ENV.uses.indexOf(s)<0) {
             ENV.uses.push(s)
             var fn = LIB[s]
             if (!fn) throw new Error("Cannot link "+s)
+            ENV.usesCount[s] = 1;
+            ENV.callCount[s] = 0;
             if (fn.uses) {
                 for (var i=0;i<fn.uses.length;i++) {
                     var use = fn.uses[i]
                     ENV.addUse(use)
                 }
             }
+        } else {
+          ENV.usesCount[s]++;
         }
         return ENV.uses.indexOf(s)
     }
@@ -572,7 +600,7 @@ var generator = function(basic, CFG, PROC) {
                     target = findLabel(par.value,labels);
                     if (target===null) croak("Target line not found",line)
                     ENV.lUse("CMD"+target)
-                    out+=CFG.asm.docall("CMD"+target);
+                    out+=CFG.asm.docall("CMD"+target, ENV)
             break;
           case "return":
                     if (tokens.length) {
@@ -668,7 +696,7 @@ var generator = function(basic, CFG, PROC) {
                       if (!tokens.length) break;
                       if (!isPunc(",")) croak("Separate variables by comma",line)
                     }
-                    out+=CFG.asm.docall("hp_gc");
+                    out+=CFG.asm.docall("hp_gc", ENV)
                     break;
                 case "data":
                     label = line.label
@@ -711,7 +739,7 @@ var generator = function(basic, CFG, PROC) {
                         ex = expr(tokens,line);
                         et = exprType(ex,line);
                         out+=exprAsm(ex,line,et)
-                        out+=CFG.asm.docall("s_lut");
+                        out+=CFG.asm.docall("s_lut", ENV)
                         out+=CFG.asm.jmpZ("errnodata");
                         out+=CFG.asm.storeAnyInt("datapoint")
                         break;
@@ -728,14 +756,14 @@ var generator = function(basic, CFG, PROC) {
                         if (!ex) croak("READ needs a variable name",line)
                         if (ex.type=="var") {
                             ENV.addVar(ex.value,"int")
-                            out+=CFG.asm.docall("s_read");
+                            out+=CFG.asm.docall("s_read", ENV)
                             out+=CFG.asm.storeInt(ex.value,line)
                         } else {
                             //read string
                             ENV.addUse("__heap")
                             ENV.addVar(ex.value,"int")
                             out+=CFG.asm.strUnassign(ex.value)
-                            out+=CFG.asm.docall("s_read");
+                            out+=CFG.asm.docall("s_read", ENV)
                             out+=CFG.asm.storeStr(ex.value,line)
                         }
                         if (!tokens.length) continue;
@@ -1003,7 +1031,7 @@ var generator = function(basic, CFG, PROC) {
                     }
                     //console.log(ex,ex2)
                     ENV.lUse("CMD"+target)
-                    out+=CFG.asm.docall("CMD"+target)
+                    out+=CFG.asm.docall("CMD"+target, ENV)
 
                     break
                 case "let":
@@ -1022,7 +1050,7 @@ var generator = function(basic, CFG, PROC) {
                             out+=exprAsm(ex2,line,et2,true)
                         }
                         ENV.lUse("CMD"+target)
-                        out+=CFG.asm.docall("CMD"+target)
+                        out+=CFG.asm.docall("CMD"+target, ENV)
 
                         break
                     }
@@ -1351,7 +1379,7 @@ var generator = function(basic, CFG, PROC) {
                             chan = expr(tokens,line,true);
                             out+=exprAsm(chan,line,"int");
                             ENV.addUse("inpchan")
-                            out+=CFG.asm.docall("inpchan")
+                            out+=CFG.asm.docall("inpchan", ENV)
                             if (!isPunc(",")) croak("Syntax error",line)
                             continue;
                         }
@@ -1361,7 +1389,7 @@ var generator = function(basic, CFG, PROC) {
                             //good, lets input a number
                             ENV.addUse("inputint")
                             ENV.addVar(par.value,"int")
-                            out+=CFG.asm.docall("inputint")
+                            out+=CFG.asm.docall("inputint", ENV)
                             out+=CFG.asm.storeInt(par.value)
                             //consume remainder
                             if (!tokens.length) break; //the last one
@@ -1372,7 +1400,7 @@ var generator = function(basic, CFG, PROC) {
                             if (!ENV.intarr[par.value])  croak("You have to DIM array first",line)
                             if (par.index.type=="num" && par.index.value>=ENV.intarr[par.value]) croak("Index out of bound",line)
                             ENV.addUse("inputint")
-                            out+=CFG.asm.docall("inputint")
+                            out+=CFG.asm.docall("inputint", ENV)
 
                             if (par.index.type=="num") {
                                 //precompute
@@ -1390,7 +1418,7 @@ var generator = function(basic, CFG, PROC) {
                             out+=CFG.asm.strUnassign(par.value)
 
                             ENV.addUse("inputstr")
-                            out+=CFG.asm.docall("inputstr")
+                            out+=CFG.asm.docall("inputstr", ENV)
                             ENV.addUse("__heap")
                             hasstr = true
                             //heap test
@@ -1405,7 +1433,7 @@ var generator = function(basic, CFG, PROC) {
                         et = exprType(ex,line);
                         out+=exprAsm(ex,line,et);
                         ENV.addUse("print"+et)
-                        out+=CFG.asm.docall("print"+et)
+                        out+=CFG.asm.docall("print"+et, ENV)
                         println = true;
                         if (isPunc(";")) {
                             println = false;
@@ -1413,12 +1441,12 @@ var generator = function(basic, CFG, PROC) {
                         }
                         if (isPunc(",")) {
                             ENV.addUse("printtab")
-                            out+=CFG.asm.docall("printtab")
+                            out+=CFG.asm.docall("printtab", ENV)
                             println = false;
                             continue;
                         }
                     }
-                    if (hasstr) out+=CFG.asm.docall("hp_gc");
+                    if (hasstr) out+=CFG.asm.docall("hp_gc"), ENV;
                     break;
 
                 case "write":
@@ -1429,7 +1457,7 @@ var generator = function(basic, CFG, PROC) {
                             chan = expr(tokens,line,true);
                             out+=exprAsm(chan,line,"int");
                             ENV.addUse("prtchan")
-                            out+=CFG.asm.docall("prtchan")
+                            out+=CFG.asm.docall("prtchan", ENV)
                             out+="\tCALL prtchan\n"
                             if (!isPunc(",")) croak("Syntax error",line)
                             continue
@@ -1441,24 +1469,24 @@ var generator = function(basic, CFG, PROC) {
                         ENV.addUse("print"+et)
                         if (et=="str") {
                             ENV.addUse("printquot")
-                            out+=CFG.asm.docall("printquot")
+                            out+=CFG.asm.docall("printquot", ENV)
                         }
-                        out+=CFG.asm.docall("print"+et)
+                        out+=CFG.asm.docall("print"+et, ENV)
                         if (et=="str") {
-                            out+=CFG.asm.docall("printquot")
+                            out+=CFG.asm.docall("printquot", ENV)
                             hasstr=true
                         }
                         println = true;
                         if (isPunc(",")) {
                             ENV.addUse("printcomma")
-                            out+=CFG.asm.docall("printcomma")
+                            out+=CFG.asm.docall("printcomma", ENV)
                             continue;
                         }
 
                     }
                     ENV.addUse("println")
-                    out+=CFG.asm.docall("println")
-                    //if (hasstr) out+=CFG.asm.docall("hp_gc");
+                    out+=CFG.asm.docall("println", ENV)
+                    //if (hasstr) out+=CFG.asm.docall("hp_gc"), ENV;
 
                     break;
 
@@ -1471,7 +1499,7 @@ var generator = function(basic, CFG, PROC) {
                             chan = expr(tokens,line,true);
                             out+=exprAsm(chan,line,"int");
                             ENV.addUse("prtchan")
-                            out+=CFG.asm.docall("prtchan")
+                            out+=CFG.asm.docall("prtchan", ENV)
                             out+="\tCALL prtchan\n"
                             if (!isPunc(",")) croak("Syntax error",line)
                             continue
@@ -1481,7 +1509,7 @@ var generator = function(basic, CFG, PROC) {
                         //console.log(ex,et)
                         out+=exprAsm(ex,line,et);
                         ENV.addUse("print"+et)
-                        out+=CFG.asm.docall("print"+et)
+                        out+=CFG.asm.docall("print"+et, ENV)
                         if (et=="str") hasstr=true
                         println = true;
                         if (isPunc(";")) {
@@ -1490,7 +1518,7 @@ var generator = function(basic, CFG, PROC) {
                         }
                         if (isPunc(",")) {
                             ENV.addUse("printtab")
-                            out+=CFG.asm.docall("printtab")
+                            out+=CFG.asm.docall("printtab", ENV)
                             println = false;
                             continue;
                         }
@@ -1498,9 +1526,9 @@ var generator = function(basic, CFG, PROC) {
                     }
                     if (println) {
                         ENV.addUse("println")
-                        out+=CFG.asm.docall("println")
+                        out+=CFG.asm.docall("println", ENV)
                     }
-                    //if (hasstr) out+=CFG.asm.docall("hp_gc");
+                    //if (hasstr) out+=CFG.asm.docall("hp_gc"), ENV;
 
                     break;
 
@@ -1575,7 +1603,7 @@ var generator = function(basic, CFG, PROC) {
     out+="ERRGO:\t"+CFG.goback+"\n"; //error handling poor man
 
     //fndump
-    out+=fnAsm();
+    out=fnAsm(out);
 
 
     //strdump

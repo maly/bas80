@@ -30,16 +30,16 @@
 </head>
 <body>
 <div id="editor">
+  a$="AH"
+  print a$+"OJ"
+    print fn(factorial,rnd())
 
-10
-  a = 5
-  b = a /2
-  throw 2
-
-a$ = "hello " + "world"
-
-20 print "ERROR"
-
+    factorial: take fact
+        if fact=1 then return 1
+        push fact
+        temp = fn(factorial,fact-1)
+        pop fact
+        return temp*fact
 
 </div>
 
