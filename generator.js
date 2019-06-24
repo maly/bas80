@@ -128,8 +128,8 @@
         return out
     }
 
-    var replace
-/* global LIB, embedding into main ASM */
+/* global LIB */
+/* embedding into main ASM */
     var fnAsm = function(oldAsm) {
         var out = "";
         var fname,i;
